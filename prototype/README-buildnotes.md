@@ -76,7 +76,8 @@ and paste the whole block to every page. Never fork one page's copy.
 ### Hard constraints
 - **Zero external dependencies.** No CDN, no webfont file, no remote image, no
   build step. Every file must open correctly by double-click from `file://`.
-- Brand images are at `../assets/images/` (22 PNGs). Use them only for the logo
+- Brand images are at `assets/images/` — 22 PNGs, inside `prototype/` so the directory is
+  self-contained and deployable as-is. Use them only for the logo
   and photographic content — **never as icons or chrome.** `bottomNavBackground.png`
   and the eight raster icon PNGs are dead; do not resurrect them.
 - Icons are inline SVG `<symbol>` sprites on a 24px grid using `currentColor`.

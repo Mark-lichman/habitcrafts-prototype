@@ -31,13 +31,28 @@ jobs:
         run: |
           set -euo pipefail
           test -f prototype/index.html || { echo "::error::prototype/index.html is missing"; exit 1; }
+          fail=0
+
           # Every screen the gallery links to must actually exist on disk.
-          missing=0
           for f in $(grep -ohE 'href="[a-z0-9-]+\.html"' prototype/*.html \
                      | sed -E 's/href="([^"]+)"/\1/' | sort -u); do
-            if [ ! -f "prototype/$f" ]; then echo "::error::broken link target: $f"; missing=1; fi
+            if [ ! -f "prototype/$f" ]; then echo "::error::broken link target: $f"; fail=1; fi
           done
-          exit $missing
+
+          # Only prototype/ is published, so anything reaching above it (../) is
+          # broken once deployed even though it resolves locally over file://.
+          if grep -rn '\.\./' prototype --include='*.html' --include='*.css' --include='*.js'; then
+            echo "::error::reference escapes the published root (prototype/) — see matches above"
+            fail=1
+          fi
+
+          # Local asset references must resolve.
+          for a in $(grep -rhoE '(src|href)="(assets/[^"]+)"' prototype --include='*.html' \
+                     | sed -E 's/.*="([^"]+)"/\1/' | sort -u); do
+            if [ ! -f "prototype/$a" ]; then echo "::error::missing asset: $a"; fail=1; fi
+          done
+
+          exit $fail
 
       - uses: actions/configure-pages@v5
 

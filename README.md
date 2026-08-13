@@ -35,7 +35,8 @@ spring."
 - `prototype/` — the working prototype: ten screens plus a design-system gallery.
 - `prototype/README-buildnotes.md` — the build contract: CSS architecture, token naming,
   component classes, JS hooks.
-- `assets/images/` — brand assets copied from the production app.
+- `prototype/assets/images/` — brand assets copied from the production app. They live inside
+  `prototype/` so that directory is self-contained and can be deployed as-is.
 
 ## Scope
 
