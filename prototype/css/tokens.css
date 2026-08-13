@@ -1,0 +1,559 @@
+/* ============================================================================
+   HabitCrafts — tokens.css
+   The closed token layer. Every value below is traceable to a document:
+
+     [D §n]  docs/design-direction.md      — the AUTHORITY. Overrules the brief.
+     [B §n]  docs/design-research-brief.md — the evidence base.
+
+   Rules that govern this file:
+   - The palette is CLOSED. [D §6 veto list] No new hex may be added here or
+     anywhere else. Extensions happen in OKLCH, in this file, or not at all.
+   - Contrast ratios in comments were computed with the WCAG 2.x relative
+     luminance formula. Ones carried from the brief are marked [B]; ones
+     derived for tokens the brief did not pair are marked (computed).
+   - Naming convention: --c-* colour · --space-* spacing · --radius-* ·
+     --stroke-* · --fs-/--lh-/--fw-/--ls-* type · --dur-* · --ease-* ·
+     --shadow-* · --bp-* breakpoints · --layout-* shell metrics.
+
+   THEME ARCHITECTURE
+   Raw palettes are declared once as --l-* (Daylight) and --d-* (Nightfall)
+   and never consumed directly by components. Components consume only the
+   SEMANTIC --c-* layer, which is remapped per theme in three places:
+     1. :root                                   → light default
+     2. @media (prefers-color-scheme: dark)     → system dark
+        scoped to :root:not([data-theme="light"]) so an explicit light
+        toggle beats the OS preference
+     3. :root[data-theme="dark"]                → explicit dark toggle
+        beats a light OS preference
+   Blocks 2 and 3 are identical. KEEP THEM IN SYNC.
+   ========================================================================= */
+
+:root {
+  /* ==========================================================================
+     1. RAW PALETTE — DAYLIGHT (light)                                  [B §4.1]
+     Declared once. Do not consume these directly; use the --c-* layer.
+     ====================================================================== */
+
+  /* Neutrals — the new ground. Warm parchment; this is where humanity lives. */
+  --l-canvas:          #F7F5F1; /* page background                              */
+  --l-canvas-sunken:   #EFEBE4; /* recessed sections, ring tracks · 1.09:1 [B]  */
+  --l-surface:         #FFFFFF; /* cards, sheets, inputs                        */
+  --l-surface-raised:  #FFFFFF; /* light mode has no second card tone           */
+  --l-surface-tinted:  #EDF3FA; /* info panels, selected rows · 1.03:1 vs canvas*/
+  --l-border:          #E3DED5; /* decorative hairline · 1.23:1 vs canvas   [B] */
+  --l-border-control:  #8A8377; /* border IS the affordance · 3.45:1 ✅ AA  [B] */
+  --l-border-focus:    #41607F; /* 2px focus ring · 6.02:1 vs canvas ✅     [B] */
+
+  /* Ink — blue-as-ink, never neutral grey. */
+  --l-ink-strong:      #16232F; /* display + headlines · 14.66:1 ✅         [B] */
+  --l-ink:             #24384B; /* body · 11.07:1 canvas / 12.05:1 white ✅ [B] */
+  --l-ink-muted:       #566878; /* secondary · 5.29:1 / 5.76:1 white ✅     [B] */
+  --l-ink-subtle:      #7C8B99; /* placeholder/disabled · 3.21:1 — NOT body [B] */
+
+  /* Brand blue — the anchor ramp. 100/500/700 are the app's existing hexes. */
+  --l-brand-50:        #F1F6FB; /* 1.00:1  faintest wash                        */
+  --l-brand-100:       #E6EEF8; /* 1.07:1  EXISTING `tertiary` — chip fills [B] */
+  --l-brand-200:       #C9DBEC; /* 1.30:1  borders on tinted, chart gridlines   */
+  --l-brand-300:       #A3C0D9; /* 1.74:1  illustration mid-tone                */
+  --l-brand-400:       #7A9DBE; /* 2.61:1  decorative only                      */
+  --l-brand-500:       #507598; /* 4.44:1  EXISTING `primary` — white label 4.84 ✅ */
+  --l-brand-600:       #41607F; /* 6.02:1 ✅ interactive text, links, icons, FAB */
+  --l-brand-700:       #325171; /* 7.56:1 ✅ EXISTING `secondary` — HERO SURFACE */
+  --l-brand-800:       #27405A; /* 9.80:1 ✅ pressed on brand-700, late gradient */
+  --l-brand-900:       #16232F; /* 14.66:1 ✅ = ink-strong                      */
+
+  /* Gold — the reward colour. Rationed. [D §6 "Gold: highlight, not hero"]
+     ⚠ gold-500 is 1.52:1 on canvas: FILLED SHAPES ONLY, never a hairline,
+     never text on light. Text uses gold-700. */
+  --l-gold-300:        #F7DE85; /* confetti, glow, chart fill                   */
+  --l-gold-400:        #F2D059; /* 5.47:1 on brand-700 ✅ secondary reward  [B] */
+  --l-gold-500:        #EFC530; /* EXISTING `accent1` · 4.98:1 on brand-700 ✅
+                                   ink label on it = 7.29:1 ✅              [B] */
+  --l-gold-surface:    #FBF1D9; /* streak chip background                       */
+  --l-gold-700:        #8A6510; /* gold TEXT · 4.88:1 canvas / 4.73:1 on
+                                   gold-surface ✅                          [B] */
+
+  /* Sage — success and growth. Replaces the old #4DC360. */
+  --l-sage-100:        #E7EFE7; /* completed habit-card fill                    */
+  --l-sage-300:        #A9C4A8; /* ring track alt, chart fill                   */
+  --l-sage-500:        #6E9A70; /* 2.96:1 decorative fill only, NOT a boundary  */
+  --l-sage-600:        #4F7A53; /* 4.55:1 ✅ rings, checkmarks, success text
+                                   white on it = 4.95:1 ✅                  [B] */
+  --l-sage-700:        #446B48; /* 5.20:1 on sage-100 ✅ text on sage surface [B]*/
+
+  /* Clay + amber — care, not alarm. Replaces #F06962 / #FCDC0C. */
+  --l-clay-surface:    #F8E7E4;
+  --l-clay-600:        #A9483E; /* 5.24:1 canvas / 4.76:1 on clay-surface ✅ [B] */
+  --l-amber-surface:   #FAF0DA;
+  --l-amber-700:       #96650A; /* 4.63:1 vs canvas ✅                      [B] */
+  --l-amber-750:       #8A5D09; /* 5.08:1 on amber-surface ✅               [B] */
+
+  /* Teal — RETIRED FROM THE UI. [D §4.4] Retained only so illustration
+     compositions have a legal fourth shape colour. Never a UI fill, never
+     text, never a chart series. Do not add new usages. */
+  --l-teal-400:        #80BBC8; /* illustration fill only                       */
+  --l-teal-650:        #37707E; /* illustration linework only                   */
+
+
+  /* ==========================================================================
+     2. RAW PALETTE — NIGHTFALL (dark)                                  [B §4.2]
+     Dark surfaces are TINTED WITH THE BRAND HUE, never neutral grey — that is
+     the difference between "same product at night" and "a different app".
+     ====================================================================== */
+  --d-canvas:          #0F151B; /* blue-black page background                   */
+  --d-surface:         #182029; /* cards · 1.12:1 vs canvas                 [B] */
+  --d-surface-raised:  #1E2833; /* sheets, menus, hover, ring tracks        [B] */
+  --d-surface-tinted:  #233240; /* selected rows, info panels, brand fill   [B] */
+  --d-border:          #2C3945; /* hairlines · 1.39:1 vs surface [B]
+                                   NOTE: dark carries elevation by tone +
+                                   border ONLY. No shadows in dark. [D §4.3]   */
+  --d-ink-strong:      #EDF2F7; /* 16.31:1 vs canvas ✅                     [B] */
+  --d-ink:             #D8E2EC; /* 14.00:1 canvas / 12.53:1 surface ✅      [B] */
+  --d-ink-muted:       #9FB0C0; /* 7.39:1 vs surface ✅                     [B] */
+  --d-ink-subtle:      #74869A; /* 4.40:1 vs surface ✅ (3:1 target)        [B] */
+  --d-brand:           #8FB4D4; /* 8.44:1 canvas / 7.55:1 surface ✅        [B] */
+  --d-brand-hero:      #27405A; /* hero surface fill in dark.
+                                   white on it = 10.67:1 ✅ (computed)
+                                   1.75:1 vs canvas — reads as a surface (computed) */
+  --d-brand-hero-late: #1B2E42; /* after-20:00 gradient end (computed:
+                                   white on it = 13.4:1 ✅)                     */
+  --d-gold:            #F2D059; /* 10.91:1 vs surface ✅ [B]
+                                   7.08:1 on brand-hero ✅ (computed)           */
+  --d-gold-soft:       #F7DE85; /* particles, confetti                          */
+  --d-gold-surface:    #33291259; /* streak chip bg — gold at low alpha on dark */
+  --d-sage:            #8FB891; /* 7.38:1 vs surface ✅                     [B] */
+  --d-sage-surface:    #1B2621; /* completed habit-card fill (computed:
+                                   ink #D8E2EC on it = 11.9:1 ✅)               */
+  --d-clay:            #E08C7F; /* 6.44:1 vs surface ✅                     [B] */
+  --d-clay-surface:    #2B1D1B;
+  --d-amber:           #E5B85C; /* 8.88:1 vs surface ✅                     [B] */
+  --d-amber-surface:   #2B2313;
+  --d-teal:            #7FB9C7; /* illustration only — see teal retirement      */
+
+
+  /* ==========================================================================
+     3. SEMANTIC LAYER — LIGHT MAPPING (default)
+     Components consume ONLY these. If you need a colour that is not here,
+     you need a new semantic token, not a new hex.
+     ====================================================================== */
+  color-scheme: light;
+
+  --c-canvas:          var(--l-canvas);
+  --c-canvas-sunken:   var(--l-canvas-sunken);
+  --c-surface:         var(--l-surface);
+  --c-surface-raised:  var(--l-surface-raised);
+  --c-surface-tinted:  var(--l-surface-tinted);
+  --c-border:          var(--l-border);
+  --c-border-control:  var(--l-border-control);
+  --c-border-focus:    var(--l-border-focus);
+
+  --c-ink-strong:      var(--l-ink-strong);
+  --c-ink:             var(--l-ink);
+  --c-ink-muted:       var(--l-ink-muted);
+  --c-ink-subtle:      var(--l-ink-subtle);
+
+  --c-brand-50:        var(--l-brand-50);
+  --c-brand-100:       var(--l-brand-100);
+  --c-brand-200:       var(--l-brand-200);
+  --c-brand-300:       var(--l-brand-300);
+  --c-brand-400:       var(--l-brand-400);
+  --c-brand-500:       var(--l-brand-500);
+  --c-brand-600:       var(--l-brand-600);
+  --c-brand-700:       var(--l-brand-700);
+  --c-brand-800:       var(--l-brand-800);
+  --c-brand-900:       var(--l-brand-900);
+
+  --c-gold-300:        var(--l-gold-300);
+  --c-gold-400:        var(--l-gold-400);
+  --c-gold-500:        var(--l-gold-500);
+  --c-gold-700:        var(--l-gold-700);
+  --c-gold-surface:    var(--l-gold-surface);
+
+  --c-sage-100:        var(--l-sage-100);
+  --c-sage-300:        var(--l-sage-300);
+  --c-sage-500:        var(--l-sage-500);
+  --c-sage-600:        var(--l-sage-600);
+  --c-sage-700:        var(--l-sage-700);
+
+  --c-clay-600:        var(--l-clay-600);
+  --c-clay-surface:    var(--l-clay-surface);
+  --c-amber-700:       var(--l-amber-700);
+  --c-amber-750:       var(--l-amber-750);
+  --c-amber-surface:   var(--l-amber-surface);
+
+  --c-teal-400:        var(--l-teal-400);
+  --c-teal-650:        var(--l-teal-650);
+
+  /* --- Role tokens: the ONLY things components should reach for when the
+         light and dark answers differ structurally rather than in value. --- */
+  --c-hero-fill:       var(--l-brand-700); /* the one deep-blue surface/screen  */
+  --c-hero-fill-late:  var(--l-brand-800); /* after-20:00 gradient stop [D §2.5]*/
+  --c-hero-ink:        #FFFFFF;            /* 8.23:1 on brand-700 ✅       [B]  */
+  --c-hero-ink-muted:  var(--l-brand-100); /* 7.04:1 on brand-700 ✅       [B]  */
+  --c-hero-border:     transparent;
+  --c-on-brand:        #FFFFFF;            /* label on brand-500/600 fills      */
+
+  --c-arc-on-hero:     var(--l-sage-300);      /* day-arc fill ON the hero:
+                                                  4.10:1 on brand-700 ✅ (computed) */
+  --c-ring-track:      var(--l-canvas-sunken); /* [D §6] light: canvas-sunken   */
+  --c-ring-start:      var(--l-brand-500);     /* hold t=0   — JS reads this    */
+  --c-ring-end:        var(--l-sage-600);      /* hold t=450 — JS reads this    */
+  --c-spark-a:         var(--l-sage-500);      /* check-in particle A           */
+  --c-spark-b:         var(--l-gold-500);      /* check-in particle B           */
+
+  --c-done-surface:    var(--l-sage-100);  /* completed habit card fill         */
+  --c-done-border:     var(--l-sage-300);
+  --c-done-ink:        var(--l-sage-700);
+
+  --c-scrim:           rgba(22, 35, 47, 0.4); /* modal scrim = 40% ink-strong   */
+
+
+  /* ==========================================================================
+     4. TYPOGRAPHY                                            [B §4.4] [D §4.2]
+     Fraunces is a DAILY voice, not an event voice [D §4.2]: it takes h1 page
+     titles, streak numerals, milestone headlines, empty-state headings, and
+     the Create-Habit step questions. Body, labels, buttons and nav are
+     strictly Figtree.
+
+     ZERO EXTERNAL DEPENDENCIES: no webfont is loaded. The stacks below name
+     the intended faces first, then degrade through the best locally-available
+     humanist sans / transitional serif on each OS. The design must still read
+     as intentional on the fallbacks, which is why the display stack ends in
+     Georgia (a real serif) and never in `sans-serif`.
+     ====================================================================== */
+  --font-ui: "Figtree", "Hanken Grotesk", "Segoe UI Variable Text", "Segoe UI",
+             system-ui, -apple-system, "SF Pro Text", Roboto,
+             "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino,
+                  "Book Antiqua", "Hoefler Text", Georgia, "Times New Roman",
+                  serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas,
+               "Liberation Mono", monospace;
+
+  /* Fraunces variable axes. Inert (and harmless) when the font is absent.
+     SOFT ~50 softens the terminals; WONK stays 0 EVERYWHERE except milestone
+     cards, where it may go to 1. [D §4.2] */
+  --fvs-display: "SOFT" 50, "WONK" 0, "opsz" 48;
+  --fvs-h1:      "SOFT" 50, "WONK" 0, "opsz" 32;
+  --fvs-wonk:    "SOFT" 50, "WONK" 1, "opsz" 48; /* milestone card only */
+
+  /* The ramp — 9 sizes, real tracking, real line heights.
+     MINIMUM TEXT SIZE IS 13px, NO EXCEPTIONS. [D §6]
+     Deviation logged: the brief's ramp lists `caption` at 11px while the same
+     section states a 13px floor. The direction's "13px minimum, no exceptions"
+     wins, so caption is 13px here and differs from body-sm by weight and
+     tracking rather than size. */
+  --fs-display: 48px;  --lh-display: 52px;  --fw-display: 600;  --ls-display: -0.02em;
+  --fs-h1:      32px;  --lh-h1:      38px;  --fw-h1:      600;  --ls-h1:      -0.015em;
+  --fs-h2:      24px;  --lh-h2:      30px;  --fw-h2:      600;  --ls-h2:      -0.01em;
+  --fs-h3:      20px;  --lh-h3:      26px;  --fw-h3:      600;  --ls-h3:      -0.005em;
+  --fs-body-lg: 17px;  --lh-body-lg: 26px;  --fw-body-lg: 400;  --ls-body-lg: 0;
+  --fs-body:    15px;  --lh-body:    22px;  --fw-body:    400;  --ls-body:    0;
+  --fs-body-sm: 13px;  --lh-body-sm: 19px;  --fw-body-sm: 400;  --ls-body-sm: 0.005em;
+  --fs-label:   13px;  --lh-label:   16px;  --fw-label:   600;  --ls-label:   0.01em;
+  --fs-caption: 13px;  --lh-caption: 16px;  --fw-caption: 500;  --ls-caption: 0.02em;
+
+
+  /* ==========================================================================
+     5. SPACING · RADIUS · STROKE                                     [B §4.3]
+     Everything sits on the 8px baseline grid (12 is the one half-step).
+     This scale retires the app's nine drifting radius values.
+     ====================================================================== */
+  --space-4:  4px;
+  --space-8:  8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-48: 48px;
+  --space-64: 64px;
+
+  --radius-xs:   8px;
+  --radius-sm:   12px;
+  --radius-md:   16px;  /* habit card, all cards */
+  --radius-lg:   24px;  /* sheets, modals, floating nav bar */
+  --radius-xl:   32px;
+  --radius-full: 999px; /* pills, chips */
+
+  --stroke-hairline: 1px;   /* card outline, dividers */
+  --stroke-control:  1.5px; /* form-control boundary */
+  --stroke-ring:     3px;   /* progress arcs, check-in ring, day arc */
+  --stroke-focus:    2px;   /* focus ring */
+
+  /* Minimum interactive target at every breakpoint. One number satisfies
+     WCAG 2.5.8 AA (24), 2.5.5 AAA (44), Apple 44pt and Material 48dp. [B §6.4] */
+  --target-min: 48px;
+
+
+  /* ==========================================================================
+     6. ELEVATION                                             [D §4.3] [B §4.1]
+     TWO LAYERS ONLY: paper (canvas + cards — tone and hairline, NO shadow at
+     rest) and floating (nav, FAB, modals, hero, desktop hover-lift).
+     shadow-xs and shadow-sm are DELETED from the system. Do not re-add them.
+     Shadow colour is rgba(22,35,47,α) — the ink hue, never neutral black.
+     ====================================================================== */
+  --shadow-md:   0 6px 16px -4px rgba(22, 35, 47, 0.09);  /* hover-lift only  */
+  --shadow-lg:   0 14px 34px -10px rgba(22, 35, 47, 0.13); /* nav, FAB, modal */
+  --shadow-hero: 0 20px 48px -16px rgba(50, 81, 113, 0.22); /* hero card only */
+
+
+  /* ==========================================================================
+     7. MOTION                                                          [B §5.1]
+     Durations and curves verbatim. CSS has no true spring; the --ease-spring-*
+     beziers are Google's own published approximations of the M3 Expressive
+     spatial springs, each paired with its intended duration.
+
+     LAW: never apply a spatial spring to a colour or opacity transition — the
+     overshoot produces a visible tint wobble. That is why M3's `effects`
+     springs are critically damped at 1.0. Use --ease-standard for colour.
+     ====================================================================== */
+  --dur-micro:     120ms; /* colour/opacity state change, hover, focus fill */
+  --dur-quick:     180ms; /* button press-release, toggle thumb, chip select */
+  --dur-base:      260ms; /* card expand, tab indicator, list entrance, ring fill */
+  --dur-moderate:  340ms; /* page transition total */
+  --dur-slow:      420ms; /* bottom sheet / modal enter */
+  --dur-celebrate: 900ms; /* habit-complete micro-celebration envelope */
+  --dur-milestone: 1600ms;/* streak-milestone full sequence */
+
+  --ease-standard:   cubic-bezier(0.2, 0, 0, 1);       /* default; stays on screen */
+  --ease-enter:      cubic-bezier(0.05, 0.7, 0.1, 1);  /* elements arriving */
+  --ease-exit:       cubic-bezier(0.3, 0, 0.8, 0.15);  /* elements leaving */
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);       /* hero moments, tab indicator */
+  --ease-linear:     linear;                           /* progress bars ONLY */
+
+  --ease-spring-gentle: cubic-bezier(0.39, 1.29, 0.35, 0.98); /* 0.8/200 spatial-slow */
+  --dur-spring-gentle:  650ms;                                /* sheets, milestone card */
+  --ease-spring-snap:   cubic-bezier(0.38, 1.21, 0.22, 1.00); /* 0.8/380 spatial-default */
+  --dur-spring-snap:    500ms;                                /* canonical pairing */
+  --dur-spring-snap-ui: 180ms;                                /* button release [B §5.3] */
+  --ease-spring-bounce: cubic-bezier(0.42, 1.67, 0.21, 0.90); /* 0.6/800 spatial-fast */
+  --dur-spring-bounce:  350ms;                                /* REWARD POP ONLY */
+
+  /* Signature-moment timings. [D §2.1–2.4] */
+  --dur-hold:        450ms; /* press-and-hold to commit a check-in [D §2.1] */
+  --dur-press:       120ms; /* card 1.0 → 0.97 on pointer-down */
+  --dur-checkmark:   200ms; /* checkmark path draw, ease-enter */
+  --dur-particles:   400ms; /* 6–8 flecks fly 24px and fade, ease-exit */
+  --dur-card-tone:   240ms; /* surface → sage-100 crossfade */
+  --dur-echo-in:     240ms; /* celebration echo fade + rise 8px [D §2.2] */
+  --dur-echo-dwell:  5000ms;/* echo + inline Undo dwell (untimed under SR) */
+  --dur-arc-step:    260ms; /* day-arc increment [D §2.3] */
+  --dur-arc-glint:   600ms; /* glint travels the full arc once */
+  --dur-arc-flush:   300ms; /* arc sage-600 → gold-500 */
+  --dur-reorder:     260ms; /* completed card sinks to the bottom of the list */
+  --dur-drift:       4000ms;/* the ONE permitted loop: empty-state leaf drift */
+  --overshoot:       1.08;  /* ~8% — the spring-bounce release peak [D §2.1] */
+
+
+  /* ==========================================================================
+     8. LAYOUT — breakpoints, gutters, max-widths                       [B §6.1]
+     Breakpoint vars are DOCUMENTATION: @media cannot read custom properties,
+     so the literals below are repeated in the media queries. If you change one,
+     change both. Every media query in this system uses exactly these numbers.
+
+       xs   0–479     Compact      4 col
+       sm   480–599   Compact      4 col
+       md   600–839   Medium      12 col   → nav rail, collapsed (80px)
+       lg   840–1199  Expanded    12 col   → nav rail, extended (200px)
+       xl   1200–1599 Large       12 col   → permanent drawer (256px)
+       2xl  ≥1600     Extra-large 12 col
+     ====================================================================== */
+  --bp-sm:  480px;
+  --bp-md:  600px;  /* bottom bar → nav rail          [B §6.2] */
+  --bp-lg:  840px;  /* rail collapsed → rail extended [B §6.2] */
+  --bp-xl:  1200px; /* rail → permanent drawer        [B §6.2] */
+  --bp-2xl: 1600px;
+
+  /* Screen gutter. The direction sets 24px on mobile [D §3 global rules],
+     which overrides the brief's 16px xs margin; 40px at xl+ is the brief's. */
+  --layout-gutter: 24px;
+  --layout-grid-gap: 16px;   /* → 24px at md+ per [B §6.1] */
+  --layout-card-gap: 16px;   /* → 24px at md+ */
+
+  --layout-shell-max:   1440px; /* app shell, centred */
+  --layout-content-max: 1184px; /* dashboard content area */
+  --layout-read-max:    600px;  /* reading column ≈ 60ch. 840px absolute ceiling */
+
+  --layout-nav-bar-h:   64px;   /* floating bottom bar, + safe area */
+  --layout-nav-rail-w:  92px;   /* md: collapsed rail, icon over label.
+                                   Wider than Flutter's 72px minimum because
+                                   the longest label ("Community") must fit at
+                                   the system's 13px floor without ellipsis. */
+  --layout-rail-ext-w:  200px;  /* lg: extended rail, icon beside label */
+  --layout-drawer-w:    256px;  /* xl: permanent drawer */
+}
+
+/* Gutters and gaps step up with the window. [B §6.1] */
+@media (min-width: 600px) {
+  :root {
+    --layout-gutter: 24px;
+    --layout-grid-gap: 24px;
+    --layout-card-gap: 24px;
+  }
+}
+@media (min-width: 1200px) {
+  :root { --layout-gutter: 40px; }
+}
+
+
+/* ============================================================================
+   SEMANTIC LAYER — NIGHTFALL MAPPING
+   Two identical blocks. Block A wins when the OS asks for dark and the user has
+   not explicitly chosen light. Block B wins when the user explicitly toggles
+   dark. KEEP THEM IN SYNC — if you edit one, edit the other.
+   ========================================================================= */
+
+/* ---- Block A: system dark, unless an explicit light toggle overrides ---- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --c-canvas:          var(--d-canvas);
+    --c-canvas-sunken:   var(--d-surface-raised);
+    --c-surface:         var(--d-surface);
+    --c-surface-raised:  var(--d-surface-raised);
+    --c-surface-tinted:  var(--d-surface-tinted);
+    --c-border:          var(--d-border);
+    --c-border-control:  var(--d-ink-subtle);
+    --c-border-focus:    var(--d-brand);
+
+    --c-ink-strong:      var(--d-ink-strong);
+    --c-ink:             var(--d-ink);
+    --c-ink-muted:       var(--d-ink-muted);
+    --c-ink-subtle:      var(--d-ink-subtle);
+
+    /* The brand ramp collapses in dark: interactive steps all resolve to the
+       one accessible brand tint, structural steps to tinted surfaces. */
+    --c-brand-50:        var(--d-surface);
+    --c-brand-100:       var(--d-surface-tinted);
+    --c-brand-200:       var(--d-border);
+    --c-brand-300:       #4E6E8C;
+    --c-brand-400:       #6E93B4;
+    --c-brand-500:       var(--d-brand);
+    --c-brand-600:       var(--d-brand);
+    --c-brand-700:       var(--d-brand-hero);
+    --c-brand-800:       var(--d-brand-hero-late);
+    --c-brand-900:       var(--d-ink-strong);
+
+    --c-gold-300:        var(--d-gold-soft);
+    --c-gold-400:        var(--d-gold);
+    --c-gold-500:        var(--d-gold);
+    --c-gold-700:        var(--d-gold);   /* gold TEXT is legible in dark */
+    --c-gold-surface:    var(--d-gold-surface);
+
+    --c-sage-100:        var(--d-sage-surface);
+    --c-sage-300:        #3E5442;
+    --c-sage-500:        var(--d-sage);
+    --c-sage-600:        var(--d-sage);
+    --c-sage-700:        var(--d-sage);
+
+    --c-clay-600:        var(--d-clay);
+    --c-clay-surface:    var(--d-clay-surface);
+    --c-amber-700:       var(--d-amber);
+    --c-amber-750:       var(--d-amber);
+    --c-amber-surface:   var(--d-amber-surface);
+
+    --c-teal-400:        var(--d-teal);
+    --c-teal-650:        var(--d-teal);
+
+    --c-hero-fill:       var(--d-brand-hero);
+    --c-hero-fill-late:  var(--d-brand-hero-late);
+    --c-hero-ink:        #FFFFFF;
+    --c-hero-ink-muted:  #C4D6E6;
+    --c-hero-border:     var(--d-border);
+    --c-on-brand:        var(--d-canvas); /* canvas label on --d-brand = 8.44:1 ✅ */
+
+    --c-arc-on-hero:     var(--d-sage);           /* 5.0:1 on brand-hero ✅ (computed) */
+    --c-ring-track:      var(--d-surface-raised); /* [D §6] dark: surface-raised */
+    --c-ring-start:      var(--d-brand);
+    --c-ring-end:        var(--d-sage);
+    --c-spark-a:         var(--d-sage);
+    --c-spark-b:         var(--d-gold);
+
+    --c-done-surface:    var(--d-sage-surface);
+    --c-done-border:     #33463A;
+    --c-done-ink:        var(--d-sage);
+
+    --c-scrim:           rgba(4, 8, 12, 0.55);
+
+    /* No shadows in dark. Elevation is tone + border only. [D §4.3] */
+    --shadow-md:   none;
+    --shadow-lg:   none;
+    --shadow-hero: none;
+  }
+}
+
+/* ---- Block B: explicit dark toggle, beats a light OS preference ---- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --c-canvas:          var(--d-canvas);
+  --c-canvas-sunken:   var(--d-surface-raised);
+  --c-surface:         var(--d-surface);
+  --c-surface-raised:  var(--d-surface-raised);
+  --c-surface-tinted:  var(--d-surface-tinted);
+  --c-border:          var(--d-border);
+  --c-border-control:  var(--d-ink-subtle);
+  --c-border-focus:    var(--d-brand);
+
+  --c-ink-strong:      var(--d-ink-strong);
+  --c-ink:             var(--d-ink);
+  --c-ink-muted:       var(--d-ink-muted);
+  --c-ink-subtle:      var(--d-ink-subtle);
+
+  --c-brand-50:        var(--d-surface);
+  --c-brand-100:       var(--d-surface-tinted);
+  --c-brand-200:       var(--d-border);
+  --c-brand-300:       #4E6E8C;
+  --c-brand-400:       #6E93B4;
+  --c-brand-500:       var(--d-brand);
+  --c-brand-600:       var(--d-brand);
+  --c-brand-700:       var(--d-brand-hero);
+  --c-brand-800:       var(--d-brand-hero-late);
+  --c-brand-900:       var(--d-ink-strong);
+
+  --c-gold-300:        var(--d-gold-soft);
+  --c-gold-400:        var(--d-gold);
+  --c-gold-500:        var(--d-gold);
+  --c-gold-700:        var(--d-gold);
+  --c-gold-surface:    var(--d-gold-surface);
+
+  --c-sage-100:        var(--d-sage-surface);
+  --c-sage-300:        #3E5442;
+  --c-sage-500:        var(--d-sage);
+  --c-sage-600:        var(--d-sage);
+  --c-sage-700:        var(--d-sage);
+
+  --c-clay-600:        var(--d-clay);
+  --c-clay-surface:    var(--d-clay-surface);
+  --c-amber-700:       var(--d-amber);
+  --c-amber-750:       var(--d-amber);
+  --c-amber-surface:   var(--d-amber-surface);
+
+  --c-teal-400:        var(--d-teal);
+  --c-teal-650:        var(--d-teal);
+
+  --c-hero-fill:       var(--d-brand-hero);
+  --c-hero-fill-late:  var(--d-brand-hero-late);
+  --c-hero-ink:        #FFFFFF;
+  --c-hero-ink-muted:  #C4D6E6;
+  --c-hero-border:     var(--d-border);
+  --c-on-brand:        var(--d-canvas);
+
+  --c-arc-on-hero:     var(--d-sage);           /* 5.0:1 on brand-hero ✅ (computed) */
+  --c-ring-track:      var(--d-surface-raised);
+  --c-ring-start:      var(--d-brand);
+  --c-ring-end:        var(--d-sage);
+  --c-spark-a:         var(--d-sage);
+  --c-spark-b:         var(--d-gold);
+
+  --c-done-surface:    var(--d-sage-surface);
+  --c-done-border:     #33463A;
+  --c-done-ink:        var(--d-sage);
+
+  --c-scrim:           rgba(4, 8, 12, 0.55);
+
+  --shadow-md:   none;
+  --shadow-lg:   none;
+  --shadow-hero: none;
+}

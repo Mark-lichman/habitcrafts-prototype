@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profile · HabitCrafts</title>
+<meta name="description" content="HabitCrafts redesign prototype — Profile. Your record and your keeping: the shelf of earned marks first, the plumbing last.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="../assets/images/favicon.png">
+<!-- Order matters: tokens → base → components. -->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+<!-- ===========================================================================
+     ICON SPRITE — one family, one style, inline SVG on a 24px grid, currentColor.
+     The block from home.html, extended with the glyphs this screen needs.
+     ======================================================================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-habits" viewBox="0 0 24 24"><path d="M7 2v2H5.5A2.5 2.5 0 0 0 3 6.5v12A2.5 2.5 0 0 0 5.5 21h13a2.5 2.5 0 0 0 2.5-2.5v-12A2.5 2.5 0 0 0 18.5 4H17V2h-2v2H9V2H7zm12 8v8.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V10h14z"/></symbol>
+    <symbol id="i-progress" viewBox="0 0 24 24"><path d="M4 12h3v8H4v-8zm6.5-8h3v16h-3V4zM17 15h3v5h-3v-5z"/></symbol>
+    <symbol id="i-community" viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm7.5 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20.2A6.7 6.7 0 0 1 9 14a6.7 6.7 0 0 1 7 6.2V21H2v-.8zm15.6-5.1A5.4 5.4 0 0 1 22 20.4V21h-4.2v-.8a8.2 8.2 0 0 0-1.5-4.7c.4-.2.8-.3 1.3-.4z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12.6 2c.3 3 2 3.9 3.4 5.6A7.7 7.7 0 0 1 18 12.6a6 6 0 1 1-12 0c0-2 .8-3.7 1.9-5.1.1 1.6 1 2.7 2.1 2.7 1.2 0 2.1-1.1 2.1-3C12.1 5.4 12.4 3.6 12.6 2z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M13 5l7 7-7 7-1.4-1.4 4.6-4.6H4v-2h12.2l-4.6-4.6L13 5z"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4.1 0-7.4 2.3-7.4 5.2V21h14.8v-1.8c0-2.9-3.3-5.2-7.4-5.2z"/></symbol>
+    <symbol id="i-rosette" viewBox="0 0 24 24"><path d="M12 2l2.2 3.1 3.7-.9.4 3.8 3.4 1.7-2.3 3 2.3 3-3.4 1.7-.4 3.8-3.7-.9L12 24l-2.2-3.1-3.7.9-.4-3.8L2.3 16l2.3-3-2.3-3 3.4-1.7.4-3.8 3.7.9L12 2zm0 5.5A4.5 4.5 0 1 0 12 16.5 4.5 4.5 0 0 0 12 7.5z"/></symbol>
+    <!-- ── added for Profile ── -->
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9.3 4.6L16.7 12l-7.4 7.4-1.7-1.7L13.3 12 7.6 6.3l1.7-1.7z"/></symbol>
+    <symbol id="i-goal" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><path d="M12 1.5A4.5 4.5 0 0 0 7.5 6v3H7a1.5 1.5 0 0 0-1.5 1.5v10A1.5 1.5 0 0 0 7 22h10a1.5 1.5 0 0 0 1.5-1.5v-10A1.5 1.5 0 0 0 17 9h-.5V6A4.5 4.5 0 0 0 12 1.5zm0 2A2.5 2.5 0 0 1 14.5 6v3h-5V6A2.5 2.5 0 0 1 12 3.5z"/></symbol>
+    <symbol id="i-contrast" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16z"/><path d="M12 4.5a7.5 7.5 0 0 1 0 15v-15z"/></symbol>
+    <symbol id="i-accessibility" viewBox="0 0 24 24"><path d="M12 2.2a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM21 7.6l-6 1.2v4l2.2 8.2-1.9.5L13 14.2h-2l-2.3 7.3-1.9-.5L9 12.8v-4L3 7.6l.4-2L12 7.3l8.6-1.7.4 2z"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M12 22.5a2.3 2.3 0 0 0 2.3-2.3H9.7A2.3 2.3 0 0 0 12 22.5zM19 16v-5.2A7 7 0 0 0 13.5 4V3.2a1.5 1.5 0 0 0-3 0V4A7 7 0 0 0 5 10.8V16l-2 2.1v1h18v-1L19 16z"/></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24"><path d="M3 4h18v4.5H3V4zm1.5 6h15v9.5A1.5 1.5 0 0 1 18 21H6a1.5 1.5 0 0 1-1.5-1.5V10zM9 12.5v2h6v-2H9z"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><path d="M14.5 3a6.5 6.5 0 0 0-6.2 8.5L2 17.8V22h4.2l1.6-1.6v-2h2v-2h2l1.1-1.1A6.5 6.5 0 1 0 14.5 3zm2 3.2a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6z"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M12 5c5.2 0 9.4 4.6 9.4 7s-4.2 7-9.4 7-9.4-4.6-9.4-7S6.8 5 12 5zm0 2.6a4.4 4.4 0 1 0 0 8.8 4.4 4.4 0 0 0 0-8.8zm0 2a2.4 2.4 0 1 1 0 4.8 2.4 2.4 0 0 1 0-4.8z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M9.6 17.2L4.4 12l-1.5 1.4 6.7 6.7L21.1 8.6 19.6 7.2 9.6 17.2z"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7l1.4-1.4 6.3 6.3 6.3-6.3z"/></symbol>
+  </defs>
+</svg>
+
+<a class="skip-link" href="#main">Skip to your record</a>
+
+<!-- PROTOTYPE CONTROLS — the block from home.html, unchanged. -->
+<div class="devbar" role="group" aria-label="Prototype controls">
+  <div class="devbar__group" role="group" aria-label="Theme">
+    <button class="devbar__btn" type="button" data-theme-btn="system" aria-pressed="true">Auto</button>
+    <button class="devbar__btn" type="button" data-theme-btn="light" aria-pressed="false">Light</button>
+    <button class="devbar__btn" type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+  </div>
+  <div class="devbar__group">
+    <label for="hour" class="visually-hidden">Simulated hour of day</label>
+    <input id="hour" type="range" min="0" max="23" step="1" data-hour-input>
+    <output class="devbar__reading" data-hour-readout>—</output>
+  </div>
+  <div class="devbar__group" role="group" aria-label="Motion">
+    <button class="devbar__btn" type="button" data-motion-btn="auto" aria-pressed="true">Motion: auto</button>
+    <button class="devbar__btn" type="button" data-motion-btn="reduce" aria-pressed="false">Reduce</button>
+  </div>
+  <button class="devbar__btn" type="button" data-demo="reset">Reset day</button>
+</div>
+
+<div class="app-shell">
+
+  <!-- NAVIGATION — identical markup to home.html; aria-current moves to Profile. -->
+  <nav class="app-nav" aria-label="Primary">
+    <a class="app-nav__brand" href="index.html">
+      <img src="../assets/images/Habit_Craft_Logo_File-09.png" alt="">
+      <span>HabitCrafts</span>
+    </a>
+
+    <a class="nav-fab" href="create-habit.html">
+      <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+      <span class="nav-fab__label">New habit</span>
+      <span class="visually-hidden">Craft a new habit</span>
+    </a>
+
+    <ul class="app-nav__list">
+      <li><a class="nav-item" href="home.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-habits"></use></svg>
+        <span class="nav-item__label">Habits</span>
+      </a></li>
+      <li><a class="nav-item" href="progress.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-progress"></use></svg>
+        <span class="nav-item__label">Progress</span>
+      </a></li>
+      <li><a class="nav-item" href="community.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-community"></use></svg>
+        <span class="nav-item__label">Community</span>
+      </a></li>
+      <li><a class="nav-item" href="profile.html" aria-current="page">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-person"></use></svg>
+        <span class="nav-item__label">Profile</span>
+      </a></li>
+    </ul>
+
+    <a class="app-nav__user" href="profile.html">
+      <span class="avatar" aria-hidden="true">M</span>
+      <span>
+        <span class="t-label" style="display:block">Mark</span>
+        <span class="t-body-sm t-muted">Member since 2024</span>
+      </span>
+    </a>
+  </nav>
+
+  <main id="main" class="page">
+
+    <!-- =====================================================================
+         THE SHELF — the hero of this screen. [D §3.5]
+         "Identity first, plumbing last." Avatar, name, member-since, and the
+         gild marks earned across every habit. This is the trophy case the
+         gilding system pays into, and it is the ONE place gold appears in
+         quantity: each mark restates the gild that sits on the habit card
+         itself — day 7 a corner tick, day 30 a gold ring, day 100 the embossed
+         seal, day 365 the seal filled solid. Cosmetic, permanent, and it
+         survives streak breaks: it records what you DID. [D §2.4]
+         This is also the screen's one and only brand-700 surface.
+         ================================================================== -->
+    <section class="hero profile-hero" aria-labelledby="me-h"
+             style="margin-block-end:var(--space-24)">
+      <div class="profile-hero__head">
+        <span class="avatar avatar--xl" aria-hidden="true">M</span>
+        <div class="u-grow">
+          <h1 class="t-h1" id="me-h" style="color:var(--c-hero-ink)">Mark</h1>
+          <p class="hero__body t-body-sm">Member since 2024 · four habits kept</p>
+          <span class="chip chip--streak" style="margin-block-start:var(--space-8)">
+            <svg class="icon" aria-hidden="true"><use href="#i-flame"></use></svg>
+            <span>112 days</span>
+          </span>
+        </div>
+        <button class="btn btn--secondary btn--sm" type="button" data-modal-open="preview">
+          <svg class="icon" aria-hidden="true"><use href="#i-eye"></use></svg>
+          Preview profile
+        </button>
+      </div>
+
+      <h2 class="hero__label t-label" style="margin-block-start:var(--space-24)">Marks earned</h2>
+      <div class="shelf">
+        <div class="mark">
+          <span class="seal" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><use href="#i-rosette"></use></svg>
+          </span>
+          <span class="mark__body">
+            <span class="mark__name">Meditate for two minutes</span>
+            <span class="mark__tier">100 days · embossed seal</span>
+          </span>
+        </div>
+        <div class="mark">
+          <span class="mark__ring" aria-hidden="true"></span>
+          <span class="mark__body">
+            <span class="mark__name">Read one page</span>
+            <span class="mark__tier">30 days · gold hairline</span>
+          </span>
+        </div>
+        <div class="mark">
+          <span class="mark__tick" aria-hidden="true"></span>
+          <span class="mark__body">
+            <span class="mark__name">Walk around the block</span>
+            <span class="mark__tier">7 days · corner tick</span>
+          </span>
+        </div>
+      </div>
+      <p class="hero__body t-body-sm" style="margin-block-start:var(--space-12)">
+        Floss one tooth earns its first mark in four days.
+      </p>
+    </section>
+
+    <!-- =====================================================================
+         THE REST. [D §3.5] The Overview / Membership / Settings tab bar is cut.
+         Categories are a permanent 2-pane from 600px up; below that, choosing
+         one pushes to its detail with a back affordance. Nothing here is a
+         settings-list graveyard: the record is above, the plumbing is behind
+         eight named doors.
+         ================================================================== -->
+    <div class="profile-panes" data-panes>
+
+      <div class="profile-panes__nav">
+        <div class="pane-nav" role="tablist" aria-orientation="vertical" aria-label="Profile sections">
+          <button class="pane-nav__btn" type="button" role="tab" data-pane-tab
+                  id="tab-habits" aria-controls="pane-habits" aria-selected="true" tabindex="0">
+            <svg class="icon" aria-hidden="true"><use href="#i-goal"></use></svg>
+            <span class="u-grow">My Goals &amp; Habits</span>
+            <svg class="icon icon--chevron" aria-hidden="true"><use href="#i-chevron"></use></svg>
+          </button>
+          <button class="pane-nav__btn" type="button" role="tab" data-pane-tab
+                  id="tab-details" aria-controls="pane-details" aria-selected="false" tabindex="-1">
+            <svg class="icon" aria-hidden="true"><use href="#i-person"></use></svg>
+            <span class="u-grow">Profile</span>
+            <svg class="icon icon--chevron" aria-hidden="true"><use href="#i-chevron"></use></svg>
+          </button>
+          <button class="pane-nav__btn" type="button" role="tab" data-pane-tab
+                  id="tab-privacy" aria-controls="pane-privacy" aria-selected="false" tabindex="-1">
+            <svg class="icon" aria-hidden="true"><use href="#i-lock"></use></svg>
+            <span class="u-grow">Privacy</span>
+            <svg class="icon icon--chevron" aria-hidden="true"><use href="#i-chevron"></use></svg>
+          </button>
+          <button class="pane-nav__btn" type="button" role="tab" data-pane-tab
+                  id="tab-appearance" aria-controls="pane-appearance" aria-selected="false" tabindex="-1">
+            <svg class="icon" aria-hidden="true"><use href="#i-contrast"></use></svg>
+            <span class="u-grow">Appearance</span>
+            <svg class="icon icon--chevron" aria-hidden="true"><use href="#i-chevron"></use></svg>
+          </button>
+          <button class="pane-nav__btn" type="button" role="tab" data-pane-tab
+                  id="tab-access" aria-controls="pane-access" aria-selected="false" tabindex="-1">
+            <svg class="icon" aria-hidden="true"><use href="#i-accessibility"></use></svg>
+            <span class="u-grow">Accessibility</span>
+            <svg class="icon icon--chevron" aria-hidden="true"><use href="#i-chevron"></use></svg>
+          </button>
+          <button class="pane-nav__btn" type="button" role="tab" data-pane-tab
+                  id="tab-notify" aria-controls="pane-notify" aria-selected="false" tabindex="-1">
+            <svg class="icon" aria-hidden="true"><use href="#i-bell"></use></svg>
+            <span class="u-grow">Notifications</span>
+            <svg class="icon icon--chevron" aria-hidden="true"><use href="#i-chevron"></use></svg>
+          </button>
+          <button class="pane-nav__btn" type="button" role="tab" data-pane-tab
+                  id="tab-blocked" aria-controls="pane-blocked" aria-selected="false" tabindex="-1">
+            <svg class="icon" aria-hidden="true"><use href="#i-community"></use></svg>
+            <span class="u-grow">Blocked Users</span>
+            <svg class="icon icon--chevron" aria-hidden="true"><use href="#i-chevron"></use></svg>
+          </button>
+          <button class="pane-nav__btn" type="button" role="tab" data-pane-tab
+                  id="tab-account" aria-controls="pane-account" aria-selected="false" tabindex="-1">
+            <svg class="icon" aria-hidden="true"><use href="#i-key"></use></svg>
+            <span class="u-grow">Account</span>
+            <svg class="icon icon--chevron" aria-hidden="true"><use href="#i-chevron"></use></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="profile-panes__detail">
+        <button class="pane-back" type="button" data-pane-back>
+          <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg>
+          All sections
+        </button>
+
+        <!-- ── My Goals & Habits, with the archive absorbed from Progress's
+                "Removed Habits". [D §3.2 cut / §3.5 add] ─────────────────── -->
+        <section class="card card--roomy" id="pane-habits" role="tabpanel"
+                 aria-labelledby="tab-habits" tabindex="0">
+          <h2 class="t-h2">My Goals &amp; Habits</h2>
+          <p class="t-body-sm t-muted" style="margin-block:var(--space-4) var(--space-16)">
+            If you wish to keep your goals and habits private from other people,
+            turn them off under Privacy.
+          </p>
+
+          <details class="goal-row" open>
+            <summary>
+              <svg class="icon" aria-hidden="true"><use href="#i-goal"></use></svg>
+              <span class="u-grow">
+                <span class="goal-row__name" style="display:block">Feel calmer</span>
+                <span class="goal-row__meta">Habits: 1</span>
+              </span>
+              <svg class="icon icon--chevron" aria-hidden="true"><use href="#i-chevron"></use></svg>
+            </summary>
+            <div class="goal-row__body">
+              <article class="card habit-card habit-card--gild-100">
+                <div class="habit-card__body">
+                  <div class="u-flow-tight">
+                    <h3 class="habit-card__title">Meditate for two minutes</h3>
+                    <span class="seal" role="img" aria-label="100-day seal">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-rosette"></use></svg>
+                    </span>
+                  </div>
+                  <p class="habit-card__meta">After I pour my morning coffee · you showed up for 112 days</p>
+                </div>
+              </article>
+            </div>
+          </details>
+
+          <details class="goal-row">
+            <summary>
+              <svg class="icon" aria-hidden="true"><use href="#i-goal"></use></svg>
+              <span class="u-grow">
+                <span class="goal-row__name" style="display:block">Read more</span>
+                <span class="goal-row__meta">Habits: 1</span>
+              </span>
+              <svg class="icon icon--chevron" aria-hidden="true"><use href="#i-chevron"></use></svg>
+            </summary>
+            <div class="goal-row__body">
+              <article class="card habit-card habit-card--gild-30">
+                <div class="habit-card__body">
+                  <h3 class="habit-card__title">Read one page</h3>
+                  <p class="habit-card__meta">After I get into bed · you showed up for 34 days</p>
+                </div>
+              </article>
+            </div>
+          </details>
+
+          <details class="goal-row">
+            <summary>
+              <svg class="icon" aria-hidden="true"><use href="#i-goal"></use></svg>
+              <span class="u-grow">
+                <span class="goal-row__name" style="display:block">Move every day</span>
+                <span class="goal-row__meta">Habits: 1</span>
+              </span>
+              <svg class="icon icon--chevron" aria-hidden="true"><use href="#i-chevron"></use></svg>
+            </summary>
+            <div class="goal-row__body">
+              <article class="card habit-card habit-card--gild-7">
+                <div class="habit-card__body">
+                  <h3 class="habit-card__title">Walk around the block</h3>
+                  <p class="habit-card__meta">After I close my laptop · you showed up for 9 days</p>
+                </div>
+              </article>
+            </div>
+          </details>
+
+          <details class="goal-row">
+            <summary>
+              <svg class="icon" aria-hidden="true"><use href="#i-goal"></use></svg>
+              <span class="u-grow">
+                <span class="goal-row__name" style="display:block">Take better care of myself</span>
+                <span class="goal-row__meta">Habits: 1</span>
+              </span>
+              <svg class="icon icon--chevron" aria-hidden="true"><use href="#i-chevron"></use></svg>
+            </summary>
+            <div class="goal-row__body">
+              <article class="card habit-card">
+                <div class="habit-card__body">
+                  <h3 class="habit-card__title">Floss one tooth</h3>
+                  <p class="habit-card__meta">After I brush my teeth · you showed up for 3 days</p>
+                </div>
+              </article>
+            </div>
+          </details>
+
+          <h3 class="t-h3" style="margin-block:var(--space-32) var(--space-4)">
+            <svg class="icon icon--sm" aria-hidden="true" style="display:inline-block;vertical-align:-4px"><use href="#i-archive"></use></svg>
+            Archive
+          </h3>
+          <p class="t-body-sm t-muted" style="margin-block-end:var(--space-16)">
+            Habits you've stopped keeping. Nothing here is lost, and the marks
+            they earned stay on the shelf.
+          </p>
+          <article class="card habit-card habit-card--gild-7">
+            <div class="habit-card__body">
+              <h3 class="habit-card__title">Stretch for one minute</h3>
+              <p class="habit-card__meta">You showed up for 21 days · archived in May</p>
+            </div>
+            <button class="btn btn--secondary btn--sm" type="button">Restore</button>
+          </article>
+        </section>
+
+        <!-- ── Profile details. Real fields from the shipping form; the stranded
+                "Agree and continue" onboarding sentence is dropped, and the two
+                lorem-ipsum placeholders are simply gone. [D §3.5 cut] ─────── -->
+        <section class="card card--roomy" id="pane-details" role="tabpanel"
+                 aria-labelledby="tab-details" tabindex="0" hidden>
+          <h2 class="t-h2">Profile</h2>
+          <p class="t-body-sm t-muted" style="margin-block:var(--space-4) var(--space-24)">
+            Only what you make public under Privacy is ever shown to other people.
+          </p>
+
+          <div class="field-grid">
+            <div class="field">
+              <label class="field__label" for="p-name">Name</label>
+              <input class="input" id="p-name" type="text" maxlength="50" value="Mark">
+            </div>
+            <div class="field">
+              <label class="field__label" for="p-email">Email Address</label>
+              <input class="input" id="p-email" type="email" maxlength="50" value="mark@lichmanllc.com">
+            </div>
+            <div class="field">
+              <label class="field__label" for="p-age">Age</label>
+              <input class="input" id="p-age" type="date" value="1988-04-12">
+              <span class="field__help">Your birthday is never shown — only the age it works out to.</span>
+            </div>
+            <div class="field">
+              <label class="field__label" for="p-gender">Gender</label>
+              <input class="input" id="p-gender" type="text" value="Male">
+            </div>
+            <div class="field">
+              <span class="field__label" id="p-height-label">Height</span>
+              <div class="field-pair" role="group" aria-labelledby="p-height-label">
+                <select class="select" aria-label="Feet">
+                  <option>3 ft</option><option>4 ft</option>
+                  <option selected>5 ft</option><option>6 ft</option><option>7 ft</option>
+                </select>
+                <select class="select" aria-label="Inches">
+                  <option>0 in</option><option>1 in</option><option>2 in</option>
+                  <option>3 in</option><option>4 in</option><option>5 in</option>
+                  <option>6 in</option><option>7 in</option><option>8 in</option>
+                  <option selected>9 in</option><option>10 in</option><option>11 in</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field__label" for="p-weight">Weight (lbs)</label>
+              <input class="input" id="p-weight" type="number" maxlength="4" value="168">
+            </div>
+            <div class="field field-grid__full">
+              <label class="field__label" for="p-location">Location</label>
+              <input class="input" id="p-location" type="text" maxlength="50" value="Portland, OR">
+            </div>
+          </div>
+
+          <p class="t-body-sm t-muted" style="margin-block-start:var(--space-24)">
+            Read our <a href="https://www.habitcrafts.com/privacy">privacy policy</a>
+            and our <a href="https://www.habitcrafts.com/eula">terms of service</a>.
+          </p>
+
+          <div class="u-flow u-wrap" style="margin-block-start:var(--space-24)">
+            <button class="btn btn--primary" type="button" data-profile-save>Save</button>
+            <span class="t-body-sm t-sage" data-profile-saved hidden>Profile updated!</span>
+          </div>
+        </section>
+
+        <!-- ── Privacy. The seven visibility switches, with the value written
+                out so the state never rests on colour alone. ─────────────── -->
+        <section class="card card--roomy" id="pane-privacy" role="tabpanel"
+                 aria-labelledby="tab-privacy" tabindex="0" hidden>
+          <h2 class="t-h2">Privacy</h2>
+          <p class="t-body-sm t-muted" style="margin-block:var(--space-4) var(--space-16)">
+            You choose what other people see. Everything starts private.
+          </p>
+
+          <div class="setting-row">
+            <div class="setting-row__body">
+              <span class="setting-row__label">Goals</span>
+              <span class="setting-row__value" data-visibility-value>Public</span>
+            </div>
+            <span class="switch">
+              <input type="checkbox" id="v-goals" role="switch" data-visibility="Goals" checked>
+              <span class="switch__track" aria-hidden="true"></span>
+              <span class="switch__thumb" aria-hidden="true"></span>
+              <label class="visually-hidden" for="v-goals">Show my goals to other people</label>
+            </span>
+          </div>
+          <div class="setting-row">
+            <div class="setting-row__body">
+              <span class="setting-row__label">Habits</span>
+              <span class="setting-row__value" data-visibility-value>Public</span>
+            </div>
+            <span class="switch">
+              <input type="checkbox" id="v-habits" role="switch" data-visibility="Habits" checked>
+              <span class="switch__track" aria-hidden="true"></span>
+              <span class="switch__thumb" aria-hidden="true"></span>
+              <label class="visually-hidden" for="v-habits">Show my habits to other people</label>
+            </span>
+          </div>
+          <div class="setting-row">
+            <div class="setting-row__body">
+              <span class="setting-row__label">Profile</span>
+              <span class="setting-row__value" data-visibility-value>Public</span>
+            </div>
+            <span class="switch">
+              <input type="checkbox" id="v-profile" role="switch" data-visibility="Profile" checked>
+              <span class="switch__track" aria-hidden="true"></span>
+              <span class="switch__thumb" aria-hidden="true"></span>
+              <label class="visually-hidden" for="v-profile">Show my profile to other people</label>
+            </span>
+          </div>
+          <div class="setting-row">
+            <div class="setting-row__body">
+              <span class="setting-row__label">Age</span>
+              <span class="setting-row__value" data-visibility-value>Private</span>
+            </div>
+            <span class="switch">
+              <input type="checkbox" id="v-age" role="switch" data-visibility="Age">
+              <span class="switch__track" aria-hidden="true"></span>
+              <span class="switch__thumb" aria-hidden="true"></span>
+              <label class="visually-hidden" for="v-age">Show my age to other people</label>
+            </span>
+          </div>
+          <div class="setting-row">
+            <div class="setting-row__body">
+              <span class="setting-row__label">Gender</span>
+              <span class="setting-row__value" data-visibility-value>Private</span>
+            </div>
+            <span class="switch">
+              <input type="checkbox" id="v-gender" role="switch" data-visibility="Gender">
+              <span class="switch__track" aria-hidden="true"></span>
+              <span class="switch__thumb" aria-hidden="true"></span>
+              <label class="visually-hidden" for="v-gender">Show my gender to other people</label>
+            </span>
+          </div>
+          <div class="setting-row">
+            <div class="setting-row__body">
+              <span class="setting-row__label">Height</span>
+              <span class="setting-row__value" data-visibility-value>Private</span>
+            </div>
+            <span class="switch">
+              <input type="checkbox" id="v-height" role="switch" data-visibility="Height">
+              <span class="switch__track" aria-hidden="true"></span>
+              <span class="switch__thumb" aria-hidden="true"></span>
+              <label class="visually-hidden" for="v-height">Show my height to other people</label>
+            </span>
+          </div>
+          <div class="setting-row">
+            <div class="setting-row__body">
+              <span class="setting-row__label">Weight</span>
+              <span class="setting-row__value" data-visibility-value>Private</span>
+            </div>
+            <span class="switch">
+              <input type="checkbox" id="v-weight" role="switch" data-visibility="Weight">
+              <span class="switch__track" aria-hidden="true"></span>
+              <span class="switch__thumb" aria-hidden="true"></span>
+              <label class="visually-hidden" for="v-weight">Show my weight to other people</label>
+            </span>
+          </div>
+        </section>
+
+        <!-- ── Appearance. The theme control the direction asks for; it drives
+                the same [data-theme] hook as the prototype bar. [D §3.5 add] -->
+        <section class="card card--roomy" id="pane-appearance" role="tabpanel"
+                 aria-labelledby="tab-appearance" tabindex="0" hidden>
+          <h2 class="t-h2">Appearance</h2>
+          <p class="t-body-sm t-muted" style="margin-block:var(--space-4) var(--space-16)">
+            Daylight and Nightfall are the same room at two times of day.
+            After 20:00 the app dims a little on its own.
+          </p>
+          <div class="setting-row">
+            <div class="setting-row__body">
+              <span class="setting-row__label">Theme</span>
+              <span class="setting-row__value">Follows your system unless you choose</span>
+            </div>
+            <div class="segmented" role="group" aria-label="Theme">
+              <button class="seg-btn" type="button" data-theme-btn="system" aria-pressed="true">System</button>
+              <button class="seg-btn" type="button" data-theme-btn="light" aria-pressed="false">Light</button>
+              <button class="seg-btn" type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Accessibility. "Quick check-in" writes the same flag the ring
+                already reads, so turning it on genuinely changes the gesture
+                on every screen in this prototype. [D §2.1] ───────────────── -->
+        <section class="card card--roomy" id="pane-access" role="tabpanel"
+                 aria-labelledby="tab-access" tabindex="0" hidden>
+          <h2 class="t-h2">Accessibility</h2>
+
+          <div class="setting-row">
+            <div class="setting-row__body">
+              <span class="setting-row__label">Quick check-in (single tap)</span>
+              <span class="setting-row__value">
+                Complete a habit with one tap instead of a press and hold.
+              </span>
+            </div>
+            <span class="switch">
+              <input type="checkbox" id="a-quick" role="switch" data-quick-checkin-toggle>
+              <span class="switch__track" aria-hidden="true"></span>
+              <span class="switch__thumb" aria-hidden="true"></span>
+              <label class="visually-hidden" for="a-quick">Quick check-in, single tap</label>
+            </span>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-row__body">
+              <span class="setting-row__label">Motion</span>
+              <span class="setting-row__value">
+                Reduced keeps the ring fill and the colour changes, and drops the
+                springs, the scale and the flecks.
+              </span>
+            </div>
+            <div class="segmented" role="group" aria-label="Motion">
+              <button class="seg-btn" type="button" data-motion-btn="auto" aria-pressed="true">System</button>
+              <button class="seg-btn" type="button" data-motion-btn="reduce" aria-pressed="false">Reduced</button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-row__body">
+              <span class="setting-row__label">Milestone chime</span>
+              <span class="setting-row__value">
+                <span data-onoff-value>Off</span> · a short sound at 7, 30, 100 and 365 days.
+              </span>
+            </div>
+            <span class="switch">
+              <input type="checkbox" id="a-chime" role="switch" data-onoff="Milestone chime">
+              <span class="switch__track" aria-hidden="true"></span>
+              <span class="switch__thumb" aria-hidden="true"></span>
+              <label class="visually-hidden" for="a-chime">Play a chime at milestones</label>
+            </span>
+          </div>
+        </section>
+
+        <!-- ── Notifications. The shipping app hands this to the OS; say so. -->
+        <section class="card card--roomy" id="pane-notify" role="tabpanel"
+                 aria-labelledby="tab-notify" tabindex="0" hidden>
+          <h2 class="t-h2">Notifications</h2>
+          <p class="t-body-sm t-muted" style="margin-block:var(--space-4) var(--space-16)">
+            Each habit carries its own reminder, set where you wrote its prompt.
+            Whether they can reach you at all is your device's decision.
+          </p>
+          <div class="setting-row">
+            <div class="setting-row__body">
+              <span class="setting-row__label">Reminders</span>
+              <span class="setting-row__value reminder-line">
+                <svg class="icon" aria-hidden="true"><use href="#i-bell"></use></svg>
+                <span>Meditate for two minutes · Every day at 7:00 AM</span>
+              </span>
+            </div>
+            <a class="btn btn--secondary btn--sm" href="create-habit.html">Edit</a>
+          </div>
+          <div class="setting-row">
+            <div class="setting-row__body">
+              <span class="setting-row__label">System permission</span>
+              <span class="setting-row__value">Allowed</span>
+            </div>
+            <a class="btn btn--secondary btn--sm" href="#">Open device settings</a>
+          </div>
+        </section>
+
+        <!-- ── Blocked Users. -->
+        <section class="card card--roomy" id="pane-blocked" role="tabpanel"
+                 aria-labelledby="tab-blocked" tabindex="0" hidden>
+          <h2 class="t-h2">Blocked Users</h2>
+          <div class="empty-state">
+            <svg class="empty-state__art" viewBox="0 0 120 120" role="img"
+                 aria-label="A closed door drawn in two colours">
+              <ellipse cx="60" cy="100" rx="32" ry="8" fill="var(--c-brand-300)" opacity=".55"/>
+              <rect x="34" y="26" width="52" height="72" rx="6" fill="var(--c-brand-300)"
+                    stroke="var(--c-brand-700)" stroke-width="2.5"/>
+              <circle cx="74" cy="64" r="4" fill="var(--c-sage-500)"/>
+            </svg>
+            <p class="empty-state__title">No Blocked Users</p>
+            <p class="empty-state__body t-body">
+              Blocking someone hides your check-ins from them and theirs from you.
+              You can undo it here whenever you like.
+            </p>
+          </div>
+        </section>
+
+        <!-- ── Account. Contact, log out, and deletion — moved behind this door
+                per the direction, with the all-caps "WARNING" dialog rewritten
+                in the product voice and styled clay, never red-alarm. [D §3.5] -->
+        <section class="card card--roomy" id="pane-account" role="tabpanel"
+                 aria-labelledby="tab-account" tabindex="0" hidden>
+          <h2 class="t-h2">Account</h2>
+
+          <div class="setting-row">
+            <div class="setting-row__body">
+              <span class="setting-row__label">Contact Us</span>
+              <span class="setting-row__value">Tell us about your experience.</span>
+            </div>
+            <a class="btn btn--secondary btn--sm"
+               href="mailto:support@habitcrafts.com?subject=HabitCrafts%20Help&amp;body=Tell%20us%20about%20your%20experience%3A">Email us</a>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-row__body">
+              <span class="setting-row__label">Log Out</span>
+              <span class="setting-row__value">Signed in as mark@lichmanllc.com</span>
+            </div>
+            <button class="btn btn--secondary btn--sm" type="button" data-modal-open="logout">Log out</button>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-row__body">
+              <span class="setting-row__label">Delete Account</span>
+              <span class="setting-row__value">
+                Removes your account and everything in it, for good.
+              </span>
+            </div>
+            <button class="btn btn--danger btn--sm" type="button" data-modal-open="delete">Delete Account</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ===========================================================================
+     MODALS. The kit's floating layer: scrim at 40% ink, spring-gentle entry,
+     shadow-lg. There is no snackbar anywhere in this system. [D §2.2]
+     ======================================================================== -->
+
+<div class="scrim" data-modal="preview" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="preview-title">
+    <div class="u-between">
+      <h2 class="t-h2" id="preview-title">How others see you</h2>
+      <button class="icon-btn" type="button" data-modal-close aria-label="Close preview">
+        <svg class="icon icon--sm" aria-hidden="true"><use href="#i-close"></use></svg>
+      </button>
+    </div>
+    <div class="u-flow" style="margin-block-start:var(--space-16)">
+      <span class="avatar avatar--lg" aria-hidden="true">M</span>
+      <p class="t-h3">Mark</p>
+    </div>
+    <div class="u-flow-tight u-wrap" style="margin-block-start:var(--space-12)">
+      <span class="chip">Portland, OR</span>
+      <span class="chip">Member since 2024</span>
+    </div>
+    <p class="t-body-sm t-muted" style="margin-block-start:var(--space-8)">
+      Age, gender, height and weight stay private until you turn them on.
+    </p>
+    <h3 class="t-label t-muted" style="margin-block:var(--space-24) var(--space-8)">My Habits</h3>
+    <ul class="u-stack-8" style="list-style:none;padding:0;margin:0">
+      <li class="t-body">Meditate for two minutes</li>
+      <li class="t-body">Read one page</li>
+      <li class="t-body">Walk around the block</li>
+      <li class="t-body">Floss one tooth</li>
+    </ul>
+    <div style="margin-block-start:var(--space-24)">
+      <button class="btn btn--secondary" type="button" data-modal-close>Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" data-modal="logout" hidden>
+  <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="logout-title">
+    <h2 class="t-h2" id="logout-title">Log out?</h2>
+    <p class="t-body t-muted" style="margin-block:var(--space-8) var(--space-24)">
+      Your habits and marks stay exactly where they are. Sign back in whenever.
+    </p>
+    <div class="u-flow u-wrap">
+      <button class="btn btn--primary" type="button" data-modal-close>Log out</button>
+      <button class="btn btn--ghost" type="button" data-modal-close>Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" data-modal="delete" hidden>
+  <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-title">
+    <h2 class="t-h2" id="delete-title">Delete your account?</h2>
+    <p class="t-body t-muted" style="margin-block:var(--space-8) var(--space-24)">
+      This permanently removes your account and everything in it — every habit,
+      every day you showed up, and every mark you earned. It can't be undone.
+    </p>
+    <div class="u-flow u-wrap">
+      <button class="btn btn--danger" type="button" data-modal-close>Delete account</button>
+      <button class="btn btn--ghost" type="button" data-modal-close>Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/prototype.js"></script>
+</body>
+</html>

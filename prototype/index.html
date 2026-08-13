@@ -1,34 +1,532 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HabitCrafts Prototype</title>
-  <style>
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: #f7f7f5;
-      color: #1c1c1a;
-      text-align: center;
-      padding: 2rem;
-      box-sizing: border-box;
-    }
-    img { width: 140px; height: auto; margin-bottom: 1.5rem; }
-    h1 { font-size: 1.75rem; margin: 0 0 0.75rem; }
-    p { max-width: 34rem; line-height: 1.6; margin: 0.25rem 0; }
-    .muted { color: #6b6b66; font-size: 0.9rem; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HabitCrafts — redesign prototype</title>
+<meta name="description" content="A quiet paper studio where everything you touch springs back, and the things you keep turn gold.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="../assets/images/favicon.png">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<style>
+/* ---------------------------------------------------------------------------
+   GALLERY-ONLY CHROME. This <style> block is scaffolding for the review page,
+   not part of the design system. Nothing here belongs in css/components.css and
+   no screen should copy it. The only hard-coded hex values in the whole
+   prototype live in this file, as swatch fills — they are DATA (the palette
+   being displayed), not UI colour, so they must not follow the theme.
+--------------------------------------------------------------------------- */
+.gal-hero { padding-block: var(--space-48) var(--space-32); }
+.gal-lede { max-width: 34ch; font-family: var(--font-display); font-variation-settings: var(--fvs-display);
+            font-size: var(--fs-h1); line-height: 1.18; letter-spacing: var(--ls-h1);
+            color: var(--c-ink-strong); }
+.gal-section { padding-block: var(--space-32); border-top: 1px solid var(--c-border); }
+.gal-section > .section-head { margin-block-end: var(--space-8); }
+.gal-note { color: var(--c-ink-muted); max-width: 68ch; margin-block-end: var(--space-24); }
+
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: var(--space-12); }
+.sw { border: 1px solid var(--c-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--c-surface); }
+.sw__chip { block-size: 56px; display: grid; place-items: center; font-size: 13px; font-weight: 600; }
+.sw__meta { padding: var(--space-8) var(--space-12); }
+.sw__name { font-size: var(--fs-body-sm); font-weight: 600; color: var(--c-ink-strong); }
+.sw__hex  { font-family: var(--font-mono); font-size: 12px; color: var(--c-ink-muted); }
+.sw__ratio{ font-size: 12px; color: var(--c-ink-muted); }
+
+.type-row { display: flex; align-items: baseline; gap: var(--space-16); padding-block: var(--space-8);
+            border-bottom: 1px solid var(--c-border); flex-wrap: wrap; }
+.type-row__spec { font-family: var(--font-mono); font-size: 12px; color: var(--c-ink-muted); min-inline-size: 20ch; }
+
+.curve-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-16); }
+.curve { border: 1px solid var(--c-border); border-radius: var(--radius-sm); padding: var(--space-12); background: var(--c-surface); }
+.curve__track { position: relative; block-size: 40px; background: var(--c-canvas-sunken); border-radius: var(--radius-full); overflow: hidden; }
+.curve__dot { position: absolute; inset-block-start: 8px; inset-inline-start: 4px; inline-size: 24px; block-size: 24px;
+              border-radius: 50%; background: var(--c-brand-600); }
+.curve.is-running .curve__dot { animation: gal-run 900ms var(--tf, linear) both; }
+@keyframes gal-run { from { translate: 0 0; } to { translate: var(--travel, 130px) 0; } }
+
+/* Device frames — mobile and desktop side by side, each a real page in an
+   iframe. Every screen file is ALSO a real responsive page on its own; these
+   frames exist so the two can be compared without resizing a window. */
+.frames { display: grid; gap: var(--space-24); grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 900px) { .frames { grid-template-columns: 260px minmax(0, 1fr); } }
+.frame { margin: 0; }
+.frame__viewport { position: relative; overflow: hidden; border-radius: var(--radius-md);
+                   border: 1px solid var(--c-border); background: var(--c-canvas); }
+.frame iframe { border: 0; display: block; transform-origin: 0 0; }
+.frame--phone .frame__viewport { inline-size: 244px; block-size: 500px; }
+.frame--phone iframe { inline-size: 390px; block-size: 800px; scale: 0.625; }
+/* The desktop frame scales itself to whatever width it is given, using
+   container query units, so the comparison holds at any window size. */
+.frame--desk .frame__viewport { inline-size: 100%; aspect-ratio: 1280 / 860; container-type: size; }
+.frame--desk iframe { inline-size: 1280px; block-size: 860px; scale: 0.45; scale: calc(100cqw / 1280px); }
+.frame figcaption { margin-block-start: var(--space-8); color: var(--c-ink-muted); font-size: var(--fs-body-sm); }
+
+.screen-links { display: grid; gap: var(--space-16); grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.screen-links a { text-decoration: none; color: inherit; display: block; }
+.screen-card__state { font-size: var(--fs-caption); font-weight: var(--fw-caption); letter-spacing: var(--ls-caption); }
+.is-built   { color: var(--c-sage-600); }
+.is-pending { color: var(--c-ink-subtle); }
+
+.demo-well { background: var(--c-canvas-sunken); border-radius: var(--radius-md); padding: var(--space-16); }
+</style>
 </head>
 <body>
-  <img src="../assets/images/Habit_Craft_Logo_File-06.png" alt="HabitCrafts logo">
-  <h1>HabitCrafts Prototype</h1>
-  <p>The prototype screens are being generated.</p>
-  <p class="muted">This placeholder will be replaced by the mobile and desktop-web screen prototypes for the HabitCrafts redesign.</p>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12.6 2c.3 3 2 3.9 3.4 5.6A7.7 7.7 0 0 1 18 12.6a6 6 0 1 1-12 0c0-2 .8-3.7 1.9-5.1.1 1.6 1 2.7 2.1 2.7 1.2 0 2.1-1.1 2.1-3C12.1 5.4 12.4 3.6 12.6 2z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M13 5l7 7-7 7-1.4-1.4 4.6-4.6H4v-2h12.2l-4.6-4.6L13 5z"/></symbol>
+  <symbol id="i-rosette" viewBox="0 0 24 24"><path d="M12 2l2.2 3.1 3.7-.9.4 3.8 3.4 1.7-2.3 3 2.3 3-3.4 1.7-.4 3.8-3.7-.9L12 24l-2.2-3.1-3.7.9-.4-3.8L2.3 16l2.3-3-2.3-3 3.4-1.7.4-3.8 3.7.9L12 2zm0 5.5A4.5 4.5 0 1 0 12 16.5 4.5 4.5 0 0 0 12 7.5z"/></symbol>
+</defs></svg>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<div class="devbar" role="group" aria-label="Prototype controls">
+  <div class="devbar__group" role="group" aria-label="Theme">
+    <button class="devbar__btn" type="button" data-theme-btn="system" aria-pressed="true">Auto</button>
+    <button class="devbar__btn" type="button" data-theme-btn="light" aria-pressed="false">Light</button>
+    <button class="devbar__btn" type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+  </div>
+  <div class="devbar__group">
+    <label for="hour" class="visually-hidden">Simulated hour of day</label>
+    <input id="hour" type="range" min="0" max="23" step="1" data-hour-input>
+    <output class="devbar__reading" data-hour-readout>—</output>
+  </div>
+  <div class="devbar__group" role="group" aria-label="Motion">
+    <button class="devbar__btn" type="button" data-motion-btn="auto" aria-pressed="true">Motion: auto</button>
+    <button class="devbar__btn" type="button" data-motion-btn="reduce" aria-pressed="false">Reduce</button>
+  </div>
+</div>
+
+<main id="main" class="page page--wide">
+
+  <!-- ====================================================================== -->
+  <header class="gal-hero">
+    <p class="t-label t-muted">HabitCrafts · redesign prototype · v1</p>
+    <p class="gal-lede" style="margin-block:var(--space-16)">
+      A quiet paper studio where everything you touch springs back,
+      and the things you keep turn gold.
+    </p>
+    <p class="t-body-lg t-muted t-measure">
+      <strong>Paper and springs.</strong> Everything you <em>look at</em> is paper — warm
+      parchment canvas, matte white cards with hairline borders, blue as ink, one deep-blue
+      hero surface per screen, grain instead of gloss. Everything you <em>touch</em> is a
+      spring — it compresses under your finger, resists, and snaps back with a little
+      overshoot. Calm is a material quality; fun is a behavioural one. They stop fighting
+      because they live in different channels.
+    </p>
+  </header>
+
+  <!-- ====================================================================== -->
+  <section class="gal-section" aria-labelledby="s-screens">
+    <div class="section-head"><h2 id="s-screens" class="t-h2">Screens</h2></div>
+    <p class="gal-note t-body">
+      Each file is a real responsive page — open it directly at any window size.
+      Four screens are being built by later passes.
+    </p>
+    <div class="screen-links">
+      <a href="home.html"><article class="card card--interactive">
+        <h3 class="t-h3">Home / Today</h3>
+        <p class="t-body-sm t-muted">The daily ritual. Greeting, day arc, habit cards, gilding.</p>
+        <p class="screen-card__state is-built" style="margin-block-start:var(--space-8)">Built · reference screen</p>
+      </article></a>
+      <a href="progress.html"><article class="card card--interactive">
+        <h3 class="t-h3">Progress</h3>
+        <p class="t-body-sm t-muted">Proof. A well-kept ledger: hero streak card, redundant-state calendar.</p>
+        <p class="screen-card__state is-pending" style="margin-block-start:var(--space-8)">Not built yet</p>
+      </article></a>
+      <a href="community.html"><article class="card card--interactive">
+        <h3 class="t-h3">Community</h3>
+        <p class="t-body-sm t-muted">Not being alone in it. Three panes on desktop; who checked in today.</p>
+        <p class="screen-card__state is-pending" style="margin-block-start:var(--space-8)">Not built yet</p>
+      </article></a>
+      <a href="create-habit.html"><article class="card card--interactive">
+        <h3 class="t-h3">Create Habit</h3>
+        <p class="t-body-sm t-muted">The workbench. One question per step, with a live card preview.</p>
+        <p class="screen-card__state is-pending" style="margin-block-start:var(--space-8)">Not built yet</p>
+      </article></a>
+      <a href="profile.html"><article class="card card--interactive">
+        <h3 class="t-h3">Profile</h3>
+        <p class="t-body-sm t-muted">Your record and your keeping. The shelf of earned marks.</p>
+        <p class="screen-card__state is-pending" style="margin-block-start:var(--space-8)">Not built yet</p>
+      </article></a>
+    </div>
+  </section>
+
+  <!-- ====================================================================== -->
+  <section class="gal-section" aria-labelledby="s-frames">
+    <div class="section-head"><h2 id="s-frames" class="t-h2">Mobile and desktop, side by side</h2></div>
+    <p class="gal-note t-body">
+      Desktop web must be a different layout, not a bigger phone — the current app clamps
+      the web experience to a 767px column, which is the specific failure this redesign
+      exists to kill. Bottom bar below 600px; nav rail at 600; extended rail at 840;
+      permanent drawer at 1200.
+    </p>
+    <div class="frames">
+      <figure class="frame frame--phone">
+        <div class="frame__viewport"><iframe src="home.html?frame=1" title="Home at 390 pixels wide" loading="lazy"></iframe></div>
+        <figcaption>390 × 800 — floating bottom bar, single column</figcaption>
+      </figure>
+      <figure class="frame frame--desk">
+        <div class="frame__viewport"><iframe src="home.html?frame=1" title="Home at 1280 pixels wide" loading="lazy"></iframe></div>
+        <figcaption>1280 × 860 — permanent drawer, three-column bento</figcaption>
+      </figure>
+    </div>
+    <p class="t-body-sm t-muted" style="margin-block-start:var(--space-16)">
+      If your browser blocks local iframes, open
+      <a href="home.html">home.html</a> directly and resize the window.
+    </p>
+  </section>
+
+  <!-- ====================================================================== -->
+  <section class="gal-section" aria-labelledby="s-moments">
+    <div class="section-head"><h2 id="s-moments" class="t-h2">The signature moments, live</h2></div>
+    <p class="gal-note t-body">
+      This card is wired to the real code. <strong>Press and hold the ring for about half a
+      second</strong> — with a mouse, a finger, or by tabbing to it and holding Space. Release
+      early and the fill runs backward at double speed with no penalty and no message; it is
+      interruptible at any millisecond. Completing it also fills the day arc, closes the day,
+      fires the glint and the gold flush, and changes the greeting.
+    </p>
+
+    <div class="demo-well">
+      <div class="u-between" style="margin-block-end:var(--space-16)">
+        <h3 class="greeting__title" data-greeting data-name="Mark" style="font-size:var(--fs-h2)">Good morning, Mark</h3>
+        <div class="day-arc" data-day-arc>
+          <svg class="day-arc__svg" viewBox="0 0 72 72" aria-hidden="true" focusable="false">
+            <path class="day-arc__track" d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100"/>
+            <path class="day-arc__fill"  d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100"/>
+            <path class="day-arc__glint" d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100"/>
+          </svg>
+          <span class="day-arc__count" aria-hidden="true"><strong data-arc-done>0</strong><span>of <span data-arc-total>1</span></span></span>
+        </div>
+      </div>
+
+      <ul class="habit-list">
+        <li>
+          <article class="card habit-card habit-card--gild-30" data-habit data-celebration="Fist pump!">
+            <div class="habit-card__body">
+              <h3 class="habit-card__title">Meditate for two minutes</h3>
+              <p class="habit-card__meta">After I pour my morning coffee · 34 day streak</p>
+              <p class="habit-card__echo" data-echo hidden></p>
+            </div>
+            <button class="btn btn--ghost btn--sm habit-card__undo" type="button" data-undo hidden>Undo</button>
+            <button class="ring" type="button" data-checkin aria-pressed="false"
+                    aria-label="Check in: Meditate for two minutes. Press and hold to complete.">
+              <svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+                <circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/>
+                <circle class="ring__fill"  cx="22" cy="22" r="16" pathLength="100"/>
+                <path class="ring__check" d="M14.6 22.4l5.1 5.1 9.7-10.6" pathLength="100"/>
+              </svg>
+              <span class="ring__hint" data-ring-hint hidden>Hold to check in</span>
+            </button>
+          </article>
+        </li>
+      </ul>
+
+      <div class="u-flow u-wrap" style="margin-block-start:var(--space-16)">
+        <button class="btn btn--secondary btn--sm" type="button" data-demo="reset">Reset the day</button>
+        <button class="btn btn--secondary btn--sm" type="button" data-demo="milestone" data-days="30">Fire the day-30 milestone</button>
+      </div>
+      <p class="t-body-sm t-muted" style="margin-block-start:var(--space-12)">
+        The milestone is capped at one full celebration per session in the product; the button
+        above replays it so it can be reviewed. Under reduced motion the confetti is replaced by
+        a static gold seal and the numeral renders directly.
+      </p>
+    </div>
+
+    <div class="grid12" style="margin-block-start:var(--space-24)">
+      <article class="card span-4">
+        <h3 class="t-h3">Your own words back</h3>
+        <p class="t-body-sm t-muted" style="margin-block-start:var(--space-4)">
+          Create Habit already asks "How will you celebrate?" and then buries the answer in
+          10px text. At the commit moment it unfurls inside the card — verbatim, in serif
+          italic, sage — holds five seconds beside an inline Undo, then settles. There is no
+          snackbar anywhere in this system; the dark toast is deleted.
+        </p>
+      </article>
+      <article class="card span-4">
+        <h3 class="t-h3">The room dims</h3>
+        <p class="t-body-sm t-muted" style="margin-block-start:var(--space-4)">
+          Drag the hour slider past 20:00. The greeting changes and the hero card takes a
+          barely-there two-stop gradient under its grain. Nothing moves, nothing else changes,
+          the layout is identical. It should feel like someone dimmed the lights.
+        </p>
+      </article>
+      <section class="hero span-4">
+        <p class="hero__numeral">112</p>
+        <p class="hero__label t-label">day streak</p>
+        <p class="hero__body t-body-sm" style="margin-block-start:var(--space-8)">
+          The one deep-blue surface per screen. White on brand-700 is 8.23:1; the gold chip is 4.98:1.
+        </p>
+        <span class="chip chip--streak" style="margin-block-start:var(--space-12)">
+          <svg class="icon" aria-hidden="true"><use href="#i-flame"></use></svg><span>Best yet</span>
+        </span>
+      </section>
+    </div>
+  </section>
+
+  <!-- ====================================================================== -->
+  <section class="gal-section" aria-labelledby="s-palette">
+    <div class="section-head"><h2 id="s-palette" class="t-h2">Palette</h2></div>
+    <p class="gal-note t-body">
+      Keep the anchors, move the ground. The app's existing <code>#507598</code>,
+      <code>#325171</code>, <code>#E6EEF8</code> and <code>#EFC530</code> are retained at their
+      exact values as named steps; what changes is what they sit on. The brand blue stops being
+      the floor and becomes the ink and the accent. Ratios were computed with the WCAG 2.x
+      relative-luminance formula. <strong>The palette is closed</strong> — no new hex, anywhere.
+    </p>
+
+    <h3 class="t-h3" style="margin-block:var(--space-24) var(--space-12)">Daylight · neutrals and ink</h3>
+    <div class="swatches">
+      <div class="sw"><div class="sw__chip" style="background:#F7F5F1;color:#24384B">canvas</div><div class="sw__meta"><div class="sw__name">canvas</div><div class="sw__hex">#F7F5F1</div><div class="sw__ratio">warm parchment · the page</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#EFEBE4;color:#24384B">sunken</div><div class="sw__meta"><div class="sw__name">canvas-sunken</div><div class="sw__hex">#EFEBE4</div><div class="sw__ratio">1.09:1 vs canvas · ring tracks</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#FFFFFF;color:#24384B">surface</div><div class="sw__meta"><div class="sw__name">surface</div><div class="sw__hex">#FFFFFF</div><div class="sw__ratio">cards, sheets, inputs</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#EDF3FA;color:#24384B">tinted</div><div class="sw__meta"><div class="sw__name">surface-tinted</div><div class="sw__hex">#EDF3FA</div><div class="sw__ratio">1.03:1 vs canvas</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#E3DED5;color:#24384B">border</div><div class="sw__meta"><div class="sw__name">border</div><div class="sw__hex">#E3DED5</div><div class="sw__ratio">1.23:1 · decorative hairline</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#8A8377;color:#fff">control</div><div class="sw__meta"><div class="sw__name">border-control</div><div class="sw__hex">#8A8377</div><div class="sw__ratio">3.45:1 ✅ 1.4.11</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#41607F;color:#fff">focus</div><div class="sw__meta"><div class="sw__name">border-focus</div><div class="sw__hex">#41607F</div><div class="sw__ratio">6.02:1 ✅</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#16232F;color:#fff">ink-strong</div><div class="sw__meta"><div class="sw__name">ink-strong</div><div class="sw__hex">#16232F</div><div class="sw__ratio">14.66:1 ✅ headlines</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#24384B;color:#fff">ink</div><div class="sw__meta"><div class="sw__name">ink</div><div class="sw__hex">#24384B</div><div class="sw__ratio">11.07:1 ✅ body</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#566878;color:#fff">ink-muted</div><div class="sw__meta"><div class="sw__name">ink-muted</div><div class="sw__hex">#566878</div><div class="sw__ratio">5.29:1 ✅ secondary</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#7C8B99;color:#fff">ink-subtle</div><div class="sw__meta"><div class="sw__name">ink-subtle</div><div class="sw__hex">#7C8B99</div><div class="sw__ratio">3.21:1 · never body text</div></div></div>
+    </div>
+
+    <h3 class="t-h3" style="margin-block:var(--space-24) var(--space-12)">Brand blue — structure and action</h3>
+    <div class="swatches">
+      <div class="sw"><div class="sw__chip" style="background:#F1F6FB;color:#24384B">50</div><div class="sw__meta"><div class="sw__name">brand-50</div><div class="sw__hex">#F1F6FB</div><div class="sw__ratio">1.00:1</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#E6EEF8;color:#24384B">100</div><div class="sw__meta"><div class="sw__name">brand-100</div><div class="sw__hex">#E6EEF8</div><div class="sw__ratio">1.07:1 · existing <code>tertiary</code></div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#C9DBEC;color:#24384B">200</div><div class="sw__meta"><div class="sw__name">brand-200</div><div class="sw__hex">#C9DBEC</div><div class="sw__ratio">1.30:1</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#A3C0D9;color:#24384B">300</div><div class="sw__meta"><div class="sw__name">brand-300</div><div class="sw__hex">#A3C0D9</div><div class="sw__ratio">1.74:1 · illustration</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#7A9DBE;color:#16232F">400</div><div class="sw__meta"><div class="sw__name">brand-400</div><div class="sw__hex">#7A9DBE</div><div class="sw__ratio">2.61:1 · decorative</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#507598;color:#fff">500</div><div class="sw__meta"><div class="sw__name">brand-500</div><div class="sw__hex">#507598</div><div class="sw__ratio">4.44:1 · white label 4.84:1 ✅</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#41607F;color:#fff">600</div><div class="sw__meta"><div class="sw__name">brand-600</div><div class="sw__hex">#41607F</div><div class="sw__ratio">6.02:1 ✅ links, icons, FAB</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#325171;color:#fff">700</div><div class="sw__meta"><div class="sw__name">brand-700</div><div class="sw__hex">#325171</div><div class="sw__ratio">7.56:1 ✅ the hero surface</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#27405A;color:#fff">800</div><div class="sw__meta"><div class="sw__name">brand-800</div><div class="sw__hex">#27405A</div><div class="sw__ratio">9.80:1 ✅ after-20:00 stop</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#16232F;color:#fff">900</div><div class="sw__meta"><div class="sw__name">brand-900</div><div class="sw__hex">#16232F</div><div class="sw__ratio">14.66:1 ✅ = ink-strong</div></div></div>
+    </div>
+
+    <h3 class="t-h3" style="margin-block:var(--space-24) var(--space-12)">Gold (reward) · sage (growth) · clay and amber (care)</h3>
+    <p class="gal-note t-body-sm">
+      Gold appears only as: the streak flame chip, milestone moments, gild marks, the calendar's
+      milestone ticks, and the nav's 3px selected pill. <code>gold-500</code> is 1.52:1 against
+      the canvas, so it is <strong>filled shapes only</strong> — never a hairline, never a
+      boundary, never text on light. Gold text is <code>gold-700</code>. On the one day a
+      milestone fires, gold owns the screen for 1.6 seconds. That ratio is the reward economy.
+    </p>
+    <div class="swatches">
+      <div class="sw"><div class="sw__chip" style="background:#F7DE85;color:#24384B">300</div><div class="sw__meta"><div class="sw__name">gold-300</div><div class="sw__hex">#F7DE85</div><div class="sw__ratio">confetti, glow</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#F2D059;color:#24384B">400</div><div class="sw__meta"><div class="sw__name">gold-400</div><div class="sw__hex">#F2D059</div><div class="sw__ratio">5.47:1 on brand-700 ✅ · dark-mode gold</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#EFC530;color:#24384B">500</div><div class="sw__meta"><div class="sw__name">gold-500</div><div class="sw__hex">#EFC530</div><div class="sw__ratio">4.98:1 on brand-700 ✅ · existing <code>accent1</code></div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#FBF1D9;color:#8A6510">surface</div><div class="sw__meta"><div class="sw__name">gold-surface</div><div class="sw__hex">#FBF1D9</div><div class="sw__ratio">streak chip fill</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#8A6510;color:#fff">700</div><div class="sw__meta"><div class="sw__name">gold-700</div><div class="sw__hex">#8A6510</div><div class="sw__ratio">4.88:1 ✅ · the only gold text</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#E7EFE7;color:#446B48">100</div><div class="sw__meta"><div class="sw__name">sage-100</div><div class="sw__hex">#E7EFE7</div><div class="sw__ratio">completed card fill</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#A9C4A8;color:#24384B">300</div><div class="sw__meta"><div class="sw__name">sage-300</div><div class="sw__hex">#A9C4A8</div><div class="sw__ratio">completed card border</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#6E9A70;color:#fff">500</div><div class="sw__meta"><div class="sw__name">sage-500</div><div class="sw__hex">#6E9A70</div><div class="sw__ratio">2.96:1 · fill only, not a boundary</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#4F7A53;color:#fff">600</div><div class="sw__meta"><div class="sw__name">sage-600</div><div class="sw__hex">#4F7A53</div><div class="sw__ratio">4.55:1 ✅ rings, checkmarks</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#446B48;color:#fff">700</div><div class="sw__meta"><div class="sw__name">sage-700</div><div class="sw__hex">#446B48</div><div class="sw__ratio">5.20:1 on sage-100 ✅</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#F8E7E4;color:#A9483E">surface</div><div class="sw__meta"><div class="sw__name">clay-surface</div><div class="sw__hex">#F8E7E4</div><div class="sw__ratio">error panel</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#A9483E;color:#fff">clay</div><div class="sw__meta"><div class="sw__name">clay-600</div><div class="sw__hex">#A9483E</div><div class="sw__ratio">5.24:1 ✅ · softer failure, never alarm-red</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#FAF0DA;color:#8A5D09">surface</div><div class="sw__meta"><div class="sw__name">amber-surface</div><div class="sw__hex">#FAF0DA</div><div class="sw__ratio">warning panel</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#96650A;color:#fff">amber</div><div class="sw__meta"><div class="sw__name">amber-700</div><div class="sw__hex">#96650A</div><div class="sw__ratio">4.63:1 ✅</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#8A5D09;color:#fff">amber</div><div class="sw__meta"><div class="sw__name">amber-750</div><div class="sw__hex">#8A5D09</div><div class="sw__ratio">5.08:1 on amber-surface ✅</div></div></div>
+    </div>
+
+    <h3 class="t-h3" style="margin-block:var(--space-24) var(--space-12)">Nightfall · dark</h3>
+    <p class="gal-note t-body-sm">
+      Dark surfaces are tinted with the brand hue rather than neutral grey — that is the
+      difference between a dark mode that feels like the same product and one that feels like a
+      different app. Elevation in dark is tone and border only: <strong>no shadows.</strong>
+    </p>
+    <div class="swatches">
+      <div class="sw"><div class="sw__chip" style="background:#0F151B;color:#EDF2F7">canvas</div><div class="sw__meta"><div class="sw__name">canvas</div><div class="sw__hex">#0F151B</div><div class="sw__ratio">blue-black page</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#182029;color:#EDF2F7">surface</div><div class="sw__meta"><div class="sw__name">surface</div><div class="sw__hex">#182029</div><div class="sw__ratio">1.12:1 vs canvas</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#1E2833;color:#EDF2F7">raised</div><div class="sw__meta"><div class="sw__name">surface-raised</div><div class="sw__hex">#1E2833</div><div class="sw__ratio">sheets, ring tracks</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#233240;color:#EDF2F7">tinted</div><div class="sw__meta"><div class="sw__name">surface-tinted</div><div class="sw__hex">#233240</div><div class="sw__ratio">selected rows</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#2C3945;color:#EDF2F7">border</div><div class="sw__meta"><div class="sw__name">border</div><div class="sw__hex">#2C3945</div><div class="sw__ratio">1.39:1 vs surface</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#EDF2F7;color:#0F151B">ink-strong</div><div class="sw__meta"><div class="sw__name">ink-strong</div><div class="sw__hex">#EDF2F7</div><div class="sw__ratio">16.31:1 ✅</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#D8E2EC;color:#0F151B">ink</div><div class="sw__meta"><div class="sw__name">ink</div><div class="sw__hex">#D8E2EC</div><div class="sw__ratio">12.53:1 vs surface ✅</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#9FB0C0;color:#0F151B">muted</div><div class="sw__meta"><div class="sw__name">ink-muted</div><div class="sw__hex">#9FB0C0</div><div class="sw__ratio">7.39:1 vs surface ✅</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#74869A;color:#0F151B">subtle</div><div class="sw__meta"><div class="sw__name">ink-subtle</div><div class="sw__hex">#74869A</div><div class="sw__ratio">4.40:1 vs surface ✅</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#8FB4D4;color:#0F151B">brand</div><div class="sw__meta"><div class="sw__name">brand</div><div class="sw__hex">#8FB4D4</div><div class="sw__ratio">7.55:1 vs surface ✅</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#27405A;color:#fff">hero</div><div class="sw__meta"><div class="sw__name">brand-hero</div><div class="sw__hex">#27405A</div><div class="sw__ratio">white on it 10.67:1 ✅ (computed)</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#F2D059;color:#0F151B">gold</div><div class="sw__meta"><div class="sw__name">gold</div><div class="sw__hex">#F2D059</div><div class="sw__ratio">10.91:1 vs surface ✅</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#8FB891;color:#0F151B">sage</div><div class="sw__meta"><div class="sw__name">sage</div><div class="sw__hex">#8FB891</div><div class="sw__ratio">7.38:1 vs surface ✅</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#E08C7F;color:#0F151B">clay</div><div class="sw__meta"><div class="sw__name">clay</div><div class="sw__hex">#E08C7F</div><div class="sw__ratio">6.44:1 vs surface ✅</div></div></div>
+      <div class="sw"><div class="sw__chip" style="background:#E5B85C;color:#0F151B">amber</div><div class="sw__meta"><div class="sw__name">amber</div><div class="sw__hex">#E5B85C</div><div class="sw__ratio">8.88:1 vs surface ✅</div></div></div>
+    </div>
+
+    <p class="gal-note t-body-sm" style="margin-block-start:var(--space-16)">
+      <strong>Teal is retired.</strong> <code>#80BBC8</code> survives only inside illustration
+      compositions — never as a UI fill, never as text, never in a chart. A
+      retained-but-roleless colour is exactly how 43 files of stray hex started last time. The
+      centre FAB, which was teal and failed 1.4.11 at 2.27:1, is now <code>brand-600</code>
+      with a white glyph.
+    </p>
+  </section>
+
+  <!-- ====================================================================== -->
+  <section class="gal-section" aria-labelledby="s-type">
+    <div class="section-head"><h2 id="s-type" class="t-h2">Type</h2></div>
+    <p class="gal-note t-body">
+      Fraunces over Figtree — a soft variable serif against a friendly geometric sans. Fraunces
+      is a <em>daily</em> voice, not an event voice: it takes h1 page titles, streak numerals,
+      milestone headlines, empty-state headings and the Create Habit step questions. Body,
+      labels, buttons and nav stay strictly Figtree. <strong>Minimum text size is 13px</strong>
+      — the app's 10px card lines are abolished. No webfont is loaded anywhere in this
+      prototype; the stacks degrade to the best local humanist sans and transitional serif.
+    </p>
+    <div class="type-row"><span class="type-row__spec">display · 48/52 · 600 · −0.02em</span><span class="t-display">112</span></div>
+    <div class="type-row"><span class="type-row__spec">h1 · 32/38 · 600 · −0.015em</span><span class="t-h1">Good morning, Mark</span></div>
+    <div class="type-row"><span class="type-row__spec">h2 · 24/30 · 600 · −0.01em</span><span class="t-h2">Today</span></div>
+    <div class="type-row"><span class="type-row__spec">h3 · 20/26 · 600 · −0.005em</span><span class="t-h3">Meditate for two minutes</span></div>
+    <div class="type-row"><span class="type-row__spec">body-lg · 17/26 · 400</span><span class="t-body-lg">Keep it small, you can always do more.</span></div>
+    <div class="type-row"><span class="type-row__spec">body · 15/22 · 400</span><span class="t-body">Give yourself credit for the effort you've been putting in.</span></div>
+    <div class="type-row"><span class="type-row__spec">body-sm · 13/19 · 400 · +0.005em</span><span class="t-body-sm">After I pour my morning coffee · 112 day streak</span></div>
+    <div class="type-row"><span class="type-row__spec">label · 13/16 · 600 · +0.01em</span><span class="t-label">Save habit</span></div>
+    <div class="type-row"><span class="type-row__spec">caption · 13/16 · 500 · +0.02em</span><span class="t-caption">Today's lesson</span></div>
+  </section>
+
+  <!-- ====================================================================== -->
+  <section class="gal-section" aria-labelledby="s-motion">
+    <div class="section-head"><h2 id="s-motion" class="t-h2">Motion</h2></div>
+    <p class="gal-note t-body">
+      Four curves and three spring approximations. CSS has no true spring, so the spring tokens
+      are Google's own published beziers for the Material 3 Expressive spatial springs, each
+      paired with its intended duration. <strong>A spatial spring never touches a colour or
+      opacity transition</strong> — the overshoot produces a visible tint wobble, which is why
+      Material's effects springs are critically damped. Press a track to run it.
+    </p>
+    <div class="curve-grid">
+      <div class="curve"><p class="t-label">ease-standard · 260ms</p><p class="t-body-sm t-muted">(0.2, 0, 0, 1) — the default</p><button class="curve__track" type="button" style="--travel:130px;--tf:cubic-bezier(0.2,0,0,1)" aria-label="Play ease-standard"><span class="curve__dot"></span></button></div>
+      <div class="curve"><p class="t-label">ease-enter · 260ms</p><p class="t-body-sm t-muted">(0.05, 0.7, 0.1, 1) — arriving</p><button class="curve__track" type="button" style="--travel:130px;--tf:cubic-bezier(0.05,0.7,0.1,1)" aria-label="Play ease-enter"><span class="curve__dot"></span></button></div>
+      <div class="curve"><p class="t-label">ease-exit · 200ms</p><p class="t-body-sm t-muted">(0.3, 0, 0.8, 0.15) — leaving</p><button class="curve__track" type="button" style="--travel:130px;--tf:cubic-bezier(0.3,0,0.8,0.15)" aria-label="Play ease-exit"><span class="curve__dot"></span></button></div>
+      <div class="curve"><p class="t-label">spring-gentle · 650ms</p><p class="t-body-sm t-muted">0.8/200 — sheets, milestone</p><button class="curve__track" type="button" style="--travel:130px;--tf:cubic-bezier(0.39,1.29,0.35,0.98)" aria-label="Play spring-gentle"><span class="curve__dot"></span></button></div>
+      <div class="curve"><p class="t-label">spring-snap · 500ms</p><p class="t-body-sm t-muted">0.8/380 — toggles, button release</p><button class="curve__track" type="button" style="--travel:130px;--tf:cubic-bezier(0.38,1.21,0.22,1)" aria-label="Play spring-snap"><span class="curve__dot"></span></button></div>
+      <div class="curve"><p class="t-label">spring-bounce · 350ms</p><p class="t-body-sm t-muted">0.6/800 — reward pop only</p><button class="curve__track" type="button" style="--travel:130px;--tf:cubic-bezier(0.42,1.67,0.21,0.9)" aria-label="Play spring-bounce"><span class="curve__dot"></span></button></div>
+    </div>
+  </section>
+
+  <!-- ====================================================================== -->
+  <section class="gal-section" aria-labelledby="s-kit">
+    <div class="section-head"><h2 id="s-kit" class="t-h2">The kit</h2></div>
+    <p class="gal-note t-body">
+      Two elevation layers only: <strong>paper</strong> (canvas and cards — tone and hairline,
+      zero resting shadow) and <strong>floating</strong> (nav, FAB, modals, the hero, and
+      desktop hover-lift). Because lift is rare, it means something. Hover a card below with a
+      real pointer.
+    </p>
+    <div class="grid12">
+      <article class="card card--interactive span-4">
+        <h3 class="t-h3">Card</h3>
+        <p class="t-body-sm t-muted">Matte fill, 1px hairline, radius 16, no resting shadow. Hover lifts 1px.</p>
+      </article>
+      <article class="card span-4">
+        <h3 class="t-h3">Buttons</h3>
+        <div class="u-flow u-wrap" style="margin-block-start:var(--space-12)">
+          <button class="btn btn--primary btn--sm" type="button">Save habit</button>
+          <button class="btn btn--secondary btn--sm" type="button">Cancel</button>
+          <button class="btn btn--ghost btn--sm" type="button">Undo</button>
+          <button class="btn btn--danger btn--sm" type="button">Delete habit</button>
+        </div>
+      </article>
+      <article class="card span-4">
+        <h3 class="t-h3">Chips</h3>
+        <div class="u-flow u-wrap" style="margin-block-start:var(--space-12)">
+          <span class="chip chip--streak"><svg class="icon" aria-hidden="true"><use href="#i-flame"></use></svg><span>112 days</span></span>
+          <span class="chip chip--sage">Done today</span>
+          <span class="chip chip--brand">Every day</span>
+          <span class="chip">Weekdays</span>
+        </div>
+      </article>
+
+      <article class="card span-6">
+        <h3 class="t-h3">Gilding — the mark, forever</h3>
+        <p class="t-body-sm t-muted" style="margin-block-start:var(--space-4)">
+          Day 7 leaves a 16px gold corner tick; day 30 adds a full inner hairline; day 100 adds
+          an embossed seal beside the title; day 365 fills the seal solid. Cosmetic only, never
+          lost, and it survives streak breaks — the gild records what you did, not what you are
+          maintaining.
+        </p>
+        <ul class="habit-list" style="margin-block-start:var(--space-16);display:flex;flex-direction:column;gap:var(--space-12)">
+          <li><article class="card habit-card habit-card--gild-7"><div class="habit-card__body"><h3 class="habit-card__title">Day 7</h3><p class="habit-card__meta">corner tick</p></div></article></li>
+          <li><article class="card habit-card habit-card--gild-30"><div class="habit-card__body"><h3 class="habit-card__title">Day 30</h3><p class="habit-card__meta">inner hairline</p></div></article></li>
+          <li><article class="card habit-card habit-card--gild-100"><div class="habit-card__body"><div class="u-flow-tight"><h3 class="habit-card__title">Day 100</h3><span class="seal" role="img" aria-label="100-day seal"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-rosette"></use></svg></span></div><p class="habit-card__meta">embossed seal</p></div></article></li>
+          <li><article class="card habit-card habit-card--gild-365"><div class="habit-card__body"><div class="u-flow-tight"><h3 class="habit-card__title">Day 365</h3><span class="seal seal--solid" role="img" aria-label="365-day seal"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-rosette"></use></svg></span></div><p class="habit-card__meta">solid gold seal</p></div></article></li>
+        </ul>
+      </article>
+
+      <article class="card span-6">
+        <h3 class="t-h3">Empty state · calendar cells</h3>
+        <p class="t-body-sm t-muted" style="margin-block-start:var(--space-4)">
+          One flat two-colour illustration and a single 4s drift — the only looping animation
+          permitted in the product. Calendar cells carry three redundant states (fill, glyph and
+          a per-cell label) so nothing is encoded by colour alone, and the encoding survives
+          grayscale.
+        </p>
+        <div class="u-flow u-wrap" style="margin-block-start:var(--space-16);align-items:flex-start">
+          <div class="empty-state" style="padding-block:0;flex:1 1 160px">
+            <svg class="empty-state__art empty-state__art--drift" viewBox="0 0 120 120" role="img" aria-label="A stem with two leaves">
+              <ellipse cx="60" cy="98" rx="34" ry="9" fill="var(--c-brand-300)" opacity=".55"/>
+              <path d="M60 96V44" stroke="var(--c-brand-700)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <path d="M60 68c-16 0-26-9-27-23 15-2 27 6 27 23z" fill="var(--c-brand-300)" stroke="var(--c-brand-700)" stroke-width="2"/>
+              <path d="M60 56c14-1 23-9 24-22-14-1-24 6-24 22z" fill="var(--c-sage-500)" stroke="var(--c-brand-700)" stroke-width="2"/>
+              <circle cx="60" cy="40" r="4" fill="var(--c-gold-500)"/>
+            </svg>
+            <p class="empty-state__title" style="font-size:var(--fs-h3)">Craft your first habit</p>
+          </div>
+          <div class="cal-grid" style="flex:1 1 200px">
+            <div class="cal-cell cal-cell--done" role="img" aria-label="Monday, completed"><span class="cal-cell__glyph"></span></div>
+            <div class="cal-cell cal-cell--done" role="img" aria-label="Tuesday, completed"><span class="cal-cell__glyph"></span></div>
+            <div class="cal-cell cal-cell--partial" role="img" aria-label="Wednesday, partial"><span class="cal-cell__glyph"></span></div>
+            <div class="cal-cell" role="img" aria-label="Thursday, no check-ins"></div>
+            <div class="cal-cell cal-cell--done cal-cell--milestone" role="img" aria-label="Friday, completed, milestone"><span class="cal-cell__glyph"></span></div>
+            <div class="cal-cell cal-cell--done" role="img" aria-label="Saturday, completed"><span class="cal-cell__glyph"></span></div>
+            <div class="cal-cell" role="img" aria-label="Sunday, no check-ins"></div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ====================================================================== -->
+  <section class="gal-section" aria-labelledby="s-veto">
+    <div class="section-head"><h2 id="s-veto" class="t-h2">What this prototype refuses to do</h2></div>
+    <ul class="t-body t-muted t-measure" style="list-style:disc;padding-inline-start:1.2em">
+      <li>No glassmorphism, no frosted cards, no glass modals.</li>
+      <li>No purple, no mesh or rainbow gradients, no animated gradient backgrounds.</li>
+      <li>No neumorphism, no inner-shadow pressed-plastic controls.</li>
+      <li>No drop shadows on resting content.</li>
+      <li>No confetti on ordinary completions; no celebration that loops or repeats in a session.</li>
+      <li>No scroll-triggered reveals, no parallax, no scroll-jacking.</li>
+      <li>No streak-guilt: no broken chains, no red missed days, no "don't lose your streak."</li>
+      <li>No AI-sparkle iconography, no glow on light surfaces, no emoji as interface elements.</li>
+      <li>No legacy-blue page background, and no raster chrome anywhere.</li>
+      <li>No new hex value outside the palette above. The palette is closed.</li>
+    </ul>
+  </section>
+
+  <footer class="gal-section">
+    <p class="t-body-sm t-muted">
+      Zero external dependencies — no CDN, no webfont, no remote image, no build step.
+      Hand-written CSS and vanilla JS; every file opens from <code>file://</code>.
+      Architecture and class names: <code>prototype/README-buildnotes.md</code>.
+    </p>
+  </footer>
+</main>
+
+<script src="js/prototype.js"></script>
+<script>
+/* Gallery-only: replay an easing curve on press. Not part of the design system. */
+document.querySelectorAll('.curve__track').forEach(function (track) {
+  track.addEventListener('click', function () {
+    var curve = track.closest('.curve');
+    curve.classList.remove('is-running');
+    void curve.offsetWidth;
+    if (!window.HC.reducedMotion()) curve.classList.add('is-running');
+  });
+});
+</script>
 </body>
 </html>

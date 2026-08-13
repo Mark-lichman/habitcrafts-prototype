@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Progress · HabitCrafts</title>
+<meta name="description" content="HabitCrafts redesign prototype — Progress. The ledger: streak, month calendar, consistency and every habit day by day.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="../assets/images/favicon.png">
+<!-- Order matters: tokens → base → components. -->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+<!-- ===========================================================================
+     ICON SPRITE — copied from home.html and extended with the two chevrons the
+     calendar's month stepper needs. One family, one style, inline SVG on a 24px
+     grid, currentColor. Zero raster icons, zero emoji-as-UI. [D §6]
+     ======================================================================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-habits" viewBox="0 0 24 24"><path d="M7 2v2H5.5A2.5 2.5 0 0 0 3 6.5v12A2.5 2.5 0 0 0 5.5 21h13a2.5 2.5 0 0 0 2.5-2.5v-12A2.5 2.5 0 0 0 18.5 4H17V2h-2v2H9V2H7zm12 8v8.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V10h14z"/></symbol>
+    <symbol id="i-progress" viewBox="0 0 24 24"><path d="M4 12h3v8H4v-8zm6.5-8h3v16h-3V4zM17 15h3v5h-3v-5z"/></symbol>
+    <symbol id="i-community" viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm7.5 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20.2A6.7 6.7 0 0 1 9 14a6.7 6.7 0 0 1 7 6.2V21H2v-.8zm15.6-5.1A5.4 5.4 0 0 1 22 20.4V21h-4.2v-.8a8.2 8.2 0 0 0-1.5-4.7c.4-.2.8-.3 1.3-.4z"/></symbol>
+    <symbol id="i-library" viewBox="0 0 24 24"><path d="M6 2h13a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2H6zm0 2a.5.5 0 0 0-.5.5V17H18V4H6zm-.5 15v.5a.5.5 0 0 0 .5.5H18v-1H5.5z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12.6 2c.3 3 2 3.9 3.4 5.6A7.7 7.7 0 0 1 18 12.6a6 6 0 1 1-12 0c0-2 .8-3.7 1.9-5.1.1 1.6 1 2.7 2.1 2.7 1.2 0 2.1-1.1 2.1-3C12.1 5.4 12.4 3.6 12.6 2z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M13 5l7 7-7 7-1.4-1.4 4.6-4.6H4v-2h12.2l-4.6-4.6L13 5z"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4.1 0-7.4 2.3-7.4 5.2V21h14.8v-1.8c0-2.9-3.3-5.2-7.4-5.2z"/></symbol>
+    <symbol id="i-rosette" viewBox="0 0 24 24"><path d="M12 2l2.2 3.1 3.7-.9.4 3.8 3.4 1.7-2.3 3 2.3 3-3.4 1.7-.4 3.8-3.7-.9L12 24l-2.2-3.1-3.7.9-.4-3.8L2.3 16l2.3-3-2.3-3 3.4-1.7.4-3.8 3.7.9L12 2zm0 5.5A4.5 4.5 0 1 0 12 16.5 4.5 4.5 0 0 0 12 7.5z"/></symbol>
+    <symbol id="i-chev-left" viewBox="0 0 24 24"><path d="M15.4 6.4L14 5l-7 7 7 7 1.4-1.4L9.8 12l5.6-5.6z"/></symbol>
+    <symbol id="i-chev-right" viewBox="0 0 24 24"><path d="M8.6 6.4L10 5l7 7-7 7-1.4-1.4L14.2 12 8.6 6.4z"/></symbol>
+  </defs>
+</svg>
+
+<a class="skip-link" href="#main">Skip to your progress</a>
+
+<!-- ===========================================================================
+     PROTOTYPE CONTROLS (scaffolding, not product) — copied from home.html.
+     ======================================================================== -->
+<div class="devbar" role="group" aria-label="Prototype controls">
+  <div class="devbar__group" role="group" aria-label="Theme">
+    <button class="devbar__btn" type="button" data-theme-btn="system" aria-pressed="true">Auto</button>
+    <button class="devbar__btn" type="button" data-theme-btn="light" aria-pressed="false">Light</button>
+    <button class="devbar__btn" type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+  </div>
+  <div class="devbar__group">
+    <label for="hour" class="visually-hidden">Simulated hour of day</label>
+    <input id="hour" type="range" min="0" max="23" step="1" data-hour-input>
+    <output class="devbar__reading" data-hour-readout>—</output>
+  </div>
+  <div class="devbar__group" role="group" aria-label="Motion">
+    <button class="devbar__btn" type="button" data-motion-btn="auto" aria-pressed="true">Motion: auto</button>
+    <button class="devbar__btn" type="button" data-motion-btn="reduce" aria-pressed="false">Reduce</button>
+  </div>
+  <button class="devbar__btn" type="button" data-demo="reset">Reset day</button>
+</div>
+
+<div class="app-shell">
+
+  <!-- =========================================================================
+       NAVIGATION — copied verbatim from home.html; aria-current moved to
+       Progress. Floating bar &lt;600 · rail 600–1199 · drawer ≥1200.
+       ====================================================================== -->
+  <nav class="app-nav" aria-label="Primary">
+    <a class="app-nav__brand" href="index.html">
+      <img src="../assets/images/Habit_Craft_Logo_File-09.png" alt="">
+      <span>HabitCrafts</span>
+    </a>
+
+    <a class="nav-fab" href="create-habit.html">
+      <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+      <span class="nav-fab__label">New habit</span>
+      <span class="visually-hidden">Craft a new habit</span>
+    </a>
+
+    <ul class="app-nav__list">
+      <li><a class="nav-item" href="home.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-habits"></use></svg>
+        <span class="nav-item__label">Habits</span>
+      </a></li>
+      <li><a class="nav-item" href="progress.html" aria-current="page">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-progress"></use></svg>
+        <span class="nav-item__label">Progress</span>
+      </a></li>
+      <li><a class="nav-item" href="community.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-community"></use></svg>
+        <span class="nav-item__label">Community</span>
+      </a></li>
+      <li><a class="nav-item" href="profile.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-person"></use></svg>
+        <span class="nav-item__label">Profile</span>
+      </a></li>
+    </ul>
+
+    <a class="app-nav__user" href="profile.html">
+      <span class="avatar" aria-hidden="true">M</span>
+      <span>
+        <span class="t-label" style="display:block">Mark</span>
+        <span class="t-body-sm t-muted">Member since 2024</span>
+      </span>
+    </a>
+  </nav>
+
+  <main id="main" class="page">
+
+    <!-- =====================================================================
+         PAGE HEAD. h1 in Fraunces (a daily voice, not an event voice [D §4.2]).
+         The app's Material TabBar becomes the kit's segmented control; the
+         Summary / Lifestyle split itself stays, because it is real IA. [D §3.2]
+         ================================================================== -->
+    <header class="prog-head">
+      <div>
+        <h1 class="t-h1 prog-head__title">Progress</h1>
+        <p class="t-body-sm t-muted">A record of what you have actually kept.</p>
+      </div>
+
+      <div class="segmented" role="tablist" aria-label="Progress views" data-tabs>
+        <button class="seg-btn" type="button" role="tab" id="tab-summary"
+                aria-selected="true" aria-controls="panel-summary" data-tab="summary">Summary</button>
+        <button class="seg-btn" type="button" role="tab" id="tab-lifestyle" tabindex="-1"
+                aria-selected="false" aria-controls="panel-lifestyle" data-tab="lifestyle">Lifestyle</button>
+      </div>
+    </header>
+
+    <!-- =====================================================================
+         SUMMARY PANEL
+         [B §6.3] Progress, verbatim: stat tiles row 1, calendar + chart row 2,
+         the per-habit list row 3. On a phone it is one column in that order.
+         ================================================================== -->
+    <div class="prog-panel" id="panel-summary" role="tabpanel"
+         aria-labelledby="tab-summary" data-tabpanel="summary" tabindex="0">
+
+      <div class="grid12">
+
+        <!-- ─────────────────────────────────────────────────────────────────
+             THE ONE DEEP-BLUE SURFACE ON THIS SCREEN. [D §3, §5.1]
+             Streak as a 48px Fraunces numeral, "day streak", this week's
+             consistency, and the gold flame chip (gold-500 on brand-700 =
+             4.98:1 ✅). After 20:00 it takes the two-stop gradient under the
+             grain automatically — try the hour slider. [D §2.5]
+             The week strip repeats the numbers in words, so the dots are never
+             the only carrier of the information.
+             ────────────────────────────────────────────────────────────── -->
+        <section class="hero hero--streak prog-hero prog-item--hero" aria-labelledby="streak-h">
+          <div>
+            <p class="hero__numeral">112</p>
+            <h2 id="streak-h" class="hero__label t-label">day streak</h2>
+            <p class="hero__body t-body-sm" style="margin-block-start:var(--space-8)">
+              Sixteen weeks with at least one check-in every single day. Your longest run yet.
+            </p>
+            <span class="chip chip--streak" style="margin-block-start:var(--space-12)">
+              <svg class="icon" aria-hidden="true"><use href="#i-flame"></use></svg>
+              <span>Best yet</span>
+            </span>
+          </div>
+
+          <div class="prog-hero__week">
+            <p class="hero__label t-caption">This week</p>
+            <span class="prog-dots prog-dots--on-hero" role="img"
+                  aria-label="This week: Monday kept in full, Tuesday kept in full, Wednesday is today and still open, Thursday to Sunday still to come.">
+              <span class="prog-dot prog-dot--kept"></span>
+              <span class="prog-dot prog-dot--kept"></span>
+              <span class="prog-dot prog-dot--open"></span>
+              <span class="prog-dot prog-dot--upcoming"></span>
+              <span class="prog-dot prog-dot--upcoming"></span>
+              <span class="prog-dot prog-dot--upcoming"></span>
+              <span class="prog-dot prog-dot--upcoming"></span>
+            </span>
+            <p class="hero__body t-body-sm">Two days in, two days kept in full.</p>
+          </div>
+        </section>
+
+        <!-- ─────────────────────────────────────────────────────────────────
+             THE LEDGER — three stat tiles. [B §6.3 "stat tiles ×3"]
+             Ruled into three columns by the same hairline as the rest of the
+             screen at lg+; stacked below that. No boxes inside boxes.
+             ────────────────────────────────────────────────────────────── -->
+        <section class="card card--roomy prog-item--ledger" aria-labelledby="ledger-h">
+          <h2 id="ledger-h" class="t-label t-muted">The ledger</h2>
+          <div class="prog-ledger">
+            <div class="stat-tile">
+              <span class="stat-tile__value">8 weeks</span>
+              <span class="stat-tile__label">in a row with four or more days where you kept everything</span>
+            </div>
+            <div class="stat-tile">
+              <span class="stat-tile__value">94%</span>
+              <span class="stat-tile__label">of your check-ins kept over the last 30 days</span>
+            </div>
+            <div class="stat-tile">
+              <span class="stat-tile__value">1,208</span>
+              <span class="stat-tile__label">check-ins since you started in March 2024</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ─────────────────────────────────────────────────────────────────
+             THE CALENDAR — the signature artifact of this screen. [D §3.2]
+             Three redundant states, never colour alone: a fill difference, a
+             glyph, a lightness step that survives greyscale, and a per-cell
+             label. Milestone days carry the gold corner tick — the gilding
+             language, in its calendar form. Missed days are simply empty:
+             no red, no broken chains, nowhere on this screen.
+
+             Note for the Flutter migration: the shipping calendar widget has
+             two alpha-less colours (`Color(0xE6EEF8)` and `Color(0x2A405D)` at
+             progress_calendar_widget.dart:416/424) that render as near-
+             transparent black. This redesign does not reproduce them — every
+             colour here comes from the semantic --c-* layer.
+             ────────────────────────────────────────────────────────────── -->
+        <section class="card card--roomy prog-item--cal" aria-labelledby="cal-h" data-cal>
+          <h2 id="cal-h" class="t-label t-muted">Your days</h2>
+
+          <div class="prog-cal__head" style="margin-block-start:var(--space-8)">
+            <button class="icon-btn" type="button" data-cal-step="-1" aria-label="Show the previous month">
+              <svg class="icon" aria-hidden="true"><use href="#i-chev-left"></use></svg>
+            </button>
+            <p class="t-h3 prog-cal__month-name" data-cal-label>August 2026</p>
+            <button class="icon-btn" type="button" data-cal-step="1" aria-label="Show the next month">
+              <svg class="icon" aria-hidden="true"><use href="#i-chev-right"></use></svg>
+            </button>
+          </div>
+
+          <div class="prog-cal__dow" aria-hidden="true">
+            <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+          </div>
+
+          <div class="prog-cal__month" data-cal-month="2026-08" data-cal-name="August 2026">
+            <div class="cal-grid">
+              <div class="prog-cal__blank" aria-hidden="true"></div>
+              <div class="prog-cal__blank" aria-hidden="true"></div>
+              <div class="prog-cal__blank" aria-hidden="true"></div>
+              <div class="prog-cal__blank" aria-hidden="true"></div>
+              <div class="prog-cal__blank" aria-hidden="true"></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Saturday 1 August, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--partial" role="img" aria-label="Sunday 2 August, some habits kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Monday 3 August, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Tuesday 4 August, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--partial" role="img" aria-label="Wednesday 5 August, some habits kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Thursday 6 August, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done cal-cell--milestone" role="img" aria-label="Friday 7 August, every habit kept, milestone: Read one page reached 30 days"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--partial" role="img" aria-label="Saturday 8 August, some habits kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done cal-cell--milestone" role="img" aria-label="Sunday 9 August, every habit kept, milestone: Walk around the block reached seven days"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Monday 10 August, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Tuesday 11 August, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell prog-cal__cell--today" role="img" aria-label="Wednesday 12 August, today, nothing yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Thursday 13 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Friday 14 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Saturday 15 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Sunday 16 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Monday 17 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Tuesday 18 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Wednesday 19 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Thursday 20 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Friday 21 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Saturday 22 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Sunday 23 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Monday 24 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Tuesday 25 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Wednesday 26 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Thursday 27 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Friday 28 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Saturday 29 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Sunday 30 August, not here yet"></div>
+              <div class="cal-cell prog-cal__cell--future" role="img" aria-label="Monday 31 August, not here yet"></div>
+              <div class="prog-cal__blank" aria-hidden="true"></div>
+              <div class="prog-cal__blank" aria-hidden="true"></div>
+              <div class="prog-cal__blank" aria-hidden="true"></div>
+              <div class="prog-cal__blank" aria-hidden="true"></div>
+              <div class="prog-cal__blank" aria-hidden="true"></div>
+              <div class="prog-cal__blank" aria-hidden="true"></div>
+            </div>
+            <p class="prog-cal__summary t-body-sm">Eleven days so far, eleven with a check-in — eight of them you kept everything. Today is still open.</p>
+          </div>
+          <div class="prog-cal__month" data-cal-month="2026-07" data-cal-name="July 2026" hidden>
+            <div class="cal-grid">
+              <div class="prog-cal__blank" aria-hidden="true"></div>
+              <div class="prog-cal__blank" aria-hidden="true"></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Wednesday 1 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Thursday 2 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--partial" role="img" aria-label="Friday 3 July, some habits kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Saturday 4 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Sunday 5 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Monday 6 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--partial" role="img" aria-label="Tuesday 7 July, some habits kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Wednesday 8 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Thursday 9 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Friday 10 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Saturday 11 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--partial" role="img" aria-label="Sunday 12 July, some habits kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Monday 13 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Tuesday 14 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Wednesday 15 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--partial" role="img" aria-label="Thursday 16 July, some habits kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Friday 17 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Saturday 18 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Sunday 19 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Monday 20 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--partial" role="img" aria-label="Tuesday 21 July, some habits kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Wednesday 22 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Thursday 23 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Friday 24 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--partial" role="img" aria-label="Saturday 25 July, some habits kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Sunday 26 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Monday 27 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--partial" role="img" aria-label="Tuesday 28 July, some habits kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Wednesday 29 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done cal-cell--milestone" role="img" aria-label="Thursday 30 July, every habit kept, milestone: Meditate for two minutes reached 100 days"><span class="cal-cell__glyph"></span></div>
+              <div class="cal-cell cal-cell--done" role="img" aria-label="Friday 31 July, every habit kept"><span class="cal-cell__glyph"></span></div>
+              <div class="prog-cal__blank" aria-hidden="true"></div>
+              <div class="prog-cal__blank" aria-hidden="true"></div>
+            </div>
+            <p class="prog-cal__summary t-body-sm">Thirty-one days, thirty-one with a check-in — twenty-four of them you kept everything.</p>
+          </div>
+
+          <ul class="prog-key">
+            <li><span class="prog-key__swatch cal-cell cal-cell--done" aria-hidden="true"><span class="cal-cell__glyph"></span></span> Kept everything</li>
+            <li><span class="prog-key__swatch cal-cell cal-cell--partial" aria-hidden="true"><span class="cal-cell__glyph"></span></span> Kept some of it</li>
+            <li><span class="prog-key__swatch cal-cell" aria-hidden="true"></span> Nothing yet — days you miss are simply empty</li>
+            <li><span class="prog-key__swatch cal-cell prog-cal__cell--future" aria-hidden="true"></span> Still to come</li>
+            <li><span class="prog-key__swatch cal-cell cal-cell--done cal-cell--milestone" aria-hidden="true"><span class="cal-cell__glyph"></span></span> A day something was gilded</li>
+          </ul>
+        </section>
+
+        <!-- ─────────────────────────────────────────────────────────────────
+             THE CONSISTENCY PLOT. [D §3.2 "the line chart restyled"]
+             Hand-built SVG — no chart library, no canvas, nothing remote.
+             brand-500 line, sage at 12% under the second series, brand-200
+             gridlines, and the series direct-labelled at the end of their own
+             line from 840 up. The two series are ALSO separated by dash
+             pattern and marker shape (disc vs diamond), so nothing here
+             depends on being able to tell blue from green.
+             The `Productivity / Habits In Progress / Done for the Day`
+             legend-and-two-primaries chart is what this replaces.
+             ────────────────────────────────────────────────────────────── -->
+        <section class="card card--roomy prog-item--chart" aria-labelledby="chart-h">
+          <h2 id="chart-h" class="t-label t-muted">Consistency, the last eight weeks</h2>
+
+          <figure class="prog-chart" role="group" aria-labelledby="chart-h" aria-describedby="chart-desc">
+
+            <ul class="prog-chart__key">
+              <li style="--y:4%">
+                <span class="prog-chart__swatch" aria-hidden="true"></span>
+                <span><b>Showed up</b><small>7 of 7, every week</small></span>
+              </li>
+              <li style="--y:30.286%">
+                <span class="prog-chart__swatch prog-chart__swatch--b" aria-hidden="true"></span>
+                <span><b>Kept everything</b><small>5 of 7 last week</small></span>
+              </li>
+            </ul>
+
+            <div class="prog-chart__yaxis" aria-hidden="true">
+              <span style="--y:4%">7</span>
+              <span style="--y:17.143%">6</span>
+              <span style="--y:43.429%">4</span>
+              <span style="--y:69.714%">2</span>
+              <span style="--y:96%">0</span>
+            </div>
+
+            <div class="prog-chart__plot">
+              <svg class="prog-chart__svg" viewBox="0 0 100 100" preserveAspectRatio="none"
+                   aria-hidden="true" focusable="false">
+                <!-- The ruling: one hairline per whole day, brand-200. -->
+                <g class="prog-chart__rule" vector-effect="non-scaling-stroke">
+                  <path d="M0 4H100"      vector-effect="non-scaling-stroke"/>
+                  <path d="M0 17.143H100" vector-effect="non-scaling-stroke"/>
+                  <path d="M0 30.286H100" vector-effect="non-scaling-stroke"/>
+                  <path d="M0 43.429H100" vector-effect="non-scaling-stroke"/>
+                  <path d="M0 56.571H100" vector-effect="non-scaling-stroke"/>
+                  <path d="M0 69.714H100" vector-effect="non-scaling-stroke"/>
+                  <path d="M0 82.857H100" vector-effect="non-scaling-stroke"/>
+                </g>
+                <path class="prog-chart__base" d="M0 96H100" vector-effect="non-scaling-stroke"/>
+
+                <!-- Series B area: sage at 12%. [D §3.2] -->
+                <path class="prog-chart__area"
+                      d="M0 43.429L14.286 17.143L28.571 30.286L42.857 17.143L57.143 30.286L71.429 17.143L85.714 30.286L100 30.286L100 96L0 96Z"/>
+
+                <!-- Series A: showed up. Solid, pinned at the ceiling — the
+                     streak, made into a shape you can see in one glance. -->
+                <path class="prog-chart__line--a" d="M0 4H100" vector-effect="non-scaling-stroke"/>
+
+                <!-- Series B: days you kept every habit. Dashed. -->
+                <path class="prog-chart__line--b" vector-effect="non-scaling-stroke"
+                      d="M0 43.429L14.286 17.143L28.571 30.286L42.857 17.143L57.143 30.286L71.429 17.143L85.714 30.286L100 30.286"/>
+              </svg>
+
+              <!-- Markers are HTML, so they never distort with the plot box and
+                   the shape difference stays exact at any width. -->
+              <span class="prog-chart__mark" style="--x:0%;--y:4%" aria-hidden="true"></span>
+              <span class="prog-chart__mark" style="--x:14.286%;--y:4%" aria-hidden="true"></span>
+              <span class="prog-chart__mark" style="--x:28.571%;--y:4%" aria-hidden="true"></span>
+              <span class="prog-chart__mark" style="--x:42.857%;--y:4%" aria-hidden="true"></span>
+              <span class="prog-chart__mark" style="--x:57.143%;--y:4%" aria-hidden="true"></span>
+              <span class="prog-chart__mark" style="--x:71.429%;--y:4%" aria-hidden="true"></span>
+              <span class="prog-chart__mark" style="--x:85.714%;--y:4%" aria-hidden="true"></span>
+              <span class="prog-chart__mark" style="--x:100%;--y:4%" aria-hidden="true"></span>
+
+              <span class="prog-chart__mark prog-chart__mark--b" style="--x:0%;--y:43.429%" aria-hidden="true"></span>
+              <span class="prog-chart__mark prog-chart__mark--b" style="--x:14.286%;--y:17.143%" aria-hidden="true"></span>
+              <span class="prog-chart__mark prog-chart__mark--b" style="--x:28.571%;--y:30.286%" aria-hidden="true"></span>
+              <span class="prog-chart__mark prog-chart__mark--b" style="--x:42.857%;--y:17.143%" aria-hidden="true"></span>
+              <span class="prog-chart__mark prog-chart__mark--b" style="--x:57.143%;--y:30.286%" aria-hidden="true"></span>
+              <span class="prog-chart__mark prog-chart__mark--b" style="--x:71.429%;--y:17.143%" aria-hidden="true"></span>
+              <span class="prog-chart__mark prog-chart__mark--b" style="--x:85.714%;--y:30.286%" aria-hidden="true"></span>
+              <span class="prog-chart__mark prog-chart__mark--b" style="--x:100%;--y:30.286%" aria-hidden="true"></span>
+            </div>
+
+            <!-- Four labels, not eight: see the note in components.css §22.6.
+                 Each carries its month so no tick is an orphan number. -->
+            <div class="prog-chart__xaxis" aria-hidden="true">
+              <span style="--x:0%">15 Jun</span>
+              <span style="--x:28.571%">29 Jun</span>
+              <span style="--x:71.429%">20 Jul</span>
+              <span style="--x:100%">3 Aug</span>
+            </div>
+          </figure>
+
+          <!-- The same numbers, in text. A chart is never the only copy of its
+               own data on this screen. -->
+          <ul class="visually-hidden" id="chart-desc">
+            <li>Week of 15 June: showed up 7 days of 7, kept everything on 4.</li>
+            <li>Week of 22 June: showed up 7 days of 7, kept everything on 6.</li>
+            <li>Week of 29 June: showed up 7 days of 7, kept everything on 5.</li>
+            <li>Week of 6 July: showed up 7 days of 7, kept everything on 6.</li>
+            <li>Week of 13 July: showed up 7 days of 7, kept everything on 5.</li>
+            <li>Week of 20 July: showed up 7 days of 7, kept everything on 6.</li>
+            <li>Week of 27 July: showed up 7 days of 7, kept everything on 5.</li>
+            <li>Week of 3 August: showed up 7 days of 7, kept everything on 5.</li>
+          </ul>
+
+          <!-- Weekly framing over daily perfection. [D §3.2] -->
+          <p class="prog-chart__caption t-body-sm">
+            Eight weeks in a row at four or more full days. Days per week, out of seven.
+          </p>
+        </section>
+
+        <!-- ─────────────────────────────────────────────────────────────────
+             EVERY HABIT, DAY BY DAY. [D §3.2 "per-habit rows with 7-day dot
+             micro-strips"] These are literally the kit's habit cards — same
+             72px pitch, same title, same 13px meta line, same permanent gild
+             marks — with the check-in ring swapped for the strip. They carry
+             no data-habit, so nothing on any screen counts them as today's
+             work. Streak language stays repair and grace: "you showed up",
+             never "you lost it".
+             ────────────────────────────────────────────────────────────── -->
+        <section class="prog-item--rows" aria-labelledby="habits-h">
+          <div class="section-head">
+            <h2 id="habits-h" class="t-h2">Every habit, day by day</h2>
+            <p class="t-body-sm t-muted">Thursday 6 to today</p>
+          </div>
+
+          <ul class="prog-rows">
+
+            <!-- Gilded at 100: gold inner hairline + the embossed seal. -->
+            <li>
+              <article class="card habit-card habit-card--gild-100 prog-row">
+                <div class="habit-card__body">
+                  <div class="u-flow-tight">
+                    <h3 class="habit-card__title">Meditate for two minutes</h3>
+                    <span class="seal" role="img" aria-label="100-day seal">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-rosette"></use></svg>
+                    </span>
+                  </div>
+                  <p class="habit-card__meta">After I pour my morning coffee · kept all six of the last six days, today still open</p>
+                </div>
+                <div class="prog-row__strip">
+                  <span class="prog-dots" role="img"
+                        aria-label="Last seven days: Thursday kept, Friday kept, Saturday kept, Sunday kept, Monday kept, Tuesday kept, today still open.">
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--open"></span>
+                  </span>
+                  <span class="chip chip--streak">
+                    <svg class="icon" aria-hidden="true"><use href="#i-flame"></use></svg>
+                    <span>112 days</span>
+                  </span>
+                </div>
+              </article>
+            </li>
+
+            <!-- Gilded at 30: the full gold inner hairline. -->
+            <li>
+              <article class="card habit-card habit-card--gild-30 prog-row">
+                <div class="habit-card__body">
+                  <h3 class="habit-card__title">Read one page</h3>
+                  <p class="habit-card__meta">After I get into bed · kept all six of the last six days, today still open</p>
+                </div>
+                <div class="prog-row__strip">
+                  <span class="prog-dots" role="img"
+                        aria-label="Last seven days: Thursday kept, Friday kept, Saturday kept, Sunday kept, Monday kept, Tuesday kept, today still open.">
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--open"></span>
+                  </span>
+                  <span class="chip chip--streak">
+                    <svg class="icon" aria-hidden="true"><use href="#i-flame"></use></svg>
+                    <span>34 days</span>
+                  </span>
+                </div>
+              </article>
+            </li>
+
+            <!-- Gilded at 7: the 16px gold corner tick. -->
+            <li>
+              <article class="card habit-card habit-card--gild-7 prog-row">
+                <div class="habit-card__body">
+                  <h3 class="habit-card__title">Walk around the block</h3>
+                  <p class="habit-card__meta">After I close my laptop · kept all six of the last six days, today still open</p>
+                </div>
+                <div class="prog-row__strip">
+                  <span class="prog-dots" role="img"
+                        aria-label="Last seven days: Thursday kept, Friday kept, Saturday kept, Sunday kept, Monday kept, Tuesday kept, today still open.">
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--open"></span>
+                  </span>
+                  <span class="chip chip--streak">
+                    <svg class="icon" aria-hidden="true"><use href="#i-flame"></use></svg>
+                    <span>9 days</span>
+                  </span>
+                </div>
+              </article>
+            </li>
+
+            <!-- Ungilded, and one missed day. It is simply empty: no red, no
+                 broken chain, no confirmshaming copy. [D §3.2] -->
+            <li>
+              <article class="card habit-card prog-row">
+                <div class="habit-card__body">
+                  <h3 class="habit-card__title">Floss one tooth</h3>
+                  <p class="habit-card__meta">After I brush my teeth · kept five of the last six days, today still open</p>
+                </div>
+                <div class="prog-row__strip">
+                  <span class="prog-dots" role="img"
+                        aria-label="Last seven days: Thursday kept, Friday kept, Saturday missed, Sunday kept, Monday kept, Tuesday kept, today still open.">
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--missed"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--kept"></span>
+                    <span class="prog-dot prog-dot--open"></span>
+                  </span>
+                  <span class="chip chip--streak">
+                    <svg class="icon" aria-hidden="true"><use href="#i-flame"></use></svg>
+                    <span>3 days</span>
+                  </span>
+                </div>
+              </article>
+            </li>
+          </ul>
+
+          <p style="margin-block-start:var(--space-16)">
+            <a class="text-link" href="home.html">
+              Back to today's habits
+              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow"></use></svg>
+            </a>
+          </p>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- =====================================================================
+         LIFESTYLE PANEL — the habits that graduated.
+         The product's own words, at a legible size: the shipping screen sets
+         this paragraph at 12px, which is below this system's 13px floor.
+         No hero here: one --c-hero-fill surface per screen, and Summary
+         already spends it. [D §3, §5.1]
+         The "Removed Habits" expander is CUT from this scroll — it moves to
+         Profile → Archive. [D §3.2]
+         ================================================================== -->
+    <div class="prog-panel" id="panel-lifestyle" role="tabpanel"
+         aria-labelledby="tab-lifestyle" data-tabpanel="lifestyle" tabindex="0" hidden>
+
+      <div class="grid12">
+        <section class="span-8" aria-labelledby="life-h">
+          <h2 id="life-h" class="t-h2">Part of your life now</h2>
+          <p class="t-body t-measure" style="margin-block-start:var(--space-8)">
+            These have become part of your everyday lifestyle. Every small step gets you
+            closer to your goals. Give yourself credit for all the efforts you've been
+            putting in, and see where it takes you.
+          </p>
+
+          <ul class="prog-fulfilled" style="margin-block-start:var(--space-24)">
+            <li>
+              <article class="card habit-card--gild-365 prog-fulfilled__row">
+                <span class="seal seal--solid" role="img" aria-label="365-day seal">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-rosette"></use></svg>
+                </span>
+                <div class="u-grow">
+                  <h3 class="t-h3">A glass of water when I wake up</h3>
+                  <p class="t-body-sm t-muted">You showed up for 365 days · finished 2 March 2026</p>
+                </div>
+              </article>
+            </li>
+            <li>
+              <article class="card habit-card--gild-100 prog-fulfilled__row">
+                <span class="seal" role="img" aria-label="100-day seal">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-rosette"></use></svg>
+                </span>
+                <div class="u-grow">
+                  <h3 class="t-h3">Ten push-ups after I brush my teeth</h3>
+                  <p class="t-body-sm t-muted">You showed up for 184 days · finished 19 November 2025</p>
+                </div>
+              </article>
+            </li>
+            <li>
+              <article class="card habit-card--gild-100 prog-fulfilled__row">
+                <span class="seal" role="img" aria-label="100-day seal">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-rosette"></use></svg>
+                </span>
+                <div class="u-grow">
+                  <h3 class="t-h3">One line in a journal before bed</h3>
+                  <p class="t-body-sm t-muted">You showed up for 121 days · finished 4 July 2025</p>
+                </div>
+              </article>
+            </li>
+          </ul>
+        </section>
+
+        <aside class="span-4" aria-labelledby="marks-h">
+          <section class="card card--tinted">
+            <h2 id="marks-h" class="t-label t-brand">Marks you've earned</h2>
+            <p class="t-body-sm" style="margin-block-start:var(--space-8)">
+              A gild is cosmetic and permanent. It records what you did, not what you are
+              keeping up, so it stays even if a streak ends.
+            </p>
+            <p class="t-body-sm t-muted" style="margin-block-start:var(--space-12)">
+              Seven days, a corner tick. Thirty, a gold rule around the card. A hundred, a
+              seal. Three hundred and sixty-five, the seal fills solid.
+            </p>
+          </section>
+
+          <section class="card" style="margin-block-start:var(--layout-card-gap)">
+            <h2 class="t-label t-muted">Habits you removed</h2>
+            <p class="t-body-sm" style="margin-block-start:var(--space-8)">
+              They live in your archive now, with everything they earned intact.
+            </p>
+            <a class="text-link" href="profile.html">
+              Open your archive
+              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow"></use></svg>
+            </a>
+          </section>
+        </aside>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="js/prototype.js"></script>
+</body>
+</html>

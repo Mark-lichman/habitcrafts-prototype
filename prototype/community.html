@@ -1,0 +1,1090 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Community · HabitCrafts</title>
+<meta name="description" content="HabitCrafts redesign prototype — Community / Groups. Your groups, the people who showed up today, and the room where you talk about it.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="../assets/images/favicon.png">
+<!-- Order matters: tokens → base → components. -->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+<!-- ===========================================================================
+     ICON SPRITE — copied from home.html and extended with the nine glyphs this
+     screen needs (search, send, details, back, calendar, target, invitations,
+     tick, close). One family, one style, inline SVG on a 24px grid,
+     currentColor. Zero raster icons, zero emoji-as-UI. [D §6]
+     ======================================================================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-habits" viewBox="0 0 24 24"><path d="M7 2v2H5.5A2.5 2.5 0 0 0 3 6.5v12A2.5 2.5 0 0 0 5.5 21h13a2.5 2.5 0 0 0 2.5-2.5v-12A2.5 2.5 0 0 0 18.5 4H17V2h-2v2H9V2H7zm12 8v8.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V10h14z"/></symbol>
+    <symbol id="i-progress" viewBox="0 0 24 24"><path d="M4 12h3v8H4v-8zm6.5-8h3v16h-3V4zM17 15h3v5h-3v-5z"/></symbol>
+    <symbol id="i-community" viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm7.5 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20.2A6.7 6.7 0 0 1 9 14a6.7 6.7 0 0 1 7 6.2V21H2v-.8zm15.6-5.1A5.4 5.4 0 0 1 22 20.4V21h-4.2v-.8a8.2 8.2 0 0 0-1.5-4.7c.4-.2.8-.3 1.3-.4z"/></symbol>
+    <symbol id="i-library" viewBox="0 0 24 24"><path d="M6 2h13a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2H6zm0 2a.5.5 0 0 0-.5.5V17H18V4H6zm-.5 15v.5a.5.5 0 0 0 .5.5H18v-1H5.5z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12.6 2c.3 3 2 3.9 3.4 5.6A7.7 7.7 0 0 1 18 12.6a6 6 0 1 1-12 0c0-2 .8-3.7 1.9-5.1.1 1.6 1 2.7 2.1 2.7 1.2 0 2.1-1.1 2.1-3C12.1 5.4 12.4 3.6 12.6 2z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M13 5l7 7-7 7-1.4-1.4 4.6-4.6H4v-2h12.2l-4.6-4.6L13 5z"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4.1 0-7.4 2.3-7.4 5.2V21h14.8v-1.8c0-2.9-3.3-5.2-7.4-5.2z"/></symbol>
+    <symbol id="i-rosette" viewBox="0 0 24 24"><path d="M12 2l2.2 3.1 3.7-.9.4 3.8 3.4 1.7-2.3 3 2.3 3-3.4 1.7-.4 3.8-3.7-.9L12 24l-2.2-3.1-3.7.9-.4-3.8L2.3 16l2.3-3-2.3-3 3.4-1.7.4-3.8 3.7.9L12 2zm0 5.5A4.5 4.5 0 1 0 12 16.5 4.5 4.5 0 0 0 12 7.5z"/></symbol>
+    <!-- ── added for Community ── -->
+    <symbol id="i-search" viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.3 4.3-1.4 1.4-4.3-4.3A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M3.4 3.1l17.4 8.2a.8.8 0 0 1 0 1.4L3.4 20.9a.6.6 0 0 1-.8-.7l1.8-6.6L14 12 4.4 10.4 2.6 3.8a.6.6 0 0 1 .8-.7z"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm1 8h-2v7h2v-7zm0-3.2h-2v2h2v-2z"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M14.7 5.3L16.1 6.7 10.8 12l5.3 5.3-1.4 1.4L8 12l6.7-6.7z"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M7 2v2h10V2h2v2h1.5A1.5 1.5 0 0 1 22 5.5v15a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 20.5v-15A1.5 1.5 0 0 1 3.5 4H5V2h2zM20 10H4v10h16V10z"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></symbol>
+    <symbol id="i-invite" viewBox="0 0 24 24"><path d="M3.5 4h17A1.5 1.5 0 0 1 22 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 18.5v-13A1.5 1.5 0 0 1 3.5 4zM20 8.2l-8 4.6-8-4.6V18h16V8.2zM19.3 6H4.7L12 10.2 19.3 6z"/></symbol>
+    <symbol id="i-tick" viewBox="0 0 24 24"><path d="M9.6 16.2L5.4 12l-1.4 1.4 5.6 5.6L20.2 8.4 18.8 7 9.6 16.2z"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7l1.4-1.4 6.3 6.3 6.3-6.3z"/></symbol>
+  </defs>
+</svg>
+
+<a class="skip-link" href="#main">Skip to your groups</a>
+
+<!-- ===========================================================================
+     PROTOTYPE CONTROLS (scaffolding, not product) — copied verbatim from
+     home.html so every screen is reviewed the same way.
+     ======================================================================== -->
+<div class="devbar" role="group" aria-label="Prototype controls">
+  <div class="devbar__group" role="group" aria-label="Theme">
+    <button class="devbar__btn" type="button" data-theme-btn="system" aria-pressed="true">Auto</button>
+    <button class="devbar__btn" type="button" data-theme-btn="light" aria-pressed="false">Light</button>
+    <button class="devbar__btn" type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+  </div>
+  <div class="devbar__group">
+    <label for="hour" class="visually-hidden">Simulated hour of day</label>
+    <input id="hour" type="range" min="0" max="23" step="1" data-hour-input>
+    <output class="devbar__reading" data-hour-readout>—</output>
+  </div>
+  <div class="devbar__group" role="group" aria-label="Motion">
+    <button class="devbar__btn" type="button" data-motion-btn="auto" aria-pressed="true">Motion: auto</button>
+    <button class="devbar__btn" type="button" data-motion-btn="reduce" aria-pressed="false">Reduce</button>
+  </div>
+</div>
+
+<div class="app-shell">
+
+  <!-- =========================================================================
+       NAVIGATION — copied unchanged from home.html; aria-current moved here.
+       ====================================================================== -->
+  <nav class="app-nav" aria-label="Primary">
+    <a class="app-nav__brand" href="index.html">
+      <img src="../assets/images/Habit_Craft_Logo_File-09.png" alt="">
+      <span>HabitCrafts</span>
+    </a>
+
+    <a class="nav-fab" href="create-habit.html">
+      <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+      <span class="nav-fab__label">New habit</span>
+      <span class="visually-hidden">Craft a new habit</span>
+    </a>
+
+    <ul class="app-nav__list">
+      <li><a class="nav-item" href="home.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-habits"></use></svg>
+        <span class="nav-item__label">Habits</span>
+      </a></li>
+      <li><a class="nav-item" href="progress.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-progress"></use></svg>
+        <span class="nav-item__label">Progress</span>
+      </a></li>
+      <li><a class="nav-item" href="community.html" aria-current="page">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-community"></use></svg>
+        <span class="nav-item__label">Community</span>
+      </a></li>
+      <li><a class="nav-item" href="profile.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-person"></use></svg>
+        <span class="nav-item__label">Profile</span>
+      </a></li>
+    </ul>
+
+    <a class="app-nav__user" href="profile.html">
+      <span class="avatar" aria-hidden="true">M</span>
+      <span>
+        <span class="t-label" style="display:block">Mark</span>
+        <span class="t-body-sm t-muted">Member since 2024</span>
+      </span>
+    </a>
+  </nav>
+
+  <main id="main" class="page community-page">
+
+    <!-- =====================================================================
+         HEADER. The five-tab bar (Chats · Invitations · Events · Monthly
+         Challenges · Webinars) is CUT — the worst IA in the app, per the audit.
+         Three segments remain: Groups · Challenges · Events. Invitations become
+         a single pinned inbox row (a queue, not a place you live) and Webinars
+         fold into Events as a type tag. [D §3.3]
+         ================================================================== -->
+    <header class="community-head">
+      <div>
+        <h1 class="t-h1">Community</h1>
+        <p class="t-body-sm t-muted">The people who are in it with you.</p>
+      </div>
+
+      <div class="segmented" role="tablist" aria-label="Community sections" data-tabs>
+        <button class="seg-btn" type="button" role="tab" id="tab-groups"
+                data-tab="groups" aria-selected="true" aria-controls="panel-groups">Groups</button>
+        <button class="seg-btn" type="button" role="tab" id="tab-challenges" tabindex="-1"
+                data-tab="challenges" aria-selected="false" aria-controls="panel-challenges">Challenges</button>
+        <button class="seg-btn" type="button" role="tab" id="tab-events" tabindex="-1"
+                data-tab="events" aria-selected="false" aria-controls="panel-events">Events</button>
+      </div>
+    </header>
+
+
+    <!-- =====================================================================
+         PANEL 1 — GROUPS. The workspace: list / thread / members & details.
+         <600  one pane at a time (list → thread → details)
+         600   2-pane: list 280 | thread
+         840   3-pane: list | thread on row one, members & details as a band
+               beneath — see the note in components.css §22 for the arithmetic
+         1200  the canonical three columns, list | thread | details
+         ================================================================== -->
+    <div id="panel-groups" role="tabpanel" tabindex="0" aria-labelledby="tab-groups" data-tabpanel="groups">
+
+      <div class="workspace" data-workspace data-view="list">
+
+        <!-- ── PANE 1: your groups ─────────────────────────────────────── -->
+        <section class="card card--flush workspace__list" aria-labelledby="groups-h">
+          <div class="pane-head">
+            <h2 id="groups-h" class="t-label t-ink-strong u-grow">Your groups</h2>
+            <a class="btn btn--ghost btn--sm" href="#">Create</a>
+          </div>
+
+          <div class="pane-scroll">
+            <!-- Invitations: one pinned inbox row with a plain count. No red
+                 badge, no dot swarm — it is a queue you empty, not a place. -->
+            <div class="invite-inbox">
+              <button class="invite-row" type="button" data-disclosure="invites"
+                      aria-expanded="false" aria-controls="invite-panel">
+                <span class="invite-row__icon" aria-hidden="true">
+                  <svg class="icon icon--sm"><use href="#i-invite"></use></svg>
+                </span>
+                <span class="u-grow">
+                  <span class="invite-row__title">Invitations</span>
+                  <span class="invite-row__meta t-body-sm" data-invite-count>2 waiting</span>
+                </span>
+                <svg class="icon icon--sm invite-row__chevron" aria-hidden="true"><use href="#i-arrow"></use></svg>
+              </button>
+
+              <div class="invite-panel" id="invite-panel" hidden>
+                <ul class="invite-list">
+                  <li class="invite-item" data-invite-item>
+                    <span class="avatar avatar--sage" aria-hidden="true">MV</span>
+                    <span class="u-grow">
+                      <span class="t-body">Marisol Vega invited you to <strong>Weeknight Walkers</strong></span>
+                      <span class="t-body-sm t-muted" style="display:block">24 members · walks after dinner</span>
+                    </span>
+                    <span class="invite-item__actions">
+                      <button class="btn btn--secondary btn--sm" type="button" data-invite-action="accept">Accept</button>
+                      <button class="btn btn--ghost btn--sm" type="button" data-invite-action="decline">Decline</button>
+                    </span>
+                  </li>
+                  <li class="invite-item" data-invite-item>
+                    <span class="avatar avatar--clay" aria-hidden="true">TW</span>
+                    <span class="u-grow">
+                      <span class="t-body">Tom Whitby asked to join <strong>Morning Movers</strong></span>
+                      <span class="t-body-sm t-muted" style="display:block">You are the team lead there</span>
+                    </span>
+                    <span class="invite-item__actions">
+                      <button class="btn btn--secondary btn--sm" type="button" data-invite-action="accept">Accept</button>
+                      <button class="btn btn--ghost btn--sm" type="button" data-invite-action="decline">Decline</button>
+                    </span>
+                  </li>
+                </ul>
+
+                <!-- Reachable empty state: handle both invitations and the
+                     queue empties. Flat two-colour art, one sage accent. -->
+                <div class="empty-state empty-state--inline" data-invite-empty hidden>
+                  <svg class="empty-state__art" viewBox="0 0 120 120" role="img"
+                       aria-label="An empty tray with a leaf resting in it">
+                    <ellipse cx="60" cy="94" rx="34" ry="8" fill="var(--c-brand-300)" opacity=".55"/>
+                    <path d="M28 62h64l-8 26H36l-8-26z" fill="none" stroke="var(--c-brand-700)" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M60 62c0-14 10-22 24-21-1 13-10 21-24 21z" fill="var(--c-sage-500)" stroke="var(--c-brand-700)" stroke-width="2"/>
+                  </svg>
+                  <p class="empty-state__title">Nothing waiting</p>
+                  <p class="empty-state__body t-body-sm">You are all caught up.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Search stays — it works today (Algolia is wired). [D §3.3] -->
+            <div class="field pane-search">
+              <label class="visually-hidden" for="group-search">Search your groups</label>
+              <span class="input-with-icon">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-search"></use></svg>
+                <input class="input" id="group-search" type="search" placeholder="Search groups"
+                       data-filter-input data-filter-scope="group-list">
+              </span>
+            </div>
+
+            <!-- THE HERO OF THE SCREEN: each row carries the avatar stack of the
+                 members who checked in today with a "+n today" count in sage —
+                 habit energy imported into the social surface. Momentum, not
+                 messaging. No unread badges anywhere. [D §3.3] -->
+            <ul class="group-list" data-filter-list="group-list" aria-label="Your groups">
+              <li>
+                <button class="group-row" type="button" data-group-select="movers"
+                        data-filter-name="Morning Movers" aria-current="true">
+                  <span class="avatar avatar--group avatar--lg" aria-hidden="true">MM</span>
+                  <span class="group-row__body">
+                    <span class="group-row__name">Morning Movers</span>
+                    <span class="group-row__meta">18 members · Sundays, 7 pm</span>
+                    <span class="group-row__today">
+                      <span class="avatar-stack" aria-hidden="true">
+                        <span class="avatar avatar--sm avatar--sage">AB</span>
+                        <span class="avatar avatar--sm">JR</span>
+                        <span class="avatar avatar--sm avatar--gold">PN</span>
+                        <span class="avatar avatar--sm avatar--clay">DO</span>
+                      </span>
+                      <span class="group-row__count">+12 today</span>
+                    </span>
+                    <span class="group-row__preview">Rae: Priya! Thirty days.</span>
+                  </span>
+                </button>
+              </li>
+
+              <li>
+                <button class="group-row" type="button" data-group-select="readers"
+                        data-filter-name="Sunrise Readers">
+                  <span class="avatar avatar--group avatar--lg" aria-hidden="true">SR</span>
+                  <span class="group-row__body">
+                    <span class="group-row__name">Sunrise Readers</span>
+                    <span class="group-row__meta">9 members · Sundays, 8:30 am</span>
+                    <span class="group-row__today">
+                      <span class="avatar-stack" aria-hidden="true">
+                        <span class="avatar avatar--sm">JR</span>
+                        <span class="avatar avatar--sm avatar--amber">RL</span>
+                        <span class="avatar avatar--sm avatar--sage">MV</span>
+                      </span>
+                      <span class="group-row__count">+4 today</span>
+                    </span>
+                    <span class="group-row__preview">Jonah: One page still counts.</span>
+                  </span>
+                </button>
+              </li>
+
+              <li>
+                <button class="group-row" type="button" data-group-select="walkers"
+                        data-filter-name="Weeknight Walkers">
+                  <span class="avatar avatar--group avatar--lg" aria-hidden="true">WW</span>
+                  <span class="group-row__body">
+                    <span class="group-row__name">Weeknight Walkers</span>
+                    <span class="group-row__meta">24 members · Fridays, 6 pm</span>
+                    <span class="group-row__today">
+                      <span class="avatar-stack" aria-hidden="true">
+                        <span class="avatar avatar--sm avatar--sage">MV</span>
+                        <span class="avatar avatar--sm avatar--clay">DO</span>
+                        <span class="avatar avatar--sm">TW</span>
+                      </span>
+                      <span class="group-row__count">+9 today</span>
+                    </span>
+                    <span class="group-row__preview">Marisol: Long way round tonight.</span>
+                  </span>
+                </button>
+              </li>
+
+              <li>
+                <button class="group-row" type="button" data-group-select="quiet"
+                        data-filter-name="Two Minutes of Quiet">
+                  <span class="avatar avatar--group avatar--lg" aria-hidden="true">TQ</span>
+                  <span class="group-row__body">
+                    <span class="group-row__name">Two Minutes of Quiet</span>
+                    <span class="group-row__meta">6 members · Sundays, 9 pm</span>
+                    <span class="group-row__today">
+                      <span class="avatar-stack" aria-hidden="true">
+                        <span class="avatar avatar--sm avatar--gold">PN</span>
+                        <span class="avatar avatar--sm avatar--amber">RL</span>
+                      </span>
+                      <span class="group-row__count">+3 today</span>
+                    </span>
+                    <span class="group-row__preview">No messages yet.</span>
+                  </span>
+                </button>
+              </li>
+            </ul>
+
+            <p class="pane-foot">
+              <a class="text-link" href="#">
+                Want to start a group?
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow"></use></svg>
+              </a>
+            </p>
+          </div>
+        </section>
+
+
+        <!-- ── PANE 2: the thread. One panel per group; only the selected one
+                is in the accessibility tree. Bubbles are surface + hairline for
+                others and brand-100 for you — never a filled brand-500 bubble,
+                which is far too loud for the paper room. [D §3.3] ─────────── -->
+        <section class="card card--flush workspace__thread" aria-label="Group conversation">
+
+          <!-- ····· Morning Movers ····· -->
+          <div class="thread-panel" data-group-panel="movers">
+            <div class="pane-head">
+              <button class="icon-btn pane-head__back" type="button" data-view-set="list"
+                      aria-label="Back to your groups">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-back"></use></svg>
+              </button>
+              <span class="avatar avatar--group" aria-hidden="true">MM</span>
+              <span class="u-grow">
+                <span class="pane-head__title">Morning Movers</span>
+                <span class="pane-head__meta t-body-sm">12 of 18 showed up today</span>
+              </span>
+              <button class="icon-btn pane-head__details" type="button" data-view-set="detail"
+                      aria-label="Group members and details">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-info"></use></svg>
+              </button>
+            </div>
+
+            <div class="pane-scroll thread" data-thread-log>
+              <p class="thread__day"><span>Today</span></p>
+
+              <!-- A peer check-in is NOT a chat bubble. It is a quiet full-width
+                   note in the completed-habit vocabulary: sage-100, a small
+                   tick, 13px. Warm, low-pressure, nothing to beat. -->
+              <div class="checkin-item">
+                <span class="avatar avatar--sm avatar--sage" aria-hidden="true">AB</span>
+                <span class="checkin-item__body">
+                  <span class="checkin-item__text"><strong>Aisha</strong> checked in · Walk before work</span>
+                  <span class="checkin-item__time t-body-sm">6:12 am</span>
+                </span>
+                <svg class="icon icon--sm checkin-item__tick" aria-hidden="true"><use href="#i-tick"></use></svg>
+                <button class="btn btn--ghost btn--sm checkin-item__say" type="button"
+                        data-reply-to="Aisha's check-in">Say something</button>
+              </div>
+
+              <div class="chat-row">
+                <span class="avatar avatar--sm avatar--sage" aria-hidden="true">AB</span>
+                <div>
+                  <p class="chat-bubble">Cold out there. Two minutes was enough.</p>
+                  <p class="chat-meta">Aisha Bello · 6:14 am</p>
+                </div>
+              </div>
+
+              <div class="checkin-item">
+                <span class="avatar avatar--sm" aria-hidden="true">JR</span>
+                <span class="checkin-item__body">
+                  <span class="checkin-item__text"><strong>Jonah</strong> checked in · Read one page</span>
+                  <span class="checkin-item__time t-body-sm">6:40 am</span>
+                </span>
+                <svg class="icon icon--sm checkin-item__tick" aria-hidden="true"><use href="#i-tick"></use></svg>
+                <button class="btn btn--ghost btn--sm checkin-item__say" type="button"
+                        data-reply-to="Jonah's check-in">Say something</button>
+              </div>
+
+              <div class="chat-row chat-row--self">
+                <div>
+                  <p class="chat-bubble">Jonah, you've been steady the whole month.</p>
+                  <p class="chat-meta">You · 7:02 am</p>
+                </div>
+              </div>
+
+              <!-- A milestone another member kept. The gild seal is one of the
+                   five sanctioned appearances of gold. No fanfare, no confetti
+                   in someone else's feed. [D §2.4, §6] -->
+              <div class="checkin-item checkin-item--marked">
+                <span class="avatar avatar--sm avatar--gold" aria-hidden="true">PN</span>
+                <span class="checkin-item__body">
+                  <span class="checkin-item__text"><strong>Priya</strong> checked in · Meditate for two minutes</span>
+                  <span class="checkin-item__time t-body-sm">7:15 am · 30 days kept</span>
+                </span>
+                <span class="seal" role="img" aria-label="30-day seal">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-rosette"></use></svg>
+                </span>
+                <button class="btn btn--ghost btn--sm checkin-item__say" type="button"
+                        data-reply-to="Priya's 30 days">Say something</button>
+              </div>
+
+              <div class="chat-row">
+                <span class="avatar avatar--sm avatar--amber" aria-hidden="true">RL</span>
+                <div>
+                  <p class="chat-bubble">Priya! Thirty days.</p>
+                  <p class="chat-meta">Rae Lindqvist · 7:20 am</p>
+                </div>
+              </div>
+
+              <!-- The weekly group check-in, verbatim from the product's own
+                   four prompts. Rendered as a note left on paper, not an alert. -->
+              <article class="card checkin-note">
+                <header class="checkin-note__head">
+                  <span class="avatar avatar--sm avatar--sage" aria-hidden="true">AB</span>
+                  <span class="u-grow">
+                    <span class="checkin-note__kicker">Weekly check-in · Wed, Aug 12</span>
+                    <span class="t-body-sm t-muted">Aisha Bello</span>
+                  </span>
+                </header>
+                <p class="checkin-note__lede t-body">How did your weekly habit go?</p>
+                <dl class="checkin-note__qa">
+                  <dt>What went well?</dt>
+                  <dd>Six mornings out of seven. The two-minute version saved me on the cold days.</dd>
+                  <dt>What needs improvement?</dt>
+                  <dd>Weekends. I keep meaning to and then it's noon.</dd>
+                  <dt>How did it make you feel?</dt>
+                  <dd>Steady. Less like I'm negotiating with myself every morning.</dd>
+                </dl>
+                <button class="btn btn--ghost btn--sm" type="button"
+                        data-reply-to="Aisha's weekly check-in">Say something</button>
+              </article>
+
+              <div class="chat-row">
+                <span class="avatar avatar--sm avatar--clay" aria-hidden="true">DO</span>
+                <div>
+                  <p class="chat-bubble">Sunday at 7 works for me. See you all then.</p>
+                  <p class="chat-meta">Dan Okafor · 8:05 am</p>
+                </div>
+              </div>
+            </div>
+
+            <form class="composer" data-composer>
+              <p class="composer__reply" data-reply-chip hidden>
+                <span class="chip chip--brand">
+                  <span>Replying to <span data-reply-text></span></span>
+                </span>
+                <button class="icon-btn" type="button" data-reply-clear aria-label="Stop replying">
+                  <svg class="icon icon--sm" aria-hidden="true"><use href="#i-close"></use></svg>
+                </button>
+              </p>
+              <span class="composer__field">
+                <label class="visually-hidden" for="say-movers">Send a message to Morning Movers</label>
+                <input class="input" id="say-movers" type="text" placeholder="Send a message" data-composer-field>
+              </span>
+              <button class="icon-btn composer__send" type="submit" aria-label="Send message">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-send"></use></svg>
+              </button>
+            </form>
+          </div>
+
+          <!-- ····· Sunrise Readers ····· -->
+          <div class="thread-panel" data-group-panel="readers" hidden>
+            <div class="pane-head">
+              <button class="icon-btn pane-head__back" type="button" data-view-set="list"
+                      aria-label="Back to your groups">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-back"></use></svg>
+              </button>
+              <span class="avatar avatar--group" aria-hidden="true">SR</span>
+              <span class="u-grow">
+                <span class="pane-head__title">Sunrise Readers</span>
+                <span class="pane-head__meta t-body-sm">4 of 9 showed up today</span>
+              </span>
+              <button class="icon-btn pane-head__details" type="button" data-view-set="detail"
+                      aria-label="Group members and details">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-info"></use></svg>
+              </button>
+            </div>
+
+            <div class="pane-scroll thread" data-thread-log>
+              <p class="thread__day"><span>Today</span></p>
+
+              <div class="checkin-item">
+                <span class="avatar avatar--sm" aria-hidden="true">JR</span>
+                <span class="checkin-item__body">
+                  <span class="checkin-item__text"><strong>Jonah</strong> checked in · Read one page</span>
+                  <span class="checkin-item__time t-body-sm">6:41 am</span>
+                </span>
+                <svg class="icon icon--sm checkin-item__tick" aria-hidden="true"><use href="#i-tick"></use></svg>
+                <button class="btn btn--ghost btn--sm checkin-item__say" type="button"
+                        data-reply-to="Jonah's check-in">Say something</button>
+              </div>
+
+              <div class="chat-row">
+                <span class="avatar avatar--sm" aria-hidden="true">JR</span>
+                <div>
+                  <p class="chat-bubble">One page still counts. Finished the chapter by accident.</p>
+                  <p class="chat-meta">Jonah Reyes · 6:45 am</p>
+                </div>
+              </div>
+
+              <div class="checkin-item">
+                <span class="avatar avatar--sm avatar--amber" aria-hidden="true">RL</span>
+                <span class="checkin-item__body">
+                  <span class="checkin-item__text"><strong>Rae</strong> checked in · Read one page</span>
+                  <span class="checkin-item__time t-body-sm">7:58 am</span>
+                </span>
+                <svg class="icon icon--sm checkin-item__tick" aria-hidden="true"><use href="#i-tick"></use></svg>
+                <button class="btn btn--ghost btn--sm checkin-item__say" type="button"
+                        data-reply-to="Rae's check-in">Say something</button>
+              </div>
+
+              <div class="chat-row chat-row--self">
+                <div>
+                  <p class="chat-bubble">Adding this one to the pile. What are you two on at the moment?</p>
+                  <p class="chat-meta">You · 8:10 am</p>
+                </div>
+              </div>
+
+              <div class="chat-row">
+                <span class="avatar avatar--sm avatar--sage" aria-hidden="true">MV</span>
+                <div>
+                  <p class="chat-bubble">Short stories. Easier to keep the promise small.</p>
+                  <p class="chat-meta">Marisol Vega · 8:24 am</p>
+                </div>
+              </div>
+            </div>
+
+            <form class="composer" data-composer>
+              <p class="composer__reply" data-reply-chip hidden>
+                <span class="chip chip--brand">
+                  <span>Replying to <span data-reply-text></span></span>
+                </span>
+                <button class="icon-btn" type="button" data-reply-clear aria-label="Stop replying">
+                  <svg class="icon icon--sm" aria-hidden="true"><use href="#i-close"></use></svg>
+                </button>
+              </p>
+              <span class="composer__field">
+                <label class="visually-hidden" for="say-readers">Send a message to Sunrise Readers</label>
+                <input class="input" id="say-readers" type="text" placeholder="Send a message" data-composer-field>
+              </span>
+              <button class="icon-btn composer__send" type="submit" aria-label="Send message">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-send"></use></svg>
+              </button>
+            </form>
+          </div>
+
+          <!-- ····· Weeknight Walkers ····· -->
+          <div class="thread-panel" data-group-panel="walkers" hidden>
+            <div class="pane-head">
+              <button class="icon-btn pane-head__back" type="button" data-view-set="list"
+                      aria-label="Back to your groups">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-back"></use></svg>
+              </button>
+              <span class="avatar avatar--group" aria-hidden="true">WW</span>
+              <span class="u-grow">
+                <span class="pane-head__title">Weeknight Walkers</span>
+                <span class="pane-head__meta t-body-sm">9 of 24 showed up today</span>
+              </span>
+              <button class="icon-btn pane-head__details" type="button" data-view-set="detail"
+                      aria-label="Group members and details">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-info"></use></svg>
+              </button>
+            </div>
+
+            <div class="pane-scroll thread" data-thread-log>
+              <p class="thread__day"><span>Today</span></p>
+
+              <div class="chat-row">
+                <span class="avatar avatar--sm avatar--sage" aria-hidden="true">MV</span>
+                <div>
+                  <p class="chat-bubble">Taking the long way round tonight if anyone wants the company.</p>
+                  <p class="chat-meta">Marisol Vega · 5:31 pm</p>
+                </div>
+              </div>
+
+              <div class="checkin-item">
+                <span class="avatar avatar--sm avatar--clay" aria-hidden="true">DO</span>
+                <span class="checkin-item__body">
+                  <span class="checkin-item__text"><strong>Dan</strong> checked in · Walk around the block</span>
+                  <span class="checkin-item__time t-body-sm">6:05 pm</span>
+                </span>
+                <svg class="icon icon--sm checkin-item__tick" aria-hidden="true"><use href="#i-tick"></use></svg>
+                <button class="btn btn--ghost btn--sm checkin-item__say" type="button"
+                        data-reply-to="Dan's check-in">Say something</button>
+              </div>
+
+              <div class="chat-row">
+                <span class="avatar avatar--sm" aria-hidden="true">TW</span>
+                <div>
+                  <p class="chat-bubble">Missed the last two. Back out tonight though.</p>
+                  <p class="chat-meta">Tom Whitby · 6:18 pm</p>
+                </div>
+              </div>
+
+              <div class="chat-row chat-row--self">
+                <div>
+                  <p class="chat-bubble">Good to have you back, Tom. The block is enough.</p>
+                  <p class="chat-meta">You · 6:22 pm</p>
+                </div>
+              </div>
+            </div>
+
+            <form class="composer" data-composer>
+              <p class="composer__reply" data-reply-chip hidden>
+                <span class="chip chip--brand">
+                  <span>Replying to <span data-reply-text></span></span>
+                </span>
+                <button class="icon-btn" type="button" data-reply-clear aria-label="Stop replying">
+                  <svg class="icon icon--sm" aria-hidden="true"><use href="#i-close"></use></svg>
+                </button>
+              </p>
+              <span class="composer__field">
+                <label class="visually-hidden" for="say-walkers">Send a message to Weeknight Walkers</label>
+                <input class="input" id="say-walkers" type="text" placeholder="Send a message" data-composer-field>
+              </span>
+              <button class="icon-btn composer__send" type="submit" aria-label="Send message">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-send"></use></svg>
+              </button>
+            </form>
+          </div>
+
+          <!-- ····· Two Minutes of Quiet — a real, reachable empty thread ····· -->
+          <div class="thread-panel" data-group-panel="quiet" hidden>
+            <div class="pane-head">
+              <button class="icon-btn pane-head__back" type="button" data-view-set="list"
+                      aria-label="Back to your groups">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-back"></use></svg>
+              </button>
+              <span class="avatar avatar--group" aria-hidden="true">TQ</span>
+              <span class="u-grow">
+                <span class="pane-head__title">Two Minutes of Quiet</span>
+                <span class="pane-head__meta t-body-sm">3 of 6 showed up today</span>
+              </span>
+              <button class="icon-btn pane-head__details" type="button" data-view-set="detail"
+                      aria-label="Group members and details">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-info"></use></svg>
+              </button>
+            </div>
+
+            <div class="pane-scroll thread" data-thread-log>
+              <p class="thread__day"><span>Today</span></p>
+
+              <div class="checkin-item">
+                <span class="avatar avatar--sm avatar--gold" aria-hidden="true">PN</span>
+                <span class="checkin-item__body">
+                  <span class="checkin-item__text"><strong>Priya</strong> checked in · Meditate for two minutes</span>
+                  <span class="checkin-item__time t-body-sm">7:15 am</span>
+                </span>
+                <svg class="icon icon--sm checkin-item__tick" aria-hidden="true"><use href="#i-tick"></use></svg>
+                <button class="btn btn--ghost btn--sm checkin-item__say" type="button"
+                        data-reply-to="Priya's check-in">Say something</button>
+              </div>
+
+              <div class="empty-state">
+                <svg class="empty-state__art empty-state__art--drift" viewBox="0 0 120 120" role="img"
+                     aria-label="A folded paper note resting on a stone">
+                  <ellipse cx="60" cy="98" rx="32" ry="8" fill="var(--c-brand-300)" opacity=".55"/>
+                  <path d="M34 44h52v44H34z" fill="var(--c-brand-300)" stroke="var(--c-brand-700)" stroke-width="2.5"/>
+                  <path d="M34 44l26 20 26-20" fill="none" stroke="var(--c-brand-700)" stroke-width="2.5" stroke-linejoin="round"/>
+                  <circle cx="86" cy="42" r="6" fill="var(--c-sage-500)"/>
+                </svg>
+                <p class="empty-state__title">No messages yet.</p>
+                <p class="empty-state__body t-body">Introduce yourself to the group.</p>
+              </div>
+            </div>
+
+            <form class="composer" data-composer>
+              <p class="composer__reply" data-reply-chip hidden>
+                <span class="chip chip--brand">
+                  <span>Replying to <span data-reply-text></span></span>
+                </span>
+                <button class="icon-btn" type="button" data-reply-clear aria-label="Stop replying">
+                  <svg class="icon icon--sm" aria-hidden="true"><use href="#i-close"></use></svg>
+                </button>
+              </p>
+              <span class="composer__field">
+                <label class="visually-hidden" for="say-quiet">Send a message to Two Minutes of Quiet</label>
+                <input class="input" id="say-quiet" type="text" placeholder="Send a message" data-composer-field>
+              </span>
+              <button class="icon-btn composer__send" type="submit" aria-label="Send message">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-send"></use></svg>
+              </button>
+            </form>
+          </div>
+        </section>
+
+
+        <!-- ── PANE 3: members & details. One panel per group; only the
+                selected one is rendered, so the screen still carries exactly
+                ONE --c-hero-fill surface at a time. [D §3, §5.1] ─────────── -->
+        <aside class="card card--flush workspace__detail" aria-label="Group members and details">
+
+          <!-- ····· Morning Movers ····· -->
+          <div class="detail-panel" data-group-panel="movers">
+            <div class="pane-head">
+              <button class="icon-btn pane-head__back" type="button" data-view-set="thread"
+                      aria-label="Back to the conversation">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-back"></use></svg>
+              </button>
+              <h2 class="t-label t-ink-strong u-grow">Members &amp; details</h2>
+            </div>
+
+            <div class="pane-scroll detail-body">
+              <!-- The one deep-blue surface on this screen. -->
+              <section class="hero detail-hero">
+                <p class="hero__label t-label">Today in Morning Movers</p>
+                <p class="hero__numeral">12<span class="detail-hero__of">of 18</span></p>
+                <p class="hero__body t-body-sm">Twelve people did their small thing this morning.</p>
+                <span class="avatar-stack avatar-stack--hero" aria-hidden="true">
+                  <span class="avatar avatar--sm avatar--sage">AB</span>
+                  <span class="avatar avatar--sm">JR</span>
+                  <span class="avatar avatar--sm avatar--gold">PN</span>
+                  <span class="avatar avatar--sm avatar--clay">DO</span>
+                  <span class="avatar avatar--sm avatar--amber">RL</span>
+                </span>
+              </section>
+
+              <dl class="detail-facts">
+                <dt>Group check-in time</dt>
+                <dd>Sundays, 7:00 pm</dd>
+                <dt>Group description</dt>
+                <dd>Small movement before the day starts. Two minutes counts.</dd>
+              </dl>
+
+              <h3 class="detail-subhead t-label t-muted">Team lead</h3>
+              <div class="member-row">
+                <span class="avatar avatar--sage" aria-hidden="true">AB</span>
+                <span class="u-grow">
+                  <span class="member-row__name">Aisha Bello</span>
+                  <span class="member-row__meta">Checked in today</span>
+                </span>
+                <svg class="icon icon--sm member-row__tick" role="img" aria-label="Checked in today"><use href="#i-tick"></use></svg>
+              </div>
+
+              <h3 class="detail-subhead t-label t-muted">Team members</h3>
+              <div class="member-row">
+                <span class="avatar" aria-hidden="true">JR</span>
+                <span class="u-grow">
+                  <span class="member-row__name">Jonah Reyes</span>
+                  <span class="member-row__meta">Checked in today</span>
+                </span>
+                <svg class="icon icon--sm member-row__tick" role="img" aria-label="Checked in today"><use href="#i-tick"></use></svg>
+              </div>
+              <div class="member-row">
+                <span class="avatar avatar--gold" aria-hidden="true">PN</span>
+                <span class="u-grow">
+                  <span class="member-row__name">Priya Nair</span>
+                  <span class="member-row__meta">Checked in today · 30 days kept</span>
+                </span>
+                <svg class="icon icon--sm member-row__tick" role="img" aria-label="Checked in today"><use href="#i-tick"></use></svg>
+              </div>
+              <div class="member-row">
+                <span class="avatar avatar--clay" aria-hidden="true">DO</span>
+                <span class="u-grow">
+                  <span class="member-row__name">Dan Okafor</span>
+                  <span class="member-row__meta">Checked in today</span>
+                </span>
+                <svg class="icon icon--sm member-row__tick" role="img" aria-label="Checked in today"><use href="#i-tick"></use></svg>
+              </div>
+              <div class="member-row">
+                <span class="avatar avatar--amber" aria-hidden="true">RL</span>
+                <span class="u-grow">
+                  <span class="member-row__name">Rae Lindqvist</span>
+                  <!-- Missed days are simply empty. No red, no broken chain. -->
+                  <span class="member-row__meta">Last check-in Monday</span>
+                </span>
+              </div>
+              <div class="member-row">
+                <span class="avatar" aria-hidden="true">TW</span>
+                <span class="u-grow">
+                  <span class="member-row__name">Tom Whitby</span>
+                  <span class="member-row__meta">Pending</span>
+                </span>
+              </div>
+              <p class="detail-more t-body-sm t-muted">and 12 more</p>
+
+              <div class="detail-actions">
+                <button class="btn btn--secondary btn--sm" type="button">Invite members</button>
+                <button class="btn btn--ghost btn--sm" type="button">Leave group</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ····· Sunrise Readers ····· -->
+          <div class="detail-panel" data-group-panel="readers" hidden>
+            <div class="pane-head">
+              <button class="icon-btn pane-head__back" type="button" data-view-set="thread"
+                      aria-label="Back to the conversation">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-back"></use></svg>
+              </button>
+              <h2 class="t-label t-ink-strong u-grow">Members &amp; details</h2>
+            </div>
+            <div class="pane-scroll detail-body">
+              <section class="hero detail-hero">
+                <p class="hero__label t-label">Today in Sunrise Readers</p>
+                <p class="hero__numeral">4<span class="detail-hero__of">of 9</span></p>
+                <p class="hero__body t-body-sm">Four pages turned before the day started.</p>
+                <span class="avatar-stack avatar-stack--hero" aria-hidden="true">
+                  <span class="avatar avatar--sm">JR</span>
+                  <span class="avatar avatar--sm avatar--amber">RL</span>
+                  <span class="avatar avatar--sm avatar--sage">MV</span>
+                </span>
+              </section>
+              <dl class="detail-facts">
+                <dt>Group check-in time</dt>
+                <dd>Sundays, 8:30 am</dd>
+                <dt>Group description</dt>
+                <dd>One page a day. That is the whole rule.</dd>
+              </dl>
+              <h3 class="detail-subhead t-label t-muted">Team lead</h3>
+              <div class="member-row">
+                <span class="avatar" aria-hidden="true">JR</span>
+                <span class="u-grow">
+                  <span class="member-row__name">Jonah Reyes</span>
+                  <span class="member-row__meta">Checked in today</span>
+                </span>
+                <svg class="icon icon--sm member-row__tick" role="img" aria-label="Checked in today"><use href="#i-tick"></use></svg>
+              </div>
+              <h3 class="detail-subhead t-label t-muted">Team members</h3>
+              <div class="member-row">
+                <span class="avatar avatar--amber" aria-hidden="true">RL</span>
+                <span class="u-grow">
+                  <span class="member-row__name">Rae Lindqvist</span>
+                  <span class="member-row__meta">Checked in today</span>
+                </span>
+                <svg class="icon icon--sm member-row__tick" role="img" aria-label="Checked in today"><use href="#i-tick"></use></svg>
+              </div>
+              <div class="member-row">
+                <span class="avatar avatar--sage" aria-hidden="true">MV</span>
+                <span class="u-grow">
+                  <span class="member-row__name">Marisol Vega</span>
+                  <span class="member-row__meta">Checked in today</span>
+                </span>
+                <svg class="icon icon--sm member-row__tick" role="img" aria-label="Checked in today"><use href="#i-tick"></use></svg>
+              </div>
+              <p class="detail-more t-body-sm t-muted">and 6 more</p>
+              <div class="detail-actions">
+                <button class="btn btn--secondary btn--sm" type="button">Invite members</button>
+                <button class="btn btn--ghost btn--sm" type="button">Leave group</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ····· Weeknight Walkers ····· -->
+          <div class="detail-panel" data-group-panel="walkers" hidden>
+            <div class="pane-head">
+              <button class="icon-btn pane-head__back" type="button" data-view-set="thread"
+                      aria-label="Back to the conversation">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-back"></use></svg>
+              </button>
+              <h2 class="t-label t-ink-strong u-grow">Members &amp; details</h2>
+            </div>
+            <div class="pane-scroll detail-body">
+              <section class="hero detail-hero">
+                <p class="hero__label t-label">Today in Weeknight Walkers</p>
+                <p class="hero__numeral">9<span class="detail-hero__of">of 24</span></p>
+                <p class="hero__body t-body-sm">Nine out on the pavement so far this evening.</p>
+                <span class="avatar-stack avatar-stack--hero" aria-hidden="true">
+                  <span class="avatar avatar--sm avatar--sage">MV</span>
+                  <span class="avatar avatar--sm avatar--clay">DO</span>
+                  <span class="avatar avatar--sm">TW</span>
+                </span>
+              </section>
+              <dl class="detail-facts">
+                <dt>Group check-in time</dt>
+                <dd>Fridays, 6:00 pm</dd>
+                <dt>Group description</dt>
+                <dd>A walk after dinner, however short. Company optional.</dd>
+              </dl>
+              <h3 class="detail-subhead t-label t-muted">Team lead</h3>
+              <div class="member-row">
+                <span class="avatar avatar--sage" aria-hidden="true">MV</span>
+                <span class="u-grow">
+                  <span class="member-row__name">Marisol Vega</span>
+                  <span class="member-row__meta">Checked in today</span>
+                </span>
+                <svg class="icon icon--sm member-row__tick" role="img" aria-label="Checked in today"><use href="#i-tick"></use></svg>
+              </div>
+              <h3 class="detail-subhead t-label t-muted">Team members</h3>
+              <div class="member-row">
+                <span class="avatar avatar--clay" aria-hidden="true">DO</span>
+                <span class="u-grow">
+                  <span class="member-row__name">Dan Okafor</span>
+                  <span class="member-row__meta">Checked in today</span>
+                </span>
+                <svg class="icon icon--sm member-row__tick" role="img" aria-label="Checked in today"><use href="#i-tick"></use></svg>
+              </div>
+              <div class="member-row">
+                <span class="avatar" aria-hidden="true">TW</span>
+                <span class="u-grow">
+                  <span class="member-row__name">Tom Whitby</span>
+                  <span class="member-row__meta">Last check-in Friday</span>
+                </span>
+              </div>
+              <p class="detail-more t-body-sm t-muted">and 21 more</p>
+              <div class="detail-actions">
+                <button class="btn btn--secondary btn--sm" type="button">Invite members</button>
+                <button class="btn btn--ghost btn--sm" type="button">Leave group</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ····· Two Minutes of Quiet ····· -->
+          <div class="detail-panel" data-group-panel="quiet" hidden>
+            <div class="pane-head">
+              <button class="icon-btn pane-head__back" type="button" data-view-set="thread"
+                      aria-label="Back to the conversation">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-back"></use></svg>
+              </button>
+              <h2 class="t-label t-ink-strong u-grow">Members &amp; details</h2>
+            </div>
+            <div class="pane-scroll detail-body">
+              <section class="hero detail-hero">
+                <p class="hero__label t-label">Today in Two Minutes of Quiet</p>
+                <p class="hero__numeral">3<span class="detail-hero__of">of 6</span></p>
+                <p class="hero__body t-body-sm">A small room. That is the point of it.</p>
+                <span class="avatar-stack avatar-stack--hero" aria-hidden="true">
+                  <span class="avatar avatar--sm avatar--gold">PN</span>
+                  <span class="avatar avatar--sm avatar--amber">RL</span>
+                </span>
+              </section>
+              <dl class="detail-facts">
+                <dt>Group check-in time</dt>
+                <dd>Sundays, 9:00 pm</dd>
+                <dt>Group description</dt>
+                <dd>Two minutes of sitting still, then back to your day.</dd>
+              </dl>
+              <h3 class="detail-subhead t-label t-muted">Team lead</h3>
+              <div class="member-row">
+                <span class="avatar avatar--gold" aria-hidden="true">PN</span>
+                <span class="u-grow">
+                  <span class="member-row__name">Priya Nair</span>
+                  <span class="member-row__meta">Checked in today · 30 days kept</span>
+                </span>
+                <svg class="icon icon--sm member-row__tick" role="img" aria-label="Checked in today"><use href="#i-tick"></use></svg>
+              </div>
+              <h3 class="detail-subhead t-label t-muted">Team members</h3>
+              <div class="member-row">
+                <span class="avatar avatar--amber" aria-hidden="true">RL</span>
+                <span class="u-grow">
+                  <span class="member-row__name">Rae Lindqvist</span>
+                  <span class="member-row__meta">Checked in today</span>
+                </span>
+                <svg class="icon icon--sm member-row__tick" role="img" aria-label="Checked in today"><use href="#i-tick"></use></svg>
+              </div>
+              <p class="detail-more t-body-sm t-muted">and 4 more</p>
+              <div class="detail-actions">
+                <button class="btn btn--secondary btn--sm" type="button">Invite members</button>
+                <button class="btn btn--ghost btn--sm" type="button">Leave group</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+      </div>
+    </div>
+
+
+    <!-- =====================================================================
+         PANEL 2 — MONTHLY CHALLENGES. Cards carry a group ring (the share of
+         members on track) rather than a raw leaderboard number. No ranking, no
+         "you are 14th" — the ring is about the group, not about beating anyone.
+         ================================================================== -->
+    <div id="panel-challenges" role="tabpanel" tabindex="0" aria-labelledby="tab-challenges"
+         data-tabpanel="challenges" hidden>
+      <div class="challenge-grid">
+
+        <article class="card card--interactive challenge-card">
+          <span class="group-ring" role="img" aria-label="14 of 18 members on track, 78 percent"
+                style="--pct:78">
+            <svg class="group-ring__svg" viewBox="0 0 72 72" aria-hidden="true" focusable="false">
+              <path class="group-ring__track" d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100"/>
+              <path class="group-ring__fill"  d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100"/>
+            </svg>
+            <span class="group-ring__value" aria-hidden="true">78%</span>
+          </span>
+          <div class="u-grow">
+            <p class="challenge-card__kicker">August · Morning Movers</p>
+            <h2 class="challenge-card__title">Two minutes before breakfast</h2>
+            <p class="t-body-sm t-muted">14 of 18 members on track · 11 days left</p>
+          </div>
+          <button class="btn btn--ghost btn--sm" type="button">Open</button>
+        </article>
+
+        <article class="card card--interactive challenge-card">
+          <span class="group-ring" role="img" aria-label="5 of 9 members on track, 56 percent"
+                style="--pct:56">
+            <svg class="group-ring__svg" viewBox="0 0 72 72" aria-hidden="true" focusable="false">
+              <path class="group-ring__track" d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100"/>
+              <path class="group-ring__fill"  d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100"/>
+            </svg>
+            <span class="group-ring__value" aria-hidden="true">56%</span>
+          </span>
+          <div class="u-grow">
+            <p class="challenge-card__kicker">August · Sunrise Readers</p>
+            <h2 class="challenge-card__title">A page a day, all month</h2>
+            <p class="t-body-sm t-muted">5 of 9 members on track · 11 days left</p>
+          </div>
+          <button class="btn btn--ghost btn--sm" type="button">Open</button>
+        </article>
+
+        <article class="card card--interactive challenge-card">
+          <span class="group-ring" role="img" aria-label="Not started, 0 percent" style="--pct:0">
+            <svg class="group-ring__svg" viewBox="0 0 72 72" aria-hidden="true" focusable="false">
+              <path class="group-ring__track" d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100"/>
+              <path class="group-ring__fill"  d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100"/>
+            </svg>
+            <span class="group-ring__value" aria-hidden="true">Sep</span>
+          </span>
+          <div class="u-grow">
+            <p class="challenge-card__kicker">September · Weeknight Walkers</p>
+            <h2 class="challenge-card__title">Out the door after dinner</h2>
+            <p class="t-body-sm t-muted">Opens in 19 days · 24 members invited</p>
+          </div>
+          <button class="btn btn--ghost btn--sm" type="button">Open</button>
+        </article>
+
+      </div>
+      <p class="t-body-sm t-muted challenge-foot">
+        Challenges are a group's shared intention for the month. There is no leaderboard.
+      </p>
+    </div>
+
+
+    <!-- =====================================================================
+         PANEL 3 — EVENTS. Webinars are no longer a top-level tab; they are a
+         type tag on an event row. [D §3.3]
+         ================================================================== -->
+    <div id="panel-events" role="tabpanel" tabindex="0" aria-labelledby="tab-events"
+         data-tabpanel="events" hidden>
+      <ul class="event-list">
+        <li>
+          <article class="card card--interactive event-row">
+            <span class="event-date" aria-hidden="true">
+              <span class="event-date__month">Aug</span>
+              <span class="event-date__day">17</span>
+            </span>
+            <div class="u-grow">
+              <h2 class="event-row__title">Morning Movers Sunday check-in</h2>
+              <p class="t-body-sm t-muted">Sunday, 17 August · 7:00 pm · 18 invited</p>
+              <span class="chip chip--sage">Group check-in</span>
+            </div>
+            <button class="btn btn--secondary btn--sm" type="button">Add to calendar</button>
+          </article>
+        </li>
+        <li>
+          <article class="card card--interactive event-row">
+            <span class="event-date" aria-hidden="true">
+              <span class="event-date__month">Aug</span>
+              <span class="event-date__day">21</span>
+            </span>
+            <div class="u-grow">
+              <h2 class="event-row__title">Making a habit smaller than it needs to be</h2>
+              <p class="t-body-sm t-muted">Thursday, 21 August · 12:00 pm · 45 minutes</p>
+              <span class="chip chip--brand">Webinar</span>
+            </div>
+            <button class="btn btn--secondary btn--sm" type="button">Save a seat</button>
+          </article>
+        </li>
+        <li>
+          <article class="card card--interactive event-row">
+            <span class="event-date" aria-hidden="true">
+              <span class="event-date__month">Sep</span>
+              <span class="event-date__day">06</span>
+            </span>
+            <div class="u-grow">
+              <h2 class="event-row__title">Weeknight Walkers: the long loop</h2>
+              <p class="t-body-sm t-muted">Saturday, 6 September · 9:00 am · Riverside car park</p>
+              <span class="chip">Meet-up</span>
+            </div>
+            <button class="btn btn--secondary btn--sm" type="button">Add to calendar</button>
+          </article>
+        </li>
+      </ul>
+    </div>
+
+  </main>
+</div>
+
+<script src="js/prototype.js"></script>
+</body>
+</html>

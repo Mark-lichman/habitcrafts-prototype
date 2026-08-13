@@ -1,0 +1,407 @@
+/* ============================================================================
+   HabitCrafts — base.css
+   Reset, the paper canvas, typography setup, focus, reduced motion.
+   Depends on: tokens.css (must be linked FIRST).
+
+   The central idea this file implements: EVERYTHING YOU LOOK AT IS PAPER.
+   Warm parchment ground, ink-blue type, grain instead of gloss, and stillness
+   at rest. Nothing in here animates on its own. [D §1]
+   ========================================================================= */
+
+/* ==========================================================================
+   1. RESET / NORMALIZE
+   Minimal and modern. No opinionated defaults beyond what the system needs.
+   ====================================================================== */
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* The canvas lives on <html> so the grain pseudo-element on <body> can sit
+     behind body content at z-index:-1 without being occluded. */
+  background-color: var(--c-canvas);
+  scroll-behavior: smooth;
+}
+
+body,
+h1, h2, h3, h4, h5, h6,
+p, figure, blockquote, dl, dd, ul, ol {
+  margin: 0;
+}
+
+ul[class], ol[class] { list-style: none; padding: 0; }
+
+/* The `hidden` attribute must beat any component `display` rule. Several
+   components in this kit set `display: flex/grid`, which would otherwise win
+   over the UA's `[hidden] { display: none }` on specificity. The JS state
+   hooks (data-when-complete / data-when-empty / the echo and Undo) rely on
+   this, so it is load-bearing, not tidying. */
+[hidden] { display: none !important; }
+
+body {
+  min-height: 100%;
+  background-color: transparent;
+  color: var(--c-ink);
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  line-height: calc(var(--lh-body) / var(--fs-body));
+  font-weight: var(--fw-body);
+  letter-spacing: var(--ls-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+img, picture, svg, video, canvas {
+  display: block;
+  max-width: 100%;
+}
+
+svg { fill: currentColor; }
+
+input, button, textarea, select {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+table { border-collapse: collapse; }
+
+hr {
+  border: 0;
+  border-top: var(--stroke-hairline) solid var(--c-border);
+  margin: var(--space-24) 0;
+}
+
+::selection {
+  background: var(--c-brand-100);
+  color: var(--c-ink-strong);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) ::selection {
+    background: var(--c-surface-tinted);
+    color: var(--c-ink-strong);
+  }
+}
+:root[data-theme="dark"] ::selection {
+  background: var(--c-surface-tinted);
+  color: var(--c-ink-strong);
+}
+
+
+/* ==========================================================================
+   2. THE PAPER CANVAS — warm parchment + grain
+   [D §1] "grain instead of gloss" · [B §3.11] "grain over a soft gradient is
+   the single highest-ratio warmth move — it kills banding and adds tactility,
+   simply implemented as a low-opacity SVG noise overlay."
+
+   The grain is generated inline as an SVG feTurbulence data: URI. There is no
+   image file and no network request anywhere in this prototype — the whole
+   thing opens from file:// with zero dependencies.
+
+   --grain: the noise tile, reused by the hero surface in components.css.
+   Keep the two opacity knobs low: canvas grain is texture, not decoration.
+   ====================================================================== */
+
+:root {
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.86' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)'/%3E%3C/svg%3E");
+  --grain-canvas-opacity: 0.035; /* the parchment tooth */
+  --grain-hero-opacity: 0.028;   /* 2–3% on the deep-blue hero [D §6] */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --grain-canvas-opacity: 0.05;
+    --grain-hero-opacity: 0.05;
+  }
+}
+:root[data-theme="dark"] {
+  --grain-canvas-opacity: 0.05;
+  --grain-hero-opacity: 0.05;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--grain);
+  background-repeat: repeat;
+  opacity: var(--grain-canvas-opacity);
+}
+
+
+/* ==========================================================================
+   3. TYPOGRAPHY
+   Utility classes mirror the token ramp 1:1 so a screen can be marked up
+   semantically (h1/h2/p) and styled by role independently. Use the classes;
+   never hard-code a font-size.
+
+   Fraunces (display stack) takes: h1 page titles, streak numerals, milestone
+   headlines, empty-state headings, Create-Habit step questions. [D §4.2]
+   Everything else — body, labels, buttons, nav — is strictly Figtree.
+   ====================================================================== */
+
+.t-display,
+.t-h1 {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fvs-h1);
+  font-optical-sizing: auto;
+}
+
+.t-display {
+  font-size: var(--fs-display);
+  line-height: calc(var(--lh-display) / var(--fs-display));
+  font-weight: var(--fw-display);
+  letter-spacing: var(--ls-display);
+  font-variation-settings: var(--fvs-display);
+  color: var(--c-ink-strong);
+  /* Tabular figures keep a counting-up streak numeral from jittering. */
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.t-h1 {
+  font-size: var(--fs-h1);
+  line-height: calc(var(--lh-h1) / var(--fs-h1));
+  font-weight: var(--fw-h1);
+  letter-spacing: var(--ls-h1);
+  color: var(--c-ink-strong);
+}
+
+/* h2 and below are Figtree — the serif is a display voice, not a heading font. */
+.t-h2 {
+  font-size: var(--fs-h2);
+  line-height: calc(var(--lh-h2) / var(--fs-h2));
+  font-weight: var(--fw-h2);
+  letter-spacing: var(--ls-h2);
+  color: var(--c-ink-strong);
+}
+
+.t-h3 {
+  font-size: var(--fs-h3);
+  line-height: calc(var(--lh-h3) / var(--fs-h3));
+  font-weight: var(--fw-h3);
+  letter-spacing: var(--ls-h3);
+  color: var(--c-ink-strong);
+}
+
+.t-body-lg {
+  font-size: var(--fs-body-lg);
+  line-height: calc(var(--lh-body-lg) / var(--fs-body-lg));
+  font-weight: var(--fw-body-lg);
+  letter-spacing: var(--ls-body-lg);
+}
+
+.t-body {
+  font-size: var(--fs-body);
+  line-height: calc(var(--lh-body) / var(--fs-body));
+  font-weight: var(--fw-body);
+  letter-spacing: var(--ls-body);
+}
+
+/* The 13px secondary line. THIS REPLACES THE APP'S 10px TEXT. [B §4.4] */
+.t-body-sm {
+  font-size: var(--fs-body-sm);
+  line-height: calc(var(--lh-body-sm) / var(--fs-body-sm));
+  font-weight: var(--fw-body-sm);
+  letter-spacing: var(--ls-body-sm);
+}
+
+.t-label {
+  font-size: var(--fs-label);
+  line-height: calc(var(--lh-label) / var(--fs-label));
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-label);
+}
+
+.t-caption {
+  font-size: var(--fs-caption);
+  line-height: calc(var(--lh-caption) / var(--fs-caption));
+  font-weight: var(--fw-caption);
+  letter-spacing: var(--ls-caption);
+  text-transform: none;
+}
+
+/* Colour helpers — the only sanctioned way to shift text colour. */
+.t-ink-strong { color: var(--c-ink-strong); }
+.t-ink        { color: var(--c-ink); }
+.t-muted      { color: var(--c-ink-muted); }
+.t-subtle     { color: var(--c-ink-subtle); }
+.t-brand      { color: var(--c-brand-600); }
+.t-sage       { color: var(--c-sage-600); }
+.t-gold       { color: var(--c-gold-700); } /* NEVER gold-500 as text on light */
+.t-clay       { color: var(--c-clay-600); }
+
+/* Reading measure — Library articles, habit detail. ~60ch. [B §6.1] */
+.t-measure { max-width: var(--layout-read-max); }
+
+/* Unstyled headings inherit sensibly so semantic markup never looks broken
+   even before a utility class is applied. */
+h1 { font: inherit; }
+h2, h3, h4, h5, h6 { font-size: 1rem; font-weight: 600; }
+
+a {
+  color: var(--c-brand-600);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+a:hover { color: var(--c-brand-700); }
+
+strong, b { font-weight: 700; }
+
+code, kbd, samp {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+
+/* ==========================================================================
+   4. FOCUS
+   Focus rings are INSTANT — never animated, never faded in. [B §5.3]
+   2px --c-border-focus at 2px offset, on every focusable thing.
+   :focus-visible only, so pointer users never see it; :focus is neutralised
+   rather than removed so keyboard users always do.
+   ====================================================================== */
+
+:focus { outline: none; }
+
+:focus-visible {
+  outline: var(--stroke-focus) solid var(--c-border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+  /* transition intentionally absent — see [B §5.3] "Never animate focus" */
+}
+
+/* Inside the deep-blue hero, the ink-blue focus ring would vanish. */
+.hero :focus-visible,
+.nav-fab:focus-visible {
+  outline-color: var(--c-hero-ink);
+}
+
+
+/* ==========================================================================
+   5. UTILITIES
+   ====================================================================== */
+
+/* Screen-reader-only text. Used for live regions, ring labels, arc values. */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip link — visible only on focus, lands on <main id="main">. */
+.skip-link {
+  position: absolute;
+  left: var(--space-16);
+  top: -100px;
+  z-index: 100;
+  padding: var(--space-12) var(--space-16);
+  background: var(--c-surface);
+  border: var(--stroke-hairline) solid var(--c-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  text-decoration: none;
+  font-weight: var(--fw-label);
+}
+.skip-link:focus { top: var(--space-16); }
+
+.u-stack > * + * { margin-block-start: var(--space-16); }
+.u-stack-8 > * + * { margin-block-start: var(--space-8); }
+.u-stack-24 > * + * { margin-block-start: var(--space-24); }
+
+.u-flow-tight { display: flex; align-items: center; gap: var(--space-8); }
+.u-flow { display: flex; align-items: center; gap: var(--space-16); }
+.u-between { display: flex; align-items: center; justify-content: space-between; gap: var(--space-16); }
+.u-wrap { flex-wrap: wrap; }
+.u-grow { flex: 1 1 auto; min-width: 0; }
+
+.u-hide { display: none !important; }
+
+/* Icon sizing. ONE icon family, one style: inline SVG on a 24px grid, stroke
+   or fill 0, `currentColor`. Zero raster icons, zero emoji-as-UI. [D §6] */
+.icon { width: 24px; height: 24px; flex: none; color: var(--c-ink-muted); }
+.icon--sm { width: 20px; height: 20px; }
+.icon--lg { width: 32px; height: 32px; }
+
+
+/* ==========================================================================
+   6. REDUCED MOTION — GLOBAL
+   [B §3.6] "reduced" means REDUCED, not none. This is deliberately NOT the
+   nuclear `animation-duration: 0.01ms !important` block: that kills harmless
+   opacity fades that are safe for everyone and can make JS-driven motion
+   dizzyingly fast rather than absent.
+
+   What we do instead:
+     - Kill every TRANSFORM-based transition and animation (scale, translate,
+       spin) — these are the actual vestibular triggers.
+     - KEEP colour and opacity transitions, capped at --dur-micro. WCAG 2.3.3
+       explicitly states that changes in colour, blur or opacity that do not
+       change perceived size, shape or position are NOT motion animation.
+     - Stop the one permitted loop (the empty-state leaf drift).
+   Component-level reduced variants live next to their components; JS branches
+   are in js/prototype.js via HC.reducedMotion().
+
+   The [data-motion="reduce"] hook lets the prototype's own control force the
+   reduced path so a reviewer can see it without changing OS settings.
+   ====================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *,
+  *::before,
+  *::after {
+    /* Transform motion is removed outright. */
+    transition-property: opacity, color, background-color, border-color,
+                         fill, stroke, box-shadow, stroke-dashoffset;
+    transition-duration: var(--dur-micro) !important;
+    animation-duration: var(--dur-micro) !important;
+    animation-iteration-count: 1 !important;
+    transform: none !important;
+  }
+
+  /* The one permitted ambient loop stops entirely. [D §6] */
+  .empty-state__art { animation: none !important; }
+}
+
+:root[data-motion="reduce"] * ,
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+  transition-property: opacity, color, background-color, border-color,
+                       fill, stroke, box-shadow, stroke-dashoffset;
+  transition-duration: var(--dur-micro) !important;
+  animation-duration: var(--dur-micro) !important;
+  animation-iteration-count: 1 !important;
+  transform: none !important;
+}
+:root[data-motion="reduce"] .empty-state__art { animation: none !important; }
+
+
+/* ==========================================================================
+   7. PRINT — the paper metaphor, made literal
+   ====================================================================== */
+@media print {
+  body::before { display: none; }
+  .app-nav, .nav-fab, .devbar { display: none !important; }
+  html { background: #fff; }
+}

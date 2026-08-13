@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Create a habit · HabitCrafts</title>
+<meta name="description" content="HabitCrafts redesign prototype — Create Habit. The workbench: four questions, one live card, and the promise you make to yourself.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="../assets/images/favicon.png">
+<!-- Order matters: tokens → base → components. -->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+<!-- ===========================================================================
+     ICON SPRITE — one family, one style, inline SVG on a 24px grid, currentColor.
+     The block from home.html, extended with the glyphs this screen needs. Zero
+     raster icons, zero emoji-as-UI, zero mixed sharp/rounded/outlined. [D §6]
+     ======================================================================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-habits" viewBox="0 0 24 24"><path d="M7 2v2H5.5A2.5 2.5 0 0 0 3 6.5v12A2.5 2.5 0 0 0 5.5 21h13a2.5 2.5 0 0 0 2.5-2.5v-12A2.5 2.5 0 0 0 18.5 4H17V2h-2v2H9V2H7zm12 8v8.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V10h14z"/></symbol>
+    <symbol id="i-progress" viewBox="0 0 24 24"><path d="M4 12h3v8H4v-8zm6.5-8h3v16h-3V4zM17 15h3v5h-3v-5z"/></symbol>
+    <symbol id="i-community" viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm7.5 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20.2A6.7 6.7 0 0 1 9 14a6.7 6.7 0 0 1 7 6.2V21H2v-.8zm15.6-5.1A5.4 5.4 0 0 1 22 20.4V21h-4.2v-.8a8.2 8.2 0 0 0-1.5-4.7c.4-.2.8-.3 1.3-.4z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12.6 2c.3 3 2 3.9 3.4 5.6A7.7 7.7 0 0 1 18 12.6a6 6 0 1 1-12 0c0-2 .8-3.7 1.9-5.1.1 1.6 1 2.7 2.1 2.7 1.2 0 2.1-1.1 2.1-3C12.1 5.4 12.4 3.6 12.6 2z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M13 5l7 7-7 7-1.4-1.4 4.6-4.6H4v-2h12.2l-4.6-4.6L13 5z"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4.1 0-7.4 2.3-7.4 5.2V21h14.8v-1.8c0-2.9-3.3-5.2-7.4-5.2z"/></symbol>
+    <symbol id="i-rosette" viewBox="0 0 24 24"><path d="M12 2l2.2 3.1 3.7-.9.4 3.8 3.4 1.7-2.3 3 2.3 3-3.4 1.7-.4 3.8-3.7-.9L12 24l-2.2-3.1-3.7.9-.4-3.8L2.3 16l2.3-3-2.3-3 3.4-1.7.4-3.8 3.7.9L12 2zm0 5.5A4.5 4.5 0 1 0 12 16.5 4.5 4.5 0 0 0 12 7.5z"/></symbol>
+    <!-- ── added for the workbench ── -->
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M9.6 17.2L4.4 12l-1.5 1.4 6.7 6.7L21.1 8.6 19.6 7.2 9.6 17.2z"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M12 22.5a2.3 2.3 0 0 0 2.3-2.3H9.7A2.3 2.3 0 0 0 12 22.5zM19 16v-5.2A7 7 0 0 0 13.5 4V3.2a1.5 1.5 0 0 0-3 0V4A7 7 0 0 0 5 10.8V16l-2 2.1v1h18v-1L19 16z"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16z"/><path d="M11 6.5h2V12l4.2 2.5-1 1.7L11 13.2V6.5z"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9.5 21.5h5v-1.7h-5v1.7zm2.5-20a7 7 0 0 0-4 12.8v2.9h8v-2.9a7 7 0 0 0-4-12.8z"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9.3 4.6L16.7 12l-7.4 7.4-1.7-1.7L13.3 12 7.6 6.3l1.7-1.7z"/></symbol>
+    <symbol id="i-goal" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7l1.4-1.4 6.3 6.3 6.3-6.3z"/></symbol>
+  </defs>
+</svg>
+
+<a class="skip-link" href="#main">Skip to the habit you're crafting</a>
+
+<!-- ===========================================================================
+     PROTOTYPE CONTROLS (scaffolding, not product). The block from home.html,
+     plus one screen-specific control: the supportive "5+ habits" note replaces
+     the app's blocking "More than 7 habits?" dialog, and this reveals it. [D §3.4]
+     ======================================================================== -->
+<div class="devbar" role="group" aria-label="Prototype controls">
+  <div class="devbar__group" role="group" aria-label="Theme">
+    <button class="devbar__btn" type="button" data-theme-btn="system" aria-pressed="true">Auto</button>
+    <button class="devbar__btn" type="button" data-theme-btn="light" aria-pressed="false">Light</button>
+    <button class="devbar__btn" type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+  </div>
+  <div class="devbar__group">
+    <label for="hour" class="visually-hidden">Simulated hour of day</label>
+    <input id="hour" type="range" min="0" max="23" step="1" data-hour-input>
+    <output class="devbar__reading" data-hour-readout>—</output>
+  </div>
+  <div class="devbar__group" role="group" aria-label="Motion">
+    <button class="devbar__btn" type="button" data-motion-btn="auto" aria-pressed="true">Motion: auto</button>
+    <button class="devbar__btn" type="button" data-motion-btn="reduce" aria-pressed="false">Reduce</button>
+  </div>
+  <button class="devbar__btn" type="button" data-demo="reset">Reset day</button>
+  <button class="devbar__btn" type="button" data-demo="crowded" aria-pressed="false">5+ habits</button>
+</div>
+
+<div class="app-shell">
+
+  <!-- =========================================================================
+       NAVIGATION — identical markup to home.html. This screen is the FAB's
+       destination, so the create action carries aria-current instead of a tab.
+       ====================================================================== -->
+  <nav class="app-nav" aria-label="Primary">
+    <a class="app-nav__brand" href="index.html">
+      <img src="../assets/images/Habit_Craft_Logo_File-09.png" alt="">
+      <span>HabitCrafts</span>
+    </a>
+
+    <a class="nav-fab" href="create-habit.html" aria-current="page">
+      <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+      <span class="nav-fab__label">New habit</span>
+      <span class="visually-hidden">Craft a new habit</span>
+    </a>
+
+    <ul class="app-nav__list">
+      <li><a class="nav-item" href="home.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-habits"></use></svg>
+        <span class="nav-item__label">Habits</span>
+      </a></li>
+      <li><a class="nav-item" href="progress.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-progress"></use></svg>
+        <span class="nav-item__label">Progress</span>
+      </a></li>
+      <li><a class="nav-item" href="community.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-community"></use></svg>
+        <span class="nav-item__label">Community</span>
+      </a></li>
+      <li><a class="nav-item" href="profile.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-person"></use></svg>
+        <span class="nav-item__label">Profile</span>
+      </a></li>
+    </ul>
+
+    <a class="app-nav__user" href="profile.html">
+      <span class="avatar" aria-hidden="true">M</span>
+      <span>
+        <span class="t-label" style="display:block">Mark</span>
+        <span class="t-body-sm t-muted">Member since 2024</span>
+      </span>
+    </a>
+  </nav>
+
+  <main id="main" class="page">
+
+    <header style="margin-block-end:var(--space-24)">
+      <h1 class="t-h1">Create a habit</h1>
+      <p class="t-body-lg t-muted" style="margin-block-start:var(--space-4)">
+        Keep it small, you can always do more.
+      </p>
+    </header>
+
+    <!-- =====================================================================
+         THE WORKBENCH. [D §3.4] "The one screen where the Crafts in the name
+         is literal." Four Fogg questions in the direction's order — Behavior →
+         Prompt → Celebration → Goal, leading with the doable thing and ending
+         with the meaning — plus the app's real optional fifth, "Why".
+         No wizard: every step stays on screen and can be answered in any order.
+         No wall of fields either: each step states its question in the display
+         serif, the way the app already asks it, and the live card on the right
+         assembles as you type.
+         ================================================================== -->
+    <form class="craft-layout" data-craft novalidate>
+
+      <div class="craft-steps">
+
+        <!-- ── Templates. The app's "Need inspiration? Click here for ideas."
+                link survives; choosing one pre-fills the whole object and the
+                preview card lands with a single spring-snap settle. [D §3.4] -->
+        <section class="card" aria-labelledby="tpl-h">
+          <div class="u-between u-wrap">
+            <h2 id="tpl-h" class="t-label">Start from something that works</h2>
+            <a class="text-link" href="community.html">
+              Need inspiration? Click here for ideas.
+              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow"></use></svg>
+            </a>
+          </div>
+          <div class="u-flow-tight u-wrap" style="margin-block-start:var(--space-8)">
+            <button class="chip chip--brand" type="button" data-craft-template
+                    data-behavior="Meditate for two minutes"
+                    data-prompt="After I pour my morning coffee"
+                    data-celebration="Fist pump!"
+                    data-goal="Feel calmer"
+                    data-why="Mornings set the tone for everything after them."
+                    data-days="Mon,Tues,Wed,Thurs,Fri,Sat,Sun"
+                    data-time="07:00">Meditate for two minutes</button>
+            <button class="chip chip--brand" type="button" data-craft-template
+                    data-behavior="Read one page"
+                    data-prompt="After I get into bed"
+                    data-celebration="Say out loud: that's who I am now."
+                    data-goal="Read more"
+                    data-why="I want to finish the books I start."
+                    data-days="Mon,Tues,Wed,Thurs,Fri,Sat,Sun"
+                    data-time="21:30">Read one page</button>
+            <button class="chip chip--brand" type="button" data-craft-template
+                    data-behavior="Walk around the block"
+                    data-prompt="After I close my laptop"
+                    data-celebration="Stretch and smile."
+                    data-goal="Move every day"
+                    data-why="Sitting all day leaves me flat by the evening."
+                    data-days="Mon,Tues,Wed,Thurs,Fri"
+                    data-time="17:30">Walk around the block</button>
+          </div>
+        </section>
+
+        <!-- ── 1 · Behavior ─────────────────────────────────────────────── -->
+        <section class="card card--roomy craft-step" data-craft-step="behavior"
+                 aria-labelledby="k-behavior q-behavior">
+          <p class="craft-step__kicker">
+            <span class="craft-step__ordinal">
+              <span data-craft-ordinal>1</span>
+              <svg class="icon" data-craft-check hidden aria-hidden="true"><use href="#i-check"></use></svg>
+            </span>
+            <span class="craft-step__type" id="k-behavior">Behavior</span>
+          </p>
+          <label class="craft-step__question" id="q-behavior" for="f-behavior">What will you do?</label>
+          <div class="craft-step__control">
+            <input class="input" id="f-behavior" type="text" data-craft-field="behavior"
+                   style="inline-size:100%" autocomplete="off"
+                   placeholder="Meditate for two minutes">
+          </div>
+        </section>
+
+        <!-- ── 2 · Prompt. The real day/time picker, inline instead of a 250px
+                bottom sheet: on a workbench you should see the whole object at
+                once. Days are the app's own labels, verbatim. ─────────────── -->
+        <section class="card card--roomy craft-step" data-craft-step="prompt"
+                 aria-labelledby="k-prompt q-prompt">
+          <p class="craft-step__kicker">
+            <span class="craft-step__ordinal">
+              <span data-craft-ordinal>2</span>
+              <svg class="icon" data-craft-check hidden aria-hidden="true"><use href="#i-check"></use></svg>
+            </span>
+            <span class="craft-step__type" id="k-prompt">Prompt</span>
+          </p>
+          <label class="craft-step__question" id="q-prompt" for="f-prompt">When will you do the behavior?</label>
+          <p class="craft-step__help">A habit you already have makes the steadiest cue.</p>
+          <div class="craft-step__control">
+            <input class="input" id="f-prompt" type="text" data-craft-field="prompt"
+                   style="inline-size:100%" autocomplete="off"
+                   placeholder="After I pour my morning coffee">
+
+            <div class="setting-row" style="margin-block-start:var(--space-16)">
+              <div class="setting-row__body">
+                <span class="setting-row__label">Remind me</span>
+                <span class="setting-row__value reminder-line">
+                  <svg class="icon" aria-hidden="true"><use href="#i-bell"></use></svg>
+                  <span data-craft-reminder>No reminder set</span>
+                </span>
+              </div>
+              <span class="switch">
+                <input type="checkbox" id="f-remind" role="switch" data-craft-remind
+                       aria-describedby="q-prompt">
+                <span class="switch__track" aria-hidden="true"></span>
+                <span class="switch__thumb" aria-hidden="true"></span>
+                <label class="visually-hidden" for="f-remind">Remind me about this habit</label>
+              </span>
+            </div>
+
+            <div data-craft-schedule hidden>
+              <p class="field__label" id="daypick-label" style="margin-block:var(--space-16) var(--space-8)">
+                Which days?
+              </p>
+              <div class="daypick" role="group" aria-labelledby="daypick-label">
+                <button class="daypick__day" type="button" data-craft-day="Mon" aria-pressed="false">
+                  <span>Mon</span><span class="daypick__dot" aria-hidden="true"></span></button>
+                <button class="daypick__day" type="button" data-craft-day="Tues" aria-pressed="false">
+                  <span>Tues</span><span class="daypick__dot" aria-hidden="true"></span></button>
+                <button class="daypick__day" type="button" data-craft-day="Wed" aria-pressed="false">
+                  <span>Wed</span><span class="daypick__dot" aria-hidden="true"></span></button>
+                <button class="daypick__day" type="button" data-craft-day="Thurs" aria-pressed="false">
+                  <span>Thurs</span><span class="daypick__dot" aria-hidden="true"></span></button>
+                <button class="daypick__day" type="button" data-craft-day="Fri" aria-pressed="false">
+                  <span>Fri</span><span class="daypick__dot" aria-hidden="true"></span></button>
+                <button class="daypick__day" type="button" data-craft-day="Sat" aria-pressed="false">
+                  <span>Sat</span><span class="daypick__dot" aria-hidden="true"></span></button>
+                <button class="daypick__day" type="button" data-craft-day="Sun" aria-pressed="false">
+                  <span>Sun</span><span class="daypick__dot" aria-hidden="true"></span></button>
+                <button class="btn btn--secondary btn--sm" type="button"
+                        data-craft-selectall aria-pressed="false">Select All</button>
+              </div>
+
+              <div class="field" style="margin-block-start:var(--space-16);max-inline-size:200px">
+                <label class="field__label" for="f-time">At what time?</label>
+                <input class="input" id="f-time" type="time" value="07:00" data-craft-time>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── 3 · Celebration. THE SCREEN'S ONE HERO SURFACE. [D §2.2, §3.4]
+                The app already asks this and then buries the answer in 10px
+                text. Here the question gets the deep-blue paper and the answer
+                is written straight onto it — in the same italic display face,
+                the same size, that it will unfurl in inside the habit card at
+                check-in. The field is a preview of the moment, not a form input;
+                it is a small promise you make to yourself. ─────────────────── -->
+        <section class="hero craft-step" data-craft-step="celebration"
+                 aria-labelledby="k-celebration q-celebration">
+          <p class="craft-step__kicker">
+            <span class="craft-step__ordinal">
+              <span data-craft-ordinal>3</span>
+              <svg class="icon" data-craft-check hidden aria-hidden="true"><use href="#i-check"></use></svg>
+            </span>
+            <span class="craft-step__type" id="k-celebration">Celebration</span>
+          </p>
+          <label class="craft-step__question" id="q-celebration" for="f-celebration">How will you celebrate?</label>
+          <p class="craft-step__help u-flow-tight">
+            <svg class="icon icon--sm" aria-hidden="true" style="color:inherit"><use href="#i-bulb"></use></svg>
+            <span>Something that brings you joy!</span>
+          </p>
+
+          <div class="craft-step__control">
+            <input class="input input--on-hero" id="f-celebration" type="text"
+                   data-craft-field="celebration" autocomplete="off"
+                   placeholder="Fist pump!">
+          </div>
+
+          <div class="u-flow-tight u-wrap" style="margin-block-start:var(--space-12)">
+            <button class="chip chip--brand" type="button" data-craft-template
+                    data-celebration="Fist pump!">Fist pump!</button>
+            <button class="chip chip--brand" type="button" data-craft-template
+                    data-celebration="Say out loud: that's who I am now.">Say out loud: that's who I am now.</button>
+            <button class="chip chip--brand" type="button" data-craft-template
+                    data-celebration="Stretch and smile.">Stretch and smile.</button>
+            <button class="chip chip--brand" type="button" data-craft-template
+                    data-celebration="Nice.">Nice.</button>
+          </div>
+
+          <p class="promise-echo">
+            <span class="promise-echo__text" data-craft-echo></span>
+            <span class="promise-echo__caption" data-craft-echo-caption>
+              Whatever you write here comes back to you, word for word, every time you check in.
+            </span>
+          </p>
+        </section>
+
+        <!-- ── 4 · Goal, with the app's three most-recent goal chips and its
+                autocomplete, plus the optional "Why" folded away. ─────────── -->
+        <section class="card card--roomy craft-step" data-craft-step="goal"
+                 aria-labelledby="k-goal q-goal">
+          <p class="craft-step__kicker">
+            <span class="craft-step__ordinal">
+              <span data-craft-ordinal>4</span>
+              <svg class="icon" data-craft-check hidden aria-hidden="true"><use href="#i-check"></use></svg>
+            </span>
+            <span class="craft-step__type" id="k-goal">Goal</span>
+          </p>
+          <label class="craft-step__question" id="q-goal" for="f-goal">What will success look like?</label>
+          <p class="craft-step__help">Reuse one of your goals, or write a new one.</p>
+          <div class="craft-step__control">
+            <input class="input" id="f-goal" type="text" data-craft-field="goal"
+                   list="recent-goals" style="inline-size:100%" autocomplete="off"
+                   placeholder="Feel calmer">
+            <datalist id="recent-goals">
+              <option value="Feel calmer"></option>
+              <option value="Read more"></option>
+              <option value="Move every day"></option>
+            </datalist>
+            <div class="u-flow-tight u-wrap" style="margin-block-start:var(--space-12)">
+              <button class="chip" type="button" data-craft-template data-goal="Feel calmer">Feel calmer</button>
+              <button class="chip" type="button" data-craft-template data-goal="Read more">Read more</button>
+              <button class="chip" type="button" data-craft-template data-goal="Move every day">Move every day</button>
+            </div>
+
+            <details class="fold" style="margin-block-start:var(--space-16)">
+              <summary>
+                <svg class="icon" aria-hidden="true"><use href="#i-chevron"></use></svg>
+                <span>Why is this goal important? <span class="t-muted">(optional)</span></span>
+              </summary>
+              <div class="fold__body" data-craft-step="why">
+                <label class="field__label" for="f-why" style="display:block;margin-block-end:var(--space-8)">
+                  Why is this goal important?
+                </label>
+                <textarea class="textarea" id="f-why" data-craft-field="why" style="inline-size:100%"
+                          placeholder="Mornings set the tone for everything after them."></textarea>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <!-- ── The app's blocking "More than 7 habits?" alert is cut. The same
+                care arrives as supportive inline copy, before the button rather
+                than as a dialog after it. [D §3.4] ───────────────────────── -->
+        <section class="card card--tinted" data-craft-crowded hidden aria-labelledby="crowded-h">
+          <h2 id="crowded-h" class="t-label">You already keep five habits</h2>
+          <p class="t-body t-muted" style="margin-block-start:var(--space-4)">
+            That's a lot to keep. Consider finishing one first.
+          </p>
+        </section>
+
+        <div class="u-flow u-wrap" style="margin-block-start:var(--space-8)">
+          <button class="btn btn--primary" type="submit" data-craft-submit disabled aria-disabled="true">
+            Create Habit
+          </button>
+          <a class="btn btn--ghost" href="home.html">Cancel</a>
+          <span class="t-body-sm t-muted" data-craft-needs>
+            A behavior, a prompt and a goal finish it.
+          </span>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           THE LIVE PREVIEW — the hero of this screen in the "eye hits first"
+           sense. The exact card that will appear on Home, assembling field by
+           field as you type. data-habit="preview" keeps it out of the day arc's
+           count, but the ring is real: press and hold it and your own
+           celebration text unfurls, which is the whole point of asking. [D §3.4]
+           ================================================================ -->
+      <aside class="craft-aside" aria-labelledby="preview-h">
+        <div class="craft-preview" data-craft-preview>
+          <h2 id="preview-h" class="t-label t-muted" style="margin-block-end:var(--space-8)">
+            As it will look on Home
+          </h2>
+
+          <article class="card habit-card" data-habit="preview">
+            <div class="habit-card__body">
+              <h3 class="habit-card__title">Your habit</h3>
+              <p class="habit-card__meta">It takes shape here as you write.</p>
+              <p class="habit-card__echo" data-echo hidden></p>
+            </div>
+            <button class="btn btn--ghost btn--sm habit-card__undo" type="button" data-undo hidden>Undo</button>
+            <button class="ring" type="button" data-checkin aria-pressed="false"
+                    aria-label="Try it: your habit. Press and hold to complete.">
+              <svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+                <circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/>
+                <circle class="ring__fill"  cx="22" cy="22" r="16" pathLength="100"/>
+                <path class="ring__check" d="M14.6 22.4l5.1 5.1 9.7-10.6" pathLength="100"/>
+              </svg>
+              <span class="ring__hint" data-ring-hint hidden>Hold to check in</span>
+            </button>
+          </article>
+
+          <p class="craft-preview__caption">Press and hold the ring to try it.</p>
+        </div>
+
+        <!-- Desktop only: the rail is a real column from 840px up, so it can
+             carry the reasoning behind the order of the questions. Below that
+             the rail is a pinned strip and stays short. -->
+        <section class="card craft-aside__desk" aria-labelledby="order-h">
+          <h2 id="order-h" class="t-label t-muted">Why this order</h2>
+          <p class="t-body-sm" style="margin-block-start:var(--space-8)">
+            Behavior first, because it's the doable part. Then the prompt that
+            fires it, then the celebration that makes it stick — and the goal
+            last, because that's the intimidating one.
+          </p>
+          <p class="t-body-sm t-muted" style="margin-block-start:var(--space-12)">
+            The celebration is the only part the app hands back to you: every
+            check-in, in your own words.
+          </p>
+        </section>
+      </aside>
+    </form>
+  </main>
+</div>
+
+<script src="js/prototype.js"></script>
+</body>
+</html>

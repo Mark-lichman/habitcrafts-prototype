@@ -1,0 +1,2914 @@
+/* ============================================================================
+   HabitCrafts — components.css
+   The reusable kit. Depends on tokens.css + base.css, linked in that order.
+
+   THE ELEVATION MODEL, WHICH GOVERNS EVERY SURFACE BELOW  [D §4.3]
+   Two layers only:
+     PAPER    — canvas and cards. Fill + 1px hairline. ZERO resting shadow.
+     FLOATING — nav bar, FAB, modals/sheets, the hero card, and desktop
+                hover-lift. These are the only things that cast.
+   shadow-xs and shadow-sm do not exist. If you find yourself wanting a shadow
+   on resting content, you want a tone step (--c-canvas-sunken) or a hairline.
+
+   Naming: block `.card`, element `.card__title`, modifier `.card--hero`,
+   state `.is-complete` / `.is-pressed`. JS hooks are data-* attributes only,
+   never classes, so styling and behaviour can be changed independently.
+   ========================================================================= */
+
+
+/* ############################################################################
+   1. APP SHELL
+   Used by: every screen. Wraps the nav + the page.
+   The shell is what makes desktop a real layout instead of a stretched phone.
+   ######################################################################### */
+
+.app-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: block;
+  /* Space for the floating bottom bar on mobile; replaced by an inline start
+     inset once the nav becomes a rail at 600px. */
+  padding-block-end: calc(var(--layout-nav-bar-h) + var(--space-32));
+}
+
+/* The content column. max-width 1184px is the dashboard content area from
+   [B §6.1]; the shell max is 1440px. NOT a 767px phone strip — that clamp is
+   the specific failure this redesign exists to kill. [D §5.3] */
+.page {
+  width: 100%;
+  max-width: var(--layout-content-max);
+  margin-inline: auto;
+  padding-inline: var(--layout-gutter);
+  padding-block: var(--space-24) var(--space-48);
+}
+
+.page--wide { max-width: var(--layout-shell-max); }
+.page--read { max-width: var(--layout-read-max); } /* Library, habit detail */
+
+/* Section header: a title with an optional trailing action. */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-16);
+  margin-block-end: var(--space-16);
+}
+
+
+/* ############################################################################
+   2. NAVIGATION — one component, three shapes                        [B §6.2]
+   Used by: every screen. Mark up ONCE, in this order, and the breakpoints do
+   the rest:
+       <nav class="app-nav">  <ul class="app-nav__list"> 4 × .nav-item </ul>
+                              <a class="nav-fab">        centre / top action
+                              <div class="app-nav__user"> xl only </div>
+       </nav>
+     < 600px  floating bottom bar, 4 tabs + centre FAB, radius-lg, shadow-lg
+     600–839  collapsed rail, 80px, icon over label, FAB at the top
+     840–1199 extended rail, 200px, icon beside label, extended FAB
+     ≥ 1200   permanent drawer, 256px, user block pinned at the bottom
+   Selected state = brand-600 icon + label + a 3px gold-500 pill. NEVER
+   opacity: 0.5, and there is no raster chrome anywhere in here. [B §7 item 2]
+   ######################################################################### */
+
+.app-nav {
+  position: fixed;
+  z-index: 40;
+  inset-inline: var(--space-16);
+  inset-block-end: max(var(--space-16), env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  height: var(--layout-nav-bar-h);
+  padding-inline: var(--space-4);
+  background: var(--c-surface);
+  border: var(--stroke-hairline) solid var(--c-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.app-nav__list {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.app-nav__list > li { flex: 1 1 0; min-inline-size: 0; display: flex; }
+
+.nav-item {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: var(--target-min);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding-block: var(--space-8) var(--space-4);
+  border-radius: var(--radius-sm);
+  color: var(--c-ink-muted);
+  text-decoration: none;
+  font-size: var(--fs-caption);
+  line-height: 1.1;
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-caption);
+  transition: color var(--dur-micro) var(--ease-standard),
+              background-color var(--dur-micro) var(--ease-standard);
+}
+
+.nav-item .icon { color: inherit; width: 22px; height: 22px; }
+.nav-item__label { white-space: nowrap; }
+
+/* The 3px gold pill above the icon — the ONLY place gold appears in chrome. */
+.nav-item__pill {
+  position: absolute;
+  inset-block-start: 2px;
+  inline-size: 20px;
+  block-size: 3px;
+  border-radius: var(--radius-full);
+  background: var(--c-gold-500);
+  opacity: 0;
+  transition: opacity var(--dur-micro) var(--ease-standard);
+}
+
+.nav-item[aria-current="page"] { color: var(--c-brand-600); }
+.nav-item[aria-current="page"] .nav-item__pill { opacity: 1; }
+
+@media (hover: hover) and (pointer: fine) {
+  .nav-item:hover { color: var(--c-brand-600); background: var(--c-surface-tinted); }
+}
+
+/* The create action. brand-600 with a white glyph — the old teal FAB failed
+   1.4.11 at 2.27:1 and is retired. [D §4.4] */
+.nav-fab {
+  /* Floats clear ABOVE the centre of the bar rather than punching a hole in it,
+     so all four destinations keep full-width labels at 13px — the system's
+     minimum text size, with no exceptions and no ellipsis. */
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-end: calc(100% + var(--space-8));
+  translate: -50% 0;
+  inline-size: 56px;
+  block-size: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: var(--c-brand-600);
+  color: var(--c-on-brand);
+  box-shadow: var(--shadow-lg);
+  text-decoration: none;
+  transition: background-color var(--dur-micro) var(--ease-standard),
+              scale var(--dur-quick) var(--ease-spring-snap);
+}
+.nav-fab .icon { color: currentColor; }
+.nav-fab__label { display: none; }
+.nav-fab:active { scale: 0.96; }
+@media (hover: hover) and (pointer: fine) {
+  .nav-fab:hover { background: var(--c-brand-700); }
+}
+
+.app-nav__user { display: none; }
+
+/* ---- 600px: bottom bar becomes a collapsed rail ---- */
+@media (min-width: 600px) {
+  .app-shell {
+    padding-block-end: 0;
+    padding-inline-start: var(--layout-nav-rail-w);
+  }
+
+  .app-nav {
+    inset: 0 auto 0 0;
+    inline-size: var(--layout-nav-rail-w);
+    block-size: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-8);
+    padding: var(--space-16) var(--space-4);
+    border-radius: 0;
+    border-width: 0;
+    border-inline-end: var(--stroke-hairline) solid var(--c-border);
+    box-shadow: none;              /* the rail is chrome, not a floating card */
+    background: var(--c-canvas);
+  }
+
+  .app-nav__list {
+    flex: 0 1 auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-4);
+  }
+  .app-nav__list > li { flex: 0 0 auto; }
+
+  .nav-item { min-height: 56px; padding-block: var(--space-8); }
+  .nav-item__pill { inset-block-start: 0; }
+
+  .nav-fab {
+    position: static;
+    order: -1;
+    translate: none;
+    inline-size: 100%;
+    block-size: 56px;
+    margin-block-end: var(--space-8);
+    border-radius: var(--radius-md);
+  }
+}
+
+/* ---- 840px: extended rail, icon beside label, extended FAB ---- */
+@media (min-width: 840px) {
+  .app-shell { padding-inline-start: var(--layout-rail-ext-w); }
+
+  .app-nav { inline-size: var(--layout-rail-ext-w); padding-inline: var(--space-12); }
+
+  .nav-item {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--space-12);
+    padding-inline: var(--space-12);
+    font-size: var(--fs-label);
+  }
+  .nav-item__pill {
+    inset-block-start: 50%;
+    inset-inline-start: 0;
+    translate: 0 -50%;
+    inline-size: 3px;
+    block-size: 20px;
+  }
+  .nav-item[aria-current="page"] { background: var(--c-surface-tinted); }
+
+  .nav-fab {
+    justify-content: flex-start;
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    padding-inline: var(--space-16);
+  }
+  .nav-fab__label { display: inline; font-weight: var(--fw-label); font-size: var(--fs-label); }
+}
+
+/* ---- 1200px: permanent drawer with a pinned user block ---- */
+@media (min-width: 1200px) {
+  .app-shell { padding-inline-start: var(--layout-drawer-w); }
+  .app-nav { inline-size: var(--layout-drawer-w); padding: var(--space-24) var(--space-16); }
+
+  .app-nav__user {
+    display: flex;
+    align-items: center;
+    gap: var(--space-12);
+    margin-block-start: auto;
+    padding: var(--space-12);
+    border-radius: var(--radius-md);
+    border: var(--stroke-hairline) solid var(--c-border);
+    background: var(--c-surface);
+    text-decoration: none;
+    color: inherit;
+  }
+  .app-nav__user:hover { background: var(--c-surface-tinted); }
+}
+
+.app-nav__brand {
+  display: none;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-4) var(--space-12) var(--space-16);
+  text-decoration: none;
+  color: inherit;
+}
+@media (min-width: 840px) { .app-nav__brand { display: flex; } }
+.app-nav__brand img { inline-size: 28px; block-size: 28px; border-radius: var(--radius-xs); }
+.app-nav__brand span {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fvs-h1);
+  font-size: var(--fs-h3);
+  color: var(--c-ink-strong);
+}
+
+
+/* ############################################################################
+   3. CARD — the paper primitive
+   Used by: everything. Matte fill, hairline border, radius 16, padding 16,
+   NO RESTING SHADOW. Hover-lift is the one shadow it may earn, and only on a
+   real pointer. Because lift is rare, it means something. [D §4.3]
+   ######################################################################### */
+
+.card {
+  position: relative;
+  background: var(--c-surface);
+  border: var(--stroke-hairline) solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-16);
+  transition: box-shadow var(--dur-micro) var(--ease-standard),
+              translate var(--dur-micro) var(--ease-standard),
+              background-color var(--dur-card-tone) var(--ease-standard),
+              border-color var(--dur-card-tone) var(--ease-standard);
+}
+
+.card--sunken { background: var(--c-canvas-sunken); border-color: transparent; }
+.card--tinted { background: var(--c-surface-tinted); border-color: var(--c-brand-200); }
+.card--flush  { padding: 0; overflow: hidden; }
+.card--roomy  { padding: var(--space-24); }
+
+.card__title { margin-block-end: var(--space-4); }
+.card__meta  { color: var(--c-ink-muted); }
+
+/* Desktop hover-lift. Pointer-only, 120ms, −1px, shadow-md. [D §6] */
+@media (hover: hover) and (pointer: fine) {
+  .card--interactive:hover {
+    translate: 0 -1px;
+    box-shadow: var(--shadow-md);
+    border-color: var(--c-brand-200);
+  }
+}
+.card--interactive:active { scale: 0.99; }
+
+
+/* ############################################################################
+   4. HERO SURFACE — the one deep-blue field per screen
+   Used by: Home (md+ bento streak card), Progress (streak summary), Profile.
+   ONE PER SCREEN, MAXIMUM. [D §3, §5.1] This is where the brand blue survives
+   as a large field, and it now reads as an intentional accent rather than as
+   wallpaper. White on brand-700 = 8.23:1 ✅, brand-100 body = 7.04:1 ✅,
+   gold-500 = 4.98:1 ✅.
+   After 20:00 it carries a barely-there two-stop gradient under the grain —
+   set by JS as [data-hour-late="true"] on <html>. Nothing else changes and the
+   layout is identical: it should feel like someone dimmed the lights. [D §2.5]
+   ######################################################################### */
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: var(--c-hero-fill);
+  border: var(--stroke-hairline) solid var(--c-hero-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-24);
+  color: var(--c-hero-ink);
+  box-shadow: var(--shadow-hero);
+  transition: background-image var(--dur-slow) var(--ease-standard);
+}
+
+/* The 2–3% grain. The only texture in the card system. */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--grain);
+  opacity: var(--grain-hero-opacity);
+}
+
+:root[data-hour-late="true"] .hero {
+  background-image: linear-gradient(to bottom, var(--c-hero-fill), var(--c-hero-fill-late));
+}
+
+.hero__label {
+  color: var(--c-hero-ink-muted);
+  text-transform: none;
+}
+.hero__numeral {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fvs-display);
+  font-optical-sizing: auto;
+  font-size: var(--fs-display);
+  line-height: 1;
+  font-weight: var(--fw-display);
+  letter-spacing: var(--ls-display);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--c-hero-ink);
+}
+.hero__body { color: var(--c-hero-ink-muted); }
+.hero a { color: var(--c-hero-ink); }
+
+
+/* ############################################################################
+   5. BUTTONS
+   Press: scale 0.98, 100ms ease-standard. Release: spring-snap, 180ms. [B §5.3]
+   Every button is ≥48px tall — one number satisfies WCAG 2.5.8 AA, 2.5.5 AAA,
+   Apple 44pt and Material 48dp at once. [B §6.4]
+   ######################################################################### */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  min-height: var(--target-min);
+  padding-inline: var(--space-24);
+  border-radius: var(--radius-full);
+  border: var(--stroke-hairline) solid transparent;
+  font-size: var(--fs-label);
+  line-height: 1;
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-label);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color var(--dur-micro) var(--ease-standard),
+              border-color var(--dur-micro) var(--ease-standard),
+              color var(--dur-micro) var(--ease-standard),
+              scale var(--dur-spring-snap-ui) var(--ease-spring-snap);
+}
+.btn:active { scale: 0.98; transition-duration: 100ms; transition-timing-function: var(--ease-standard); }
+.btn .icon { inline-size: 20px; block-size: 20px; color: currentColor; }
+
+/* Primary: brand-500 fill, white label = 4.84:1 ✅ */
+.btn--primary { background: var(--c-brand-600); color: var(--c-on-brand); }
+@media (hover: hover) and (pointer: fine) { .btn--primary:hover { background: var(--c-brand-700); } }
+
+/* Secondary: paper button. The border IS the affordance → border-control 3.45:1 ✅ */
+.btn--secondary {
+  background: var(--c-surface);
+  color: var(--c-brand-600);
+  border-color: var(--c-border-control);
+}
+@media (hover: hover) and (pointer: fine) { .btn--secondary:hover { background: var(--c-surface-tinted); } }
+
+/* Ghost: text-only actions. Inline Undo uses this. */
+.btn--ghost { background: transparent; color: var(--c-brand-600); padding-inline: var(--space-12); }
+@media (hover: hover) and (pointer: fine) { .btn--ghost:hover { background: var(--c-surface-tinted); } }
+
+/* Destructive: clay, never red-alarm styling. [D §3.5] */
+.btn--danger { background: transparent; color: var(--c-clay-600); border-color: var(--c-clay-600); }
+@media (hover: hover) and (pointer: fine) { .btn--danger:hover { background: var(--c-clay-surface); } }
+
+/* Gold: reserved for the milestone card's single CTA. Nothing else. [D §6] */
+.btn--gold { background: var(--c-gold-500); color: var(--c-ink); border-color: var(--c-gold-700); }
+
+.btn--sm { min-height: 40px; padding-inline: var(--space-16); }
+.btn--block { display: flex; inline-size: 100%; }
+
+.btn[disabled], .btn[aria-disabled="true"] {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* Icon-only button. 48px box keeps the target legal even with a 24px glyph. */
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--target-min);
+  block-size: var(--target-min);
+  border-radius: var(--radius-full);
+  color: var(--c-ink-muted);
+  transition: background-color var(--dur-micro) var(--ease-standard),
+              color var(--dur-micro) var(--ease-standard);
+}
+@media (hover: hover) and (pointer: fine) {
+  .icon-btn:hover { background: var(--c-surface-tinted); color: var(--c-brand-600); }
+}
+
+
+/* ############################################################################
+   6. CHIPS
+   Used by: streak flame (Home header, hero card), schedule tags, filters.
+   The streak chip is one of only five sanctioned appearances of gold. [D §6]
+   ######################################################################### */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 6px var(--space-12);
+  border-radius: var(--radius-full);
+  background: var(--c-canvas-sunken);
+  color: var(--c-ink-muted);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-label);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.chip .icon { inline-size: 16px; block-size: 16px; color: currentColor; }
+
+/* The streak flame. gold-surface fill, gold-700 flame + count = 4.73:1 ✅ */
+.chip--streak { background: var(--c-gold-surface); color: var(--c-gold-700); }
+.chip--sage   { background: var(--c-sage-100); color: var(--c-sage-700); }
+.chip--brand  { background: var(--c-brand-100); color: var(--c-brand-600); }
+
+/* On the hero surface, gold-500 on brand-700 = 4.98:1 ✅ */
+.hero .chip--streak {
+  background: rgba(239, 197, 48, 0.16);
+  color: var(--c-gold-500);
+}
+
+/* Interactive chip (filters). Needs a real 48px pitch — see the WCAG 2.5.8
+   spacing exception; we simply meet the target instead of relying on it. */
+button.chip, a.chip { min-height: 40px; margin-block: 4px; cursor: pointer; }
+button.chip[aria-pressed="true"] { background: var(--c-brand-100); color: var(--c-brand-600); }
+
+
+/* ############################################################################
+   7. THE CHECK-IN RING — the signature interaction          [D §2.1] [D §5.2]
+   Used by: every habit card, everywhere a habit can be completed.
+
+   Press-and-HOLD, ~450ms. Hold makes the commitment the gesture itself, which
+   is what lets us delete the interruptive undo snackbar entirely.
+
+   Structure (JS depends on this exact shape):
+     <button class="ring" data-checkin aria-pressed="false">
+       <svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true">
+         <circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/>
+         <circle class="ring__fill"  cx="22" cy="22" r="16" pathLength="100"/>
+         <path   class="ring__check" d="M14.5 22.4l5.2 5.2 9.8-10.8" pathLength="100"/>
+       </svg>
+     </button>
+
+   pathLength="100" normalises every stroke so progress is literally a
+   percentage: stroke-dashoffset = 100 - percent. No circumference maths.
+
+   The fill sweeps LINEARLY — linear is correct here because the fill IS a
+   progress bar for the hold, and [B §3.1] exempts progress bars from the
+   no-linear rule. Everything else about the moment is sprung.
+   ######################################################################### */
+
+.ring {
+  position: relative;
+  flex: none;
+  inline-size: var(--target-min);   /* 48px hit area [D §3.1] */
+  block-size: var(--target-min);
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  color: var(--c-ring-start);
+  touch-action: none;               /* hold must not scroll the page */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.ring__svg { inline-size: 44px; block-size: 44px; overflow: visible; fill: none; }
+
+.ring__track {
+  stroke: var(--c-ring-track);
+  stroke-width: var(--stroke-ring);
+  fill: none;
+}
+
+.ring__fill {
+  stroke: var(--c-ring-start);      /* JS crossfades this to --c-ring-end */
+  stroke-width: var(--stroke-ring);
+  stroke-linecap: round;
+  fill: none;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;           /* 100 = empty, 0 = full */
+  /* Rotate so the sweep starts at 12 o'clock and runs clockwise. */
+  transform: rotate(-90deg);
+  transform-origin: 22px 22px;
+}
+
+.ring__check {
+  stroke: var(--c-ring-end);
+  stroke-width: var(--stroke-ring);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;           /* drawn in over 200ms at commit */
+}
+
+/* Tap-without-hold: a 2px wobble and a one-time tooltip. NEVER an error. */
+@keyframes hc-wobble {
+  0%   { translate: 0 0; }
+  30%  { translate: 2px 0; }
+  65%  { translate: -2px 0; }
+  100% { translate: 0 0; }
+}
+.ring.is-wobbling .ring__svg {
+  animation: hc-wobble var(--dur-quick) var(--ease-spring-snap) 1;
+}
+
+/* The one-time "Hold to check in." hint. */
+.ring__hint {
+  position: absolute;
+  inset-inline-end: calc(100% + var(--space-8));
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  padding: 6px var(--space-12);
+  border-radius: var(--radius-full);
+  background: var(--c-ink-strong);
+  color: var(--c-canvas);
+  font-size: var(--fs-body-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-micro) var(--ease-standard);
+  z-index: 3;
+}
+.ring__hint[data-visible="true"] { opacity: 1; }
+
+@media (hover: hover) and (pointer: fine) {
+  .ring:hover .ring__track { stroke: var(--c-sage-300); }
+}
+
+/* --- The flecks. 6–8 pieces, 3px, sage-500 + gold-500, radial 24px, 400ms.
+       JS sets --dx/--dy per fleck; one keyframe serves all of them. --- */
+.spark-field {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+.spark {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: 3px;
+  block-size: 3px;
+  margin: -1.5px 0 0 -1.5px;
+  border-radius: var(--radius-full);
+  background: var(--c-spark-a);
+  animation: hc-spark var(--dur-particles) var(--ease-exit) forwards;
+}
+.spark--b { background: var(--c-spark-b); }
+
+@keyframes hc-spark {
+  from { translate: 0 0; opacity: 1; }
+  to   { translate: var(--dx) var(--dy); opacity: 0; }
+}
+
+
+/* ############################################################################
+   8. HABIT CARD                                             [D §3.1] [D §2.2]
+   Used by: Home (the list), Create Habit (the live preview), Progress rows.
+   72px min height · title in h3 · schedule/prompt line at 13px — THE 10px TEXT
+   IS ABOLISHED · ring at the right edge as the press target.
+   ######################################################################### */
+
+.habit-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  min-block-size: 72px;
+  padding: var(--space-16);
+  transform-origin: center;
+  /* Scale rides its own spring; colour rides ease-standard. Never a spatial
+     spring on colour — that produces a visible tint wobble. [B §5.1] */
+  transition: background-color var(--dur-card-tone) var(--ease-standard),
+              border-color var(--dur-card-tone) var(--ease-standard),
+              color var(--dur-card-tone) var(--ease-standard),
+              box-shadow var(--dur-micro) var(--ease-standard),
+              scale var(--dur-spring-bounce) var(--ease-spring-bounce);
+}
+
+.habit-card__body { flex: 1 1 auto; min-inline-size: 0; }
+
+.habit-card__title {
+  font-size: var(--fs-h3);
+  line-height: calc(var(--lh-h3) / var(--fs-h3));
+  font-weight: var(--fw-h3);
+  letter-spacing: var(--ls-h3);
+  color: var(--c-ink-strong);
+  transition: color var(--dur-card-tone) var(--ease-standard);
+}
+
+.habit-card__meta {
+  margin-block-start: 2px;
+  font-size: var(--fs-body-sm);
+  line-height: calc(var(--lh-body-sm) / var(--fs-body-sm));
+  letter-spacing: var(--ls-body-sm);
+  color: var(--c-ink-muted);
+}
+
+/* Held: card compresses 1.0 → 0.97 over 120ms ease-standard. */
+.habit-card.is-pressed {
+  scale: 0.97;
+  transition: scale var(--dur-press) var(--ease-standard),
+              background-color var(--dur-card-tone) var(--ease-standard);
+}
+
+/* Released early: springs back on spring-snap, not the reward's spring-bounce.
+   No penalty, no message — the gesture is fully interruptible, which is what
+   makes it feel like a real object rather than a loading bar. [D §2.1] */
+.habit-card.is-abandoning {
+  transition: scale var(--dur-spring-snap-ui) var(--ease-spring-snap),
+              background-color var(--dur-card-tone) var(--ease-standard);
+}
+
+/* Committed: sage-100 fill, sage-300-leaning border, muted title. */
+.habit-card.is-complete {
+  background: var(--c-done-surface);
+  border-color: var(--c-done-border);
+}
+.habit-card.is-complete .habit-card__title { color: var(--c-done-ink); }
+.habit-card.is-complete .habit-card__meta  { color: var(--c-sage-700); opacity: 0.85; }
+
+/* --- 2.2 YOUR OWN WORDS BACK ------------------------------------------------
+   The user's answer to Create Habit's "How will you celebrate?" — verbatim,
+   in the display serif, italic, sage-700 — unfurls under the title at commit,
+   holds 5s, then settles. This replaces the dark toast entirely: no snackbar
+   anywhere in this system. The inline Undo lives at the card's right edge for
+   those 5s (untimed when a screen reader is active). [D §2.2]
+--------------------------------------------------------------------------- */
+.habit-card__echo {
+  display: block;
+  margin-block-start: var(--space-8);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--fs-body);
+  line-height: calc(var(--lh-body) / var(--fs-body));
+  color: var(--c-sage-700);
+}
+.habit-card__echo[hidden] { display: none; }
+
+@keyframes hc-echo-in {
+  from { opacity: 0; translate: 0 8px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+.habit-card__echo.is-entering {
+  animation: hc-echo-in var(--dur-echo-in) var(--ease-enter) both;
+}
+
+.habit-card__undo { flex: none; }
+.habit-card__undo[hidden] { display: none; }
+
+/* --- 2.4 GILDING — milestones that leave a mark -----------------------------
+   Cosmetic only, NEVER lost, survives streak breaks: the gild records what you
+   DID, not what you're maintaining. Cumulative by tier.
+     --gild-7    16px gold corner tick on the top-right radius
+     --gild-30   + a full 1px gold-500 inner hairline
+     --gild-100  + a small embossed seal beside the title
+     --gild-365  seal fills solid gold
+   gold-500 is 1.52:1 on canvas, so these are FILLED/INSET marks on a white
+   card, never a boundary against the canvas. [D §2.4, §6]
+--------------------------------------------------------------------------- */
+.habit-card--gild-7::after,
+.habit-card--gild-30::after,
+.habit-card--gild-100::after,
+.habit-card--gild-365::after {
+  content: "";
+  position: absolute;
+  inset-block-start: -1px;
+  inset-inline-end: -1px;
+  inline-size: 16px;
+  block-size: 16px;
+  border-block-start: 3px solid var(--c-gold-500);
+  border-inline-end: 3px solid var(--c-gold-500);
+  border-start-end-radius: var(--radius-md);
+  pointer-events: none;
+}
+
+.habit-card--gild-30,
+.habit-card--gild-100,
+.habit-card--gild-365 {
+  box-shadow: inset 0 0 0 1px var(--c-gold-500);
+}
+
+/* The embossed seal — an SVG rosette, gold-700 on gold-surface. */
+.seal {
+  flex: none;
+  inline-size: 22px;
+  block-size: 22px;
+  border-radius: var(--radius-full);
+  background: var(--c-gold-surface);
+  color: var(--c-gold-700);
+  display: inline-grid;
+  place-items: center;
+  vertical-align: -5px;
+}
+.seal svg { inline-size: 16px; block-size: 16px; fill: currentColor; }
+.seal--solid { background: var(--c-gold-500); color: var(--c-ink); } /* 7.29:1 ✅ */
+.seal--lg { inline-size: 40px; block-size: 40px; }
+.seal--lg svg { inline-size: 26px; block-size: 26px; }
+
+/* --- The list. Completed cards sink to the bottom (JS runs a FLIP so the
+       move is a real 260ms ease-standard reorder, not a jump). --- */
+.habit-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--layout-card-gap);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.habit-list > li { display: block; }
+.habit-list > li:has(.habit-card.is-complete) { order: 1; }
+
+/* md+ : column count falls out of the available width rather than being
+   hard-branched — the CSS equivalent of a max-cross-extent grid. Tracks are at
+   least 300px and share the leftover space, so the list never leaves a dead
+   gutter beside it and never stretches one card across a whole desktop pane
+   (once the pane is wide enough for two, it takes two). [D §3.1] [B §6.1] */
+@media (min-width: 600px) {
+  .habit-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    gap: var(--layout-card-gap);
+  }
+}
+
+
+/* ############################################################################
+   9. DAY ARC — closing the day                                       [D §2.3]
+   Used by: the Home header (mobile) and the Home hero (md+).
+   A 270° arc, 3px stroke, canvas-sunken track, sage-600 fill, showing today's
+   completions out of today's habits. Fills 260ms per increment.
+   On the LAST check-in: the segment closes, a single 40% white glint travels
+   the arc once over 600ms, the arc flushes sage-600 → gold-500 over 300ms, and
+   the greeting crossfades to "That's everything. Go enjoy your day."
+   Then the app goes quiet. No modal, no confetti, no share prompt.
+   A habit app that tells you to leave is the calm-tech move. [D §2.3]
+
+   Geometry: viewBox 0 0 72 72, centre (36,36), r=28, from 135° to 405°.
+   pathLength="100" again, so offset = 100 − percent.
+   ######################################################################### */
+
+.day-arc {
+  position: relative;
+  flex: none;
+  inline-size: 72px;
+  block-size: 72px;
+  display: grid;
+  place-items: center;
+}
+.day-arc__svg { position: absolute; inset: 0; inline-size: 72px; block-size: 72px; fill: none; }
+
+.day-arc__track {
+  stroke: var(--c-ring-track);
+  stroke-width: var(--stroke-ring);
+  stroke-linecap: round;
+}
+.day-arc__fill {
+  stroke: var(--c-sage-600);
+  stroke-width: var(--stroke-ring);
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  transition: stroke-dashoffset var(--dur-arc-step) var(--ease-enter),
+              stroke var(--dur-arc-flush) var(--ease-standard);
+}
+/* The gold flush at completion. */
+.day-arc.is-complete .day-arc__fill { stroke: var(--c-gold-500); }
+
+/* The glint: a 12-unit dash travelling the full arc once. Never loops. */
+.day-arc__glint {
+  stroke: rgba(255, 255, 255, 0.4);
+  stroke-width: var(--stroke-ring);
+  stroke-linecap: round;
+  stroke-dasharray: 10 90;
+  stroke-dashoffset: 100;
+  opacity: 0;
+}
+@keyframes hc-glint {
+  from { stroke-dashoffset: 100; opacity: 1; }
+  to   { stroke-dashoffset: -10; opacity: 1; }
+}
+.day-arc.is-glinting .day-arc__glint {
+  animation: hc-glint var(--dur-arc-glint) var(--ease-emphasized) 1 both;
+}
+
+.day-arc__count {
+  position: relative;
+  text-align: center;
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-label);
+  color: var(--c-ink-muted);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.day-arc__count strong { display: block; font-size: var(--fs-h3); color: var(--c-ink-strong); }
+
+/* On the hero surface the arc inverts its track and ink, and lightens its fill:
+   sage-600 on brand-700 is only 1.74:1, which fails 1.4.11 for a graphic whose
+   fill/track difference carries meaning. --c-arc-on-hero is 4.10:1 in light and
+   5.0:1 in dark (computed). Crucially it stays SAGE, so the gold flush at
+   completion is still a change rather than something already spent. */
+.hero .day-arc__track { stroke: rgba(255, 255, 255, 0.22); }
+.hero .day-arc__count { color: var(--c-hero-ink-muted); }
+.hero .day-arc__count strong { color: var(--c-hero-ink); }
+.hero .day-arc__fill { stroke: var(--c-arc-on-hero); }
+.hero .day-arc.is-complete .day-arc__fill { stroke: var(--c-gold-500); }
+
+
+/* ############################################################################
+   10. GREETING BLOCK
+   Used by: Home. The greeting is the hero on mobile — h1 in the display serif,
+   the date, the day arc and the streak chip beside it. The header block carries
+   the weight so mobile needs no filled hero card. [D §3.1]
+   ######################################################################### */
+
+.greeting {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  margin-block-end: var(--space-24);
+}
+.greeting__text { flex: 1 1 auto; min-inline-size: 0; }
+.greeting__title {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fvs-h1);
+  font-optical-sizing: auto;
+  font-size: var(--fs-h1);
+  line-height: calc(var(--lh-h1) / var(--fs-h1));
+  font-weight: var(--fw-h1);
+  letter-spacing: var(--ls-h1);
+  color: var(--c-ink-strong);
+  transition: opacity var(--dur-base) var(--ease-standard);
+}
+.greeting__title.is-swapping { opacity: 0; }
+.greeting__date { color: var(--c-ink-muted); margin-block-start: var(--space-4); }
+
+
+/* ############################################################################
+   11. SEGMENTED CONTROL
+   Used by: Progress (Summary / Lifestyle), Community (Groups / Challenges /
+   Events). Replaces the app's TabBars — never a full-width Material 2 tab bar
+   with an underline indicator.
+   ######################################################################### */
+
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--c-canvas-sunken);
+  border-radius: var(--radius-full);
+}
+.seg-btn {
+  min-height: 40px;
+  padding-inline: var(--space-16);
+  border-radius: var(--radius-full);
+  color: var(--c-ink-muted);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-label);
+  transition: background-color var(--dur-base) var(--ease-emphasized),
+              color var(--dur-base) var(--ease-emphasized);
+}
+.seg-btn[aria-selected="true"], .seg-btn[aria-pressed="true"] {
+  background: var(--c-surface);
+  color: var(--c-brand-600);
+  box-shadow: var(--shadow-md);
+}
+
+
+/* ############################################################################
+   12. STAT TILE
+   Used by: Progress (three tiles, span 4 each at lg+), Home aside.
+   ######################################################################### */
+
+.stat-tile { display: flex; flex-direction: column; gap: var(--space-4); }
+.stat-tile__value {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fvs-display);
+  font-optical-sizing: auto;
+  font-size: var(--fs-h1);
+  line-height: 1.1;
+  font-weight: var(--fw-display);
+  letter-spacing: var(--ls-h1);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--c-ink-strong);
+}
+.stat-tile__label { color: var(--c-ink-muted); font-size: var(--fs-body-sm); }
+
+
+/* ############################################################################
+   13. CALENDAR CELL — three redundant states                        [D §3.2]
+   Used by: Progress. NEVER colour alone — a green-vs-grey cell is a 1.4.1
+   failure on its own. Each state carries a fill difference, a glyph, a
+   lightness step that survives grayscale, and a per-cell label.
+     done     sage-600 fill + white dot glyph
+     partial  sage-300 outline + dot
+     empty    canvas-sunken, no glyph
+   Milestone days carry a tiny gold corner tick.
+   ######################################################################### */
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-8);
+}
+.cal-cell {
+  position: relative;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--c-canvas-sunken);
+  /* The empty cell keeps a hairline so it stays a legible SHAPE on a card in
+     both themes — the tone step alone is too small in dark. */
+  border: var(--stroke-hairline) solid var(--c-border);
+  font-size: var(--fs-body-sm);
+  color: var(--c-ink-muted);
+}
+.cal-cell__glyph { inline-size: 6px; block-size: 6px; border-radius: 50%; background: transparent; }
+.cal-cell--done { background: var(--c-sage-600); color: var(--c-on-brand); }
+.cal-cell--done .cal-cell__glyph { background: #FFFFFF; }
+.cal-cell--partial { background: transparent; border-color: var(--c-sage-300); }
+.cal-cell--partial .cal-cell__glyph { background: var(--c-sage-600); }
+.cal-cell--milestone::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 0; inset-inline-end: 0;
+  inline-size: 8px; block-size: 8px;
+  border-block-start: 2px solid var(--c-gold-500);
+  border-inline-end: 2px solid var(--c-gold-500);
+  border-start-end-radius: 6px;
+}
+
+
+/* ############################################################################
+   14. AVATARS
+   Used by: Community (the stack of members who checked in today — that stack
+   is the hero of that screen), Profile, the drawer's user block. [D §3.3]
+   ######################################################################### */
+
+.avatar {
+  flex: none;
+  inline-size: 32px; block-size: 32px;
+  border-radius: var(--radius-full);
+  background: var(--c-brand-100);
+  color: var(--c-brand-600);
+  display: grid; place-items: center;
+  font-size: var(--fs-body-sm);
+  font-weight: 700;
+  overflow: hidden;
+}
+.avatar--lg { inline-size: 48px; block-size: 48px; font-size: var(--fs-body); }
+.avatar-stack { display: flex; }
+.avatar-stack .avatar { margin-inline-start: -8px; box-shadow: 0 0 0 2px var(--c-surface); }
+.avatar-stack .avatar:first-child { margin-inline-start: 0; }
+
+
+/* ############################################################################
+   15. EMPTY / COMPLETE STATE                                          [D §3.1]
+   Used by: Home (no habits, and "everything done"), Community, Library.
+   One flat two-colour SVG illustration — brand-300 shapes with brand-700
+   linework, one sage or gold accent element max. The single 4s leaf drift is
+   the ONLY looping animation permitted in the product. At 4s it stays under
+   the WCAG 2.2.2 five-second threshold. The CTA does not pulse or breathe.
+   ######################################################################### */
+
+.empty-state {
+  text-align: center;
+  padding-block: var(--space-32);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-12);
+}
+.empty-state__art { inline-size: 132px; block-size: 132px; }
+@keyframes hc-drift {
+  from { translate: 0 -4px; }
+  to   { translate: 0 4px; }
+}
+.empty-state__art--drift {
+  animation: hc-drift var(--dur-drift) ease-in-out infinite alternate;
+}
+.empty-state__title {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fvs-h1);
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-h2);
+  letter-spacing: var(--ls-h2);
+  color: var(--c-ink-strong);
+}
+.empty-state__body { color: var(--c-ink-muted); max-inline-size: 42ch; }
+
+
+/* ############################################################################
+   16. LESSON TILE
+   Used by: Home. ONE single-row tile below the habit list, surface-tinted and
+   dismissible. The "Daily Lesson / Lessons Week N / View All Lessons" stack is
+   cut from the primary scroll — it competed with the habits, which is the exact
+   Finch home-clutter failure. The Library owns the rest. [D §3.1]
+   ######################################################################### */
+
+.lesson-tile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  background: var(--c-surface-tinted);
+  border-color: var(--c-brand-200);
+}
+.lesson-tile__body { flex: 1 1 auto; min-inline-size: 0; }
+.lesson-tile__kicker {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-caption);
+  letter-spacing: var(--ls-caption);
+  color: var(--c-brand-600);
+}
+
+
+/* ############################################################################
+   17. MODAL / SHEET / MILESTONE                                       [D §2.4]
+   Used by: Create Habit (md+ modal), the milestone moment.
+   Floating layer, so these DO cast: shadow-lg. Enter with spring-gentle.
+   The milestone card is the one place WONK may go to 1, and the one place a
+   gold CTA is allowed. One full celebration per session, max.
+   ######################################################################### */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--c-scrim);
+  display: grid;
+  place-items: center;
+  padding: var(--space-24);
+  animation: hc-fade-in var(--dur-moderate) var(--ease-standard) both;
+}
+@keyframes hc-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  position: relative;   /* confetti pieces are absolutely placed inside it */
+  inline-size: 100%;
+  max-inline-size: 560px;
+  background: var(--c-surface);
+  border: var(--stroke-hairline) solid var(--c-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-24);
+}
+@media (min-width: 840px) { .modal--wide { max-inline-size: 720px; } }
+
+@keyframes hc-modal-in {
+  from { opacity: 0; scale: 0.92; translate: 0 16px; }
+  to   { opacity: 1; scale: 1; translate: 0 0; }
+}
+.modal--milestone {
+  max-inline-size: 380px;
+  text-align: center;
+  animation: hc-modal-in var(--dur-slow) var(--ease-spring-gentle) both;
+}
+.modal--milestone .modal__numeral {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fvs-wonk); /* WONK 1 — milestone cards only */
+  font-size: var(--fs-display);
+  font-weight: var(--fw-display);
+  letter-spacing: var(--ls-display);
+  color: var(--c-gold-700);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+
+/* ############################################################################
+   18. FORM FIELDS
+   Used by: Create Habit, search, Profile.
+   The border IS the affordance here, so it uses --c-border-control (3.45:1 ✅)
+   rather than the decorative --c-border.
+   ######################################################################### */
+
+.field { display: flex; flex-direction: column; gap: var(--space-8); }
+.field__label {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-label);
+  color: var(--c-ink);
+}
+.field__help { font-size: var(--fs-body-sm); color: var(--c-ink-muted); }
+
+.input, .textarea, .select {
+  min-height: var(--target-min);
+  padding: var(--space-12) var(--space-16);
+  background: var(--c-surface);
+  color: var(--c-ink);
+  border: var(--stroke-control) solid var(--c-border-control);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-body);
+  transition: border-color var(--dur-micro) var(--ease-standard),
+              background-color var(--dur-micro) var(--ease-standard);
+}
+.input::placeholder, .textarea::placeholder { color: var(--c-ink-subtle); }
+.input:hover, .textarea:hover { border-color: var(--c-brand-500); }
+.textarea { min-height: 96px; resize: vertical; }
+
+
+/* ############################################################################
+   19. SKELETON — no shimmer                                          [D §4.5]
+   Skeleton shimmer sweeps are a 2019–2021 idiom and were the only "animation
+   as decoration" moment in the brief's motion system. Under 400ms show NOTHING
+   (no flash). Beyond 400ms: static blocks at the correct radii with one gentle
+   opacity pulse. Under reduced motion: fully static.
+   ######################################################################### */
+
+.skeleton {
+  background: var(--c-canvas-sunken);
+  border-radius: var(--radius-xs);
+  animation: hc-skel 1200ms ease-in-out infinite alternate;
+}
+@keyframes hc-skel { from { opacity: 0.7; } to { opacity: 1; } }
+.skeleton--card { block-size: 72px; border-radius: var(--radius-md); }
+
+
+/* ############################################################################
+   20. PROTOTYPE-ONLY CHROME
+   The reviewer's control bar (theme, hour simulation, motion). Not part of the
+   product design system — it is scaffolding, and it is styled deliberately
+   quietly so it never competes with the screen it is inspecting. Ships on every
+   prototype page; delete for the Flutter migration.
+   ######################################################################### */
+
+.devbar {
+  position: fixed;
+  z-index: 60;
+  inset-block-end: var(--space-16);
+  inset-inline-end: var(--space-16);
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-8);
+  background: var(--c-surface);
+  border: var(--stroke-hairline) solid var(--c-border);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--fs-body-sm);
+  max-inline-size: calc(100vw - var(--space-32));
+  flex-wrap: wrap;
+}
+.devbar__group { display: flex; align-items: center; gap: var(--space-4); }
+.devbar__btn {
+  min-height: 36px;
+  padding-inline: var(--space-12);
+  border-radius: var(--radius-full);
+  color: var(--c-ink-muted);
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-label);
+}
+.devbar__btn[aria-pressed="true"] { background: var(--c-brand-100); color: var(--c-brand-600); }
+.devbar input[type="range"] { inline-size: 92px; accent-color: var(--c-brand-600); }
+.devbar__reading { font-variant-numeric: tabular-nums; color: var(--c-ink-muted); min-inline-size: 42px; }
+
+/* Keep the control bar clear of real content at every width: it floats
+   bottom-right on desktop (away from the rail) and above the bottom bar on
+   mobile, and the page reserves room for it. Prototype-only — delete with the
+   .devbar markup when this moves to Flutter. */
+body:has(.devbar) .page { padding-block-end: 128px; }
+
+@media (max-width: 599px) {
+  .devbar {
+    inset-block-end: calc(var(--layout-nav-bar-h) + var(--space-32));
+    inset-inline: var(--space-8);
+    justify-content: center;
+  }
+  body:has(.devbar) .app-shell {
+    padding-block-end: calc(var(--layout-nav-bar-h) + var(--space-64) + var(--space-48));
+  }
+  body:has(.devbar) .page { padding-block-end: var(--space-24); }
+}
+
+
+/* ############################################################################
+   21. LAYOUT PATTERNS                                        [B §6.1] [B §6.3]
+   Shared responsive scaffolding so every screen transforms on the SAME
+   breakpoints. Desktop must be a different layout, not a bigger phone. [D §5.3]
+
+   .grid12   4 columns at xs/sm, 12 columns at md+. Children span the full
+             width by default and take a .span-N only from md upward, so the
+             mobile case never needs an override.
+   .panes--2 md+: a fixed 280px list beside a flexible detail pane.
+   .panes--3 lg+: master–detail–context (280px | flex | 300px) — the Community
+             3-pane layout, which alone fixes chat on the web.
+   ######################################################################### */
+
+.grid12 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--layout-grid-gap);
+  align-items: start;
+}
+.grid12 > * { grid-column: 1 / -1; }
+
+@media (min-width: 600px) {
+  .grid12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .span-3  { grid-column: span 3; }
+  .span-4  { grid-column: span 4; }
+  .span-5  { grid-column: span 5; }
+  .span-6  { grid-column: span 6; }
+  .span-7  { grid-column: span 7; }
+  .span-8  { grid-column: span 8; }
+  .span-12 { grid-column: span 12; }
+}
+
+.panes { display: grid; gap: var(--space-24); align-items: start; }
+@media (min-width: 600px) {
+  .panes--2 { grid-template-columns: 280px minmax(0, 1fr); }
+}
+@media (min-width: 840px) {
+  .panes--3 { grid-template-columns: 280px minmax(0, 1fr) 300px; }
+}
+
+/* --- Home / Today ------------------------------------------------------------
+   xs–sm  one column: greeting block (which carries the hero weight on mobile,
+          so there is no filled hero card here) → habit list → lesson tile
+   md     2-up bento header + a habit grid
+   lg     the 8/4 split: habit list left; right column stacks the brand-700
+          streak hero, the weekly ring and the next reminder
+   xl     a third column of recent group check-ins, inside the 1184px area
+--------------------------------------------------------------------------- */
+.home-grid {
+  display: grid;
+  gap: var(--layout-grid-gap);
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+}
+.home-grid__aside,
+.home-grid__activity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--layout-card-gap);
+}
+/* On mobile the aside content follows the list; the hero card is suppressed
+   because the greeting block is already the screen's one strong surface. */
+.home-grid__aside .hero { display: none; }
+.home-grid__activity { display: none; }
+
+@media (min-width: 600px) {
+  .home-grid__aside .hero { display: block; }
+  .greeting .day-arc { display: none; }  /* the arc moves onto the hero card */
+}
+
+/* md only: the aside becomes a 2-up bento HEADER above the habit grid —
+   brand-700 streak hero + today's ring, then the week card beside it. [B §6.3] */
+@media (min-width: 600px) and (max-width: 839px) {
+  .home-grid__aside {
+    order: -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-block-end: var(--space-8);
+  }
+  .home-grid__aside > * { flex: 1 1 260px; }
+}
+
+@media (min-width: 840px) {
+  .home-grid { grid-template-columns: minmax(0, 8fr) minmax(260px, 4fr); }
+  .home-grid__main  { grid-column: 1; }
+  .home-grid__aside { grid-column: 2; }
+}
+
+@media (min-width: 1200px) {
+  .home-grid {
+    grid-template-columns: minmax(0, 1.7fr) minmax(240px, 0.75fr) minmax(210px, 0.7fr);
+  }
+  .home-grid__activity { display: flex; grid-column: 3; }
+}
+
+/* A hero laid out as a bento tile: numeral block beside the day arc. */
+.hero--streak { display: flex; align-items: center; gap: var(--space-24); }
+.hero--streak > div:first-child { flex: 1 1 auto; min-inline-size: 0; }
+
+/* Quiet text link — "Find a new habit". Explore is not a tab bar. [D §3.1] */
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: var(--target-min);
+  color: var(--c-brand-600);
+  font-weight: var(--fw-label);
+  font-size: var(--fs-label);
+  text-decoration: none;
+}
+.text-link:hover { text-decoration: underline; }
+
+/* An activity row — used by the xl third column and by Community. */
+.activity-row { display: flex; align-items: center; gap: var(--space-12); padding-block: var(--space-8); }
+.activity-row__text { min-inline-size: 0; font-size: var(--fs-body-sm); color: var(--c-ink-muted); }
+.activity-row__text strong { color: var(--c-ink); font-weight: 600; }
+
+
+/* ############################################################################
+   22. PROGRESS SCREEN — the ledger                            [D §3.2] [B §6.3]
+   APPEND-ONLY SECTION, added by the Progress build. Nothing above this line is
+   edited or reordered; every selector here is namespaced `.prog-*` so it can
+   never collide with another screen's appended section. The one exception is
+   `.prog-cal__cell--future`, which is a *new* modifier applied ALONGSIDE the
+   kit's `.cal-cell` rather than a change to it.
+
+   Used by: progress.html only.
+
+   The screen is a well-kept ledger, not an analytics dashboard: ruled paper,
+   one deep-blue cover (the streak hero), and three artifacts —
+     · the month calendar   (the signature artifact; kit `.cal-grid`/`.cal-cell`)
+     · the consistency plot (hand-built SVG; no chart library, no CDN)
+     · the per-habit rows   (kit `.habit-card` + a 7-day dot micro-strip)
+
+   DATA-VIZ LAWS OBSERVED HERE
+   - Never colour alone. Every encoded state carries a SHAPE (filled / ringed /
+     hollow / dashed), a LIGHTNESS step that survives greyscale, and a text or
+     numeric equivalent in the same row. [B §"Never encode ... by colour alone"]
+   - Series are direct-labelled at the line, never legend-only, and are
+     additionally separated by dash pattern and marker shape, so the chart reads
+     identically in monochrome or with any colour vision deficiency.
+   - Chart series come only from the sanctioned four (brand-500, sage-600,
+     gold-700, clay-600); two are used. Teal stays retired. [D §4.4]
+   - Gridlines are `brand-200` hairlines — the ruling of ledger paper.
+   - No resting shadow is introduced anywhere below.
+   ######################################################################### */
+
+/* --- 22.1 Page head: title + the Summary / Lifestyle segmented control ------
+   The app's Material TabBar is replaced by the kit's `.segmented`. [D §3.2] */
+.prog-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-16);
+  margin-block-end: var(--space-24);
+}
+.prog-head__title { margin-block-end: var(--space-4); }
+
+/* Tab panels. Opacity only — a spatial transition here would be motion for
+   decoration, and opacity is explicitly NOT motion under WCAG 2.3.3. */
+@keyframes hc-prog-panel-in { from { opacity: 0; } to { opacity: 1; } }
+.prog-panel.is-entering { animation: hc-prog-panel-in var(--dur-base) var(--ease-standard) both; }
+
+/* --- 22.2 The 12-column placement ------------------------------------------
+   [B §6.3] Progress, verbatim: stat tiles on row 1, calendar + chart on row 2,
+   the per-habit list on row 3. Sits on the kit's `.grid12`; these classes only
+   set the spans, because the kit's `.span-N` has a single 600px branch and this
+   screen needs a different md and lg answer.
+       xs/sm   one column, in reading order
+       md      2-up: hero | ledger, then calendar | chart
+       lg/xl   hero 4 + ledger 8 · calendar 5 + chart 7 · rows 12
+--------------------------------------------------------------------------- */
+@media (min-width: 600px) {
+  .prog-item--hero   { grid-column: span 6; }
+  .prog-item--ledger { grid-column: span 6; }
+  .prog-item--cal    { grid-column: span 6; }
+  .prog-item--chart  { grid-column: span 6; }
+  .prog-item--rows   { grid-column: span 12; }
+}
+@media (min-width: 840px) {
+  .prog-item--hero   { grid-column: span 4; }
+  .prog-item--ledger { grid-column: span 8; }
+  .prog-item--cal    { grid-column: span 5; }
+  .prog-item--chart  { grid-column: span 7; }
+}
+
+/* --- 22.3 The streak hero --------------------------------------------------
+   The ONE `--c-hero-fill` surface on this screen (the Lifestyle panel has
+   none). Adds wrapping to the kit's `.hero--streak` bento so the week strip
+   drops below the numeral on a phone instead of squeezing it. */
+.prog-hero { flex-wrap: wrap; row-gap: var(--space-16); }
+.prog-hero__week { flex: 1 1 150px; }
+.prog-hero__week .prog-dots { margin-block: var(--space-8) var(--space-8); }
+
+/* --- 22.4 The ledger card: three stat tiles --------------------------------
+   Stacked on a phone; at lg they become three ruled columns, divided by the
+   same hairline as everything else on this screen. No boxes inside boxes. */
+.prog-ledger { display: grid; gap: var(--space-16); margin-block-start: var(--space-16); }
+@media (min-width: 840px) {
+  .prog-ledger { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; }
+  .prog-ledger > * + * {
+    border-inline-start: var(--stroke-hairline) solid var(--c-border);
+    padding-inline-start: var(--space-24);
+  }
+  .prog-ledger > *:not(:last-child) { padding-inline-end: var(--space-24); }
+}
+
+/* --- 22.5 The month calendar -----------------------------------------------
+   Cells are the kit's `.cal-cell` with its three redundant states. Everything
+   here is the FRAME around them: the month stepper, the weekday ruling, the
+   key, and one new state the kit had no need for — a day that has not happened
+   yet. `--future` is a DASHED OUTLINE on no fill, so it can never be mistaken
+   for a missed day (`canvas-sunken`, solid, filled) at a glance or in
+   greyscale. Missed days stay simply empty: no red, no broken chain. [D §3.2]
+--------------------------------------------------------------------------- */
+.prog-cal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+  margin-block-end: var(--space-12);
+}
+.prog-cal__month-name {
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--c-ink-strong);
+}
+
+.prog-cal__dow {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-8);
+  margin-block-end: var(--space-8);
+}
+.prog-cal__dow span {
+  text-align: center;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-caption);
+  letter-spacing: var(--ls-caption);
+  color: var(--c-ink-muted);
+}
+
+/* A leading/trailing blank in the month grid: no cell, no border, no meaning. */
+.prog-cal__blank { aspect-ratio: 1; }
+
+/* Not yet lived. Dashed outline on nothing. */
+.prog-cal__cell--future {
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--c-border-control);
+}
+
+/* Today gets a real ring rather than a colour hint, so it survives greyscale
+   and sits happily on top of whichever state the day is already in. */
+.prog-cal__cell--today { box-shadow: 0 0 0 2px var(--c-brand-600); }
+
+.prog-cal__summary {
+  margin-block-start: var(--space-16);
+  color: var(--c-ink-muted);
+}
+
+/* The key. Each swatch is a real `.cal-cell` at 18px, so the key can never
+   drift from the thing it explains. */
+.prog-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8) var(--space-16);
+  margin-block-start: var(--space-16);
+  padding-block-start: var(--space-16);
+  border-block-start: var(--stroke-hairline) solid var(--c-border);
+  list-style: none;
+}
+.prog-key li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  font-size: var(--fs-body-sm);
+  color: var(--c-ink-muted);
+}
+.prog-key__swatch { inline-size: 18px; block-size: 18px; border-radius: 5px; }
+
+/* --- 22.6 The consistency plot ---------------------------------------------
+   Hand-built. No chart library, no canvas, no remote anything.
+
+   HOW IT IS ASSEMBLED, and why:
+   The lines, the area and the ruling live in ONE svg with
+   `preserveAspectRatio="none"`, so a 0–100 × 0–100 coordinate space maps
+   exactly onto the plot box at any width — which is what makes the chart truly
+   fluid rather than "responsive down to a minimum". The stretch is cancelled on
+   every stroke with `vector-effect="non-scaling-stroke"`, so no line ever
+   thickens or thins with the viewport.
+   Everything that must NOT stretch — axis text, markers, series labels — is
+   real HTML positioned by percentage over the same box. That is also why every
+   label in here is genuinely 13px at every breakpoint: nothing is scaled type
+   inside an SVG.
+--------------------------------------------------------------------------- */
+.prog-chart {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "key    key"
+    "yaxis  plot"
+    ".      xaxis";
+  column-gap: var(--space-8);
+  margin-block-start: var(--space-16);
+}
+@media (min-width: 840px) {
+  .prog-chart {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "yaxis plot  key"
+      ".     xaxis .";
+    column-gap: var(--space-12);
+  }
+}
+
+.prog-chart__plot {
+  grid-area: plot;
+  position: relative;
+  block-size: 168px;
+}
+@media (min-width: 600px) { .prog-chart__plot { block-size: 208px; } }
+
+.prog-chart__svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
+
+.prog-chart__rule   { stroke: var(--c-brand-200); stroke-width: 1; fill: none; }
+.prog-chart__base   { stroke: var(--c-border-control); stroke-width: 1; fill: none; }
+.prog-chart__area   { fill: var(--c-sage-600); fill-opacity: 0.12; stroke: none; } /* [D §3.2] sage fill at 12% */
+.prog-chart__line--a{ stroke: var(--c-brand-500); stroke-width: 2.5; fill: none;
+                      stroke-linecap: round; stroke-linejoin: round; }
+.prog-chart__line--b{ stroke: var(--c-sage-600); stroke-width: 2.5; fill: none;
+                      stroke-linecap: round; stroke-linejoin: round;
+                      stroke-dasharray: 7 5; } /* dash = the second, colour-free encoding */
+
+/* Markers. Shape carries the series as reliably as colour does:
+   series A is a filled disc, series B a diamond. */
+.prog-chart__mark {
+  position: absolute;
+  inline-size: 9px;
+  block-size: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  inset-block-start: var(--y);
+  inset-inline-start: var(--x);
+  border-radius: var(--radius-full);
+  background: var(--c-brand-500);
+  box-shadow: 0 0 0 2px var(--c-surface); /* knock-out, not elevation */
+}
+.prog-chart__mark--b {
+  inline-size: 8px;
+  block-size: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 1px;
+  rotate: 45deg;
+  background: var(--c-sage-600);
+}
+
+/* Axes. Absolutely placed against the same 0–100 box the svg uses. */
+.prog-chart__yaxis { grid-area: yaxis; position: relative; inline-size: 2ch; }
+.prog-chart__yaxis span {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-start: var(--y);
+  translate: 0 -50%;
+  font-size: var(--fs-body-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-ink-subtle);
+}
+.prog-chart__xaxis { grid-area: xaxis; position: relative; block-size: 22px; margin-block-start: var(--space-8); }
+.prog-chart__xaxis span {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: var(--x);
+  translate: -50% 0;
+  white-space: nowrap;
+  font-size: var(--fs-body-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-ink-muted);
+}
+.prog-chart__xaxis span:first-child { translate: 0 0; }
+.prog-chart__xaxis span:last-child  { translate: -100% 0; }
+/* Only four dates are labelled, at every width. Eight would collide even on a
+   desktop plot once the series labels take their gutter, and the answer to a
+   crowded axis in this system is never smaller type — 13px is the floor, with
+   no exceptions. The four that remain carry their month, so no label is ever
+   an orphan number. */
+
+/* Direct labels. Below 840 they sit above the plot as a shape-led key; from 840
+   they move to the end of their own line, which is the honest version. */
+.prog-chart__key {
+  grid-area: key;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8) var(--space-16);
+  margin-block-end: var(--space-12);
+  list-style: none;
+}
+.prog-chart__key li { display: flex; align-items: center; gap: var(--space-8); }
+.prog-chart__key b {
+  display: block;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-label);
+  color: var(--c-ink-strong);
+}
+.prog-chart__key small { display: block; font-size: var(--fs-body-sm); color: var(--c-ink-muted); }
+
+/* The swatch is a scale model of the line: same colour, same dash, same marker. */
+.prog-chart__swatch { position: relative; inline-size: 26px; block-size: 12px; flex: none; }
+.prog-chart__swatch::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline: 0;
+  block-size: 0;
+  border-block-start: 2.5px solid var(--c-brand-500);
+}
+.prog-chart__swatch::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: 9px;
+  block-size: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: var(--radius-full);
+  background: var(--c-brand-500);
+}
+.prog-chart__swatch--b::before { border-block-start: 2.5px dashed var(--c-sage-600); }
+.prog-chart__swatch--b::after {
+  inline-size: 8px; block-size: 8px; margin: -4px 0 0 -4px;
+  border-radius: 1px; rotate: 45deg; background: var(--c-sage-600);
+}
+
+@media (min-width: 840px) {
+  .prog-chart__key {
+    position: relative;
+    display: block;
+    inline-size: 148px;
+    margin-block-end: 0;
+  }
+  .prog-chart__key li {
+    position: absolute;
+    inset-block-start: var(--y);
+    inset-inline-start: 0;
+    translate: 0 -50%;
+  }
+}
+
+.prog-chart__caption { margin-block-start: var(--space-12); color: var(--c-ink-muted); }
+
+/* --- 22.7 Per-habit rows + the 7-day micro-strip ---------------------------
+   The rows ARE kit habit cards — same 72px pitch, same title, same 13px meta,
+   same permanent gild marks — with the check-in ring replaced by the strip.
+   They deliberately carry NO `data-habit`, so the day arc and the day-state
+   hooks on other screens never count them.
+
+   Four dot states, four shapes:
+     kept      solid sage-600 disc          (dark, filled)
+     missed    hollow, hairline ring        (light, empty — never red) [D §3.2]
+     open      2px brand-600 ring           (today, still available)
+     upcoming  dashed hairline ring         (has not happened)
+   Each strip also states its count in words in the meta line above it, so the
+   information is never only in the dots.
+--------------------------------------------------------------------------- */
+.prog-rows { display: flex; flex-direction: column; gap: var(--layout-card-gap); list-style: none; }
+/* Below 600 the strip drops onto its own line under the title. From 600 up the
+   row stays a single line and the meta text wraps instead — flexbox wraps
+   before it shrinks, so `nowrap` is what actually keeps the ledger aligned. */
+.prog-row  { flex-wrap: wrap; row-gap: var(--space-12); }
+@media (min-width: 600px) { .prog-row { flex-wrap: nowrap; } }
+.prog-row__strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  flex: none;
+}
+@media (max-width: 599px) {
+  .prog-row__strip { flex-basis: 100%; justify-content: space-between; }
+}
+
+.prog-dots { display: inline-flex; align-items: center; gap: 6px; }
+.prog-dot {
+  inline-size: 12px;
+  block-size: 12px;
+  border-radius: var(--radius-full);
+  background: transparent;
+  border: var(--stroke-hairline) solid var(--c-border-control);
+}
+.prog-dot--kept     { background: var(--c-sage-600); border-color: var(--c-sage-600); }
+.prog-dot--missed   { background: var(--c-canvas-sunken); border-color: var(--c-border); }
+.prog-dot--open     { border: 2px solid var(--c-brand-600); }
+.prog-dot--upcoming { border-style: dashed; }
+
+/* On the hero the ink flips: sage-600 is only 1.74:1 on brand-700, so the
+   filled dot uses --c-arc-on-hero (4.10:1 light / 5.0:1 dark) for exactly the
+   reason the day arc does. The hairline states use the same 22% white the kit's
+   hero arc track already uses. */
+.prog-dots--on-hero .prog-dot          { border-color: rgba(255, 255, 255, 0.22); }
+.prog-dots--on-hero .prog-dot--kept    { background: var(--c-arc-on-hero); border-color: var(--c-arc-on-hero); }
+.prog-dots--on-hero .prog-dot--open    { border: 2px solid var(--c-hero-ink); }
+
+/* --- 22.8 Lifestyle panel: the habits that graduated -----------------------
+   The screen's second gilding surface. These are finished habits, so their
+   seals are the point of the row rather than a decoration on it. [D §2.4] */
+.prog-fulfilled { display: grid; gap: var(--layout-card-gap); list-style: none; }
+@media (min-width: 600px) {
+  .prog-fulfilled { grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+}
+.prog-fulfilled__row { display: flex; align-items: center; gap: var(--space-16); min-block-size: 72px; }
+.prog-fulfilled__row .seal { align-self: flex-start; margin-block-start: 2px; }
+
+
+/* ############################################################################
+   23. COMMUNITY — groups, threads, the check-in feed                 [D §3.3]
+   Used by: community.html ONLY. Appended, self-contained; nothing above this
+   line is edited. Every colour is a semantic --c-* token.
+
+   THE POSTURE OF THIS SCREEN. Group chat and peer check-ins pull hard toward
+   notification-heavy, slot-machine patterns. Everything here is built to
+   resist that:
+     - no unread badges, no dot swarms, no counters that tick up;
+     - a peer check-in is NOT a chat bubble — it is a quiet full-width note in
+       the completed-habit vocabulary (sage-100, small tick, 13px), so someone
+       else's progress reads as warmth rather than as a scoreboard;
+     - encouragement is free text only. There is no "like", no reaction count,
+       no "3 people cheered you" — a note left on paper, not a push alert;
+     - the only gold on the screen is the gild seal beside a milestone someone
+       actually kept, which is a sanctioned use. [D §6]
+     - missed days are simply absent ("Last check-in Monday"), never red,
+       never a broken chain. [D §7]
+
+   THE 3-PANE LAYOUT, AND ONE DOCUMENTED DEVIATION.
+   [D §3.3] and [B §6.3] both ask for 3-pane master-detail at lg (>=840):
+   list 280 | thread flex | members & details 300. At exactly 840px the
+   extended nav rail takes 200px and the page gutter 48px, leaving 592px of
+   content — 280 + 300 + gaps is already 628, so the thread pane would be
+   negative. Three side-by-side columns are arithmetically impossible until
+   ~1100px.
+   What is built instead keeps all three panes on screen from 840 up, which is
+   the point of the requirement, and reaches the literal column widths at xl:
+     < 600   one pane at a time — list -> thread -> details (data-view)
+     600     2-pane: list | thread. Details replaces the thread when opened.
+     840     3-pane: list | thread on row one, members & details as a full-width
+             band beneath. All three visible at once.
+     1200    the canonical three columns, list | thread | details.
+   ######################################################################### */
+
+/* --- Header: title + the three segments. The five-tab bar is gone. --------- */
+.community-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  margin-block-end: var(--space-24);
+}
+@media (min-width: 600px) {
+  .community-head {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+/* The segmented control scrolls rather than wrapping on the narrowest phones. */
+.community-head .segmented { max-inline-size: 100%; overflow-x: auto; }
+
+
+/* --- The workspace grid --------------------------------------------------- */
+.workspace {
+  display: grid;
+  gap: var(--space-16);
+  align-items: start;
+}
+.workspace__list,
+.workspace__thread,
+.workspace__detail { min-inline-size: 0; }
+
+/* xs/sm: exactly one pane at a time. */
+.workspace[data-view="list"]   .workspace__thread,
+.workspace[data-view="list"]   .workspace__detail,
+.workspace[data-view="thread"] .workspace__list,
+.workspace[data-view="thread"] .workspace__detail,
+.workspace[data-view="detail"] .workspace__list,
+.workspace[data-view="detail"] .workspace__thread { display: none; }
+
+@media (min-width: 600px) {
+  .workspace { grid-template-columns: minmax(200px, 280px) minmax(0, 1fr); }
+  /* The list is permanent from here up; details swaps with the thread. */
+  .workspace[data-view="thread"] .workspace__list,
+  .workspace[data-view="detail"] .workspace__list,
+  .workspace[data-view="list"]   .workspace__thread { display: block; }
+}
+
+@media (min-width: 840px) {
+  .workspace {
+    grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: "list thread" "detail detail";
+    block-size: calc(100dvh - 228px);
+    min-block-size: 520px;
+    align-items: stretch;
+  }
+  .workspace__list   { grid-area: list; }
+  .workspace__thread { grid-area: thread; }
+  .workspace__detail { grid-area: detail; max-block-size: 244px; }
+
+  /* All three panes are on screen at once; data-view stops hiding anything. */
+  .workspace[data-view] .workspace__list,
+  .workspace[data-view] .workspace__thread,
+  .workspace[data-view] .workspace__detail { display: flex; }
+
+  .workspace > * { flex-direction: column; min-block-size: 0; overflow: hidden; }
+  .thread-panel, .detail-panel { display: flex; flex-direction: column; min-block-size: 0; flex: 1 1 auto; }
+  .thread-panel[hidden], .detail-panel[hidden] { display: none; }
+  .pane-scroll { flex: 1 1 auto; min-block-size: 0; overflow-y: auto; }
+
+  /* The back / details buttons are a small-screen affordance only. */
+  .pane-head__back, .pane-head__details { display: none; }
+}
+
+@media (min-width: 1200px) {
+  .workspace {
+    grid-template-columns: minmax(232px, 264px) minmax(0, 1fr) minmax(240px, 284px);
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "list thread detail";
+    gap: var(--space-24);
+    block-size: calc(100dvh - 244px);
+  }
+  .workspace__detail { max-block-size: none; }
+}
+
+
+/* --- Pane furniture ------------------------------------------------------- */
+.pane-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-8) var(--space-12);
+  min-block-size: 60px;
+  border-block-end: var(--stroke-hairline) solid var(--c-border);
+  background: var(--c-surface);
+}
+.pane-head__title {
+  display: block;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-ink-strong);
+}
+.pane-head__meta { display: block; color: var(--c-ink-muted); }
+.pane-scroll { padding: var(--space-12); }
+.pane-foot { padding-inline: var(--space-4); }
+.pane-search { margin-block: var(--space-12); }
+
+/* Search field with its glyph inset — the icon is decoration, the input is
+   the control, so the box keeps the normal 1.5px control border. */
+.input-with-icon { position: relative; display: block; }
+.input-with-icon .icon {
+  position: absolute;
+  inset-inline-start: var(--space-12);
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  pointer-events: none;
+}
+.input-with-icon .input { inline-size: 100%; padding-inline-start: 42px; }
+
+
+/* --- Invitations: a queue you empty, not a place you live ----------------- */
+.invite-inbox {
+  border: var(--stroke-hairline) solid var(--c-brand-200);
+  background: var(--c-surface-tinted);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.invite-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  inline-size: 100%;
+  min-block-size: var(--target-min);
+  padding: var(--space-8) var(--space-12);
+  text-align: start;
+  color: inherit;
+  transition: background-color var(--dur-micro) var(--ease-standard);
+}
+@media (hover: hover) and (pointer: fine) {
+  .invite-row:hover { background: var(--c-brand-100); }
+}
+.invite-row__icon { color: var(--c-brand-600); display: inline-flex; }
+.invite-row__title { display: block; font-weight: 600; color: var(--c-ink-strong); font-size: var(--fs-body); }
+/* A plain count in ink-muted. Never a red badge — a queue, not an alarm. */
+.invite-row__meta { display: block; color: var(--c-ink-muted); }
+.invite-row__chevron { rotate: 90deg; transition: rotate var(--dur-base) var(--ease-standard); }
+.invite-row[aria-expanded="true"] .invite-row__chevron { rotate: -90deg; }
+
+.invite-panel { padding: 0 var(--space-12) var(--space-12); }
+.invite-list { display: flex; flex-direction: column; gap: var(--space-8); margin: 0; padding: 0; list-style: none; }
+.invite-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-12);
+  padding: var(--space-12);
+  background: var(--c-surface);
+  border: var(--stroke-hairline) solid var(--c-border);
+  border-radius: var(--radius-sm);
+  flex-wrap: wrap;
+}
+.invite-item__actions { display: flex; gap: var(--space-4); flex: none; }
+.empty-state--inline { padding-block: var(--space-16); }
+.empty-state--inline .empty-state__art { inline-size: 84px; block-size: 84px; }
+
+
+/* --- The group list. The avatar stack of who checked in today is the hero of
+       this screen: it makes Community about momentum, not messaging. -------- */
+.group-list { display: flex; flex-direction: column; gap: var(--space-4); margin: 0; padding: 0; list-style: none; }
+.group-list > li[hidden] { display: none; }
+
+.group-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-12);
+  inline-size: 100%;
+  min-block-size: var(--target-min);
+  padding: var(--space-12);
+  border-radius: var(--radius-sm);
+  text-align: start;
+  color: inherit;
+  transition: background-color var(--dur-micro) var(--ease-standard);
+}
+@media (hover: hover) and (pointer: fine) {
+  .group-row:hover { background: var(--c-surface-tinted); }
+}
+/* Selected: a tinted row plus a 3px brand bar. Gold is nav chrome only. */
+.group-row[aria-current="true"] {
+  background: var(--c-surface-tinted);
+  box-shadow: inset 3px 0 0 0 var(--c-brand-600);
+}
+.group-row__body { min-inline-size: 0; flex: 1 1 auto; }
+.group-row__name {
+  display: block;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-ink-strong);
+}
+.group-row__meta,
+.group-row__preview {
+  display: block;
+  font-size: var(--fs-body-sm);
+  line-height: calc(var(--lh-body-sm) / var(--fs-body-sm));
+  color: var(--c-ink-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.group-row__today {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin-block: var(--space-8) 2px;
+}
+/* "+12 today" — sage, because it is the same signal as a completed habit. */
+.group-row__count {
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-label);
+  color: var(--c-sage-600);
+  white-space: nowrap;
+}
+
+
+/* --- Avatars: CSS-generated initials. No network, no photographs. --------- */
+/* 11px initials are below the 13px text floor ON PURPOSE: they are decorative
+   (aria-hidden) shapes standing in for a photograph, never content. Every
+   avatar on this screen is paired with the person's name in real 13px+ text. */
+.avatar--sm { inline-size: 24px; block-size: 24px; font-size: 11px; letter-spacing: 0; }
+.avatar--group { border-radius: var(--radius-sm); }
+.avatar--sage  { background: var(--c-sage-100);     color: var(--c-sage-700);  }
+.avatar--gold  { background: var(--c-gold-surface); color: var(--c-gold-700);  }
+.avatar--clay  { background: var(--c-clay-surface); color: var(--c-clay-600);  }
+.avatar--amber { background: var(--c-amber-surface);color: var(--c-amber-750); }
+.avatar-stack--hero .avatar { box-shadow: 0 0 0 2px var(--c-hero-fill); }
+
+
+/* --- The thread. Ground is the canvas so paper bubbles sit ON it, exactly
+       like cards sit on the page. ------------------------------------------ */
+.thread { background: var(--c-canvas); }
+.thread__day {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  margin-block: var(--space-4) var(--space-12);
+  color: var(--c-ink-muted);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-caption);
+  letter-spacing: var(--ls-caption);
+}
+.thread__day::before, .thread__day::after {
+  content: "";
+  flex: 1 1 auto;
+  block-size: var(--stroke-hairline);
+  background: var(--c-border);
+}
+
+.chat-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8);
+  margin-block-start: var(--space-16);
+}
+.chat-row--self { flex-direction: row-reverse; }
+.chat-row > div { min-inline-size: 0; max-inline-size: 46ch; }
+
+/* Others: surface + hairline. You: brand-100. NEVER a filled brand-500
+   bubble — far too loud for the paper room. [D §3.3] */
+.chat-bubble {
+  padding: var(--space-12) var(--space-16);
+  background: var(--c-surface);
+  border: var(--stroke-hairline) solid var(--c-border);
+  border-radius: var(--radius-md);
+  border-start-start-radius: var(--radius-xs);
+  color: var(--c-ink);
+  font-size: var(--fs-body);
+  line-height: calc(var(--lh-body) / var(--fs-body));
+  overflow-wrap: anywhere;
+}
+.chat-row--self .chat-bubble {
+  background: var(--c-brand-100);
+  border-color: var(--c-brand-200);
+  border-start-start-radius: var(--radius-md);
+  border-start-end-radius: var(--radius-xs);
+}
+.chat-meta {
+  margin-block-start: var(--space-4);
+  font-size: var(--fs-body-sm);
+  color: var(--c-ink-muted);
+}
+.chat-row--self .chat-meta { text-align: end; }
+
+/* A message you just sent settles in: opacity + a 6px rise. The global reduced
+   motion block in base.css strips the transform and keeps the fade. */
+@keyframes hc-msg-in {
+  from { opacity: 0; translate: 0 6px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+.chat-row.is-entering { animation: hc-msg-in var(--dur-base) var(--ease-enter) both; }
+
+
+/* --- A peer check-in. Deliberately NOT a bubble: full width, sage-100, one
+       small tick, 13px. Accountability without shame. ---------------------- */
+.checkin-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+  margin-block-start: var(--space-16);
+  padding: var(--space-8) var(--space-12);
+  background: var(--c-done-surface);
+  border: var(--stroke-hairline) solid var(--c-done-border);
+  border-radius: var(--radius-sm);
+}
+.checkin-item__body { flex: 1 1 60%; min-inline-size: 0; }
+.checkin-item__text {
+  display: block;
+  font-size: var(--fs-body-sm);
+  line-height: calc(var(--lh-body-sm) / var(--fs-body-sm));
+  color: var(--c-done-ink);
+}
+.checkin-item__text strong { color: var(--c-done-ink); font-weight: 700; }
+.checkin-item__time { display: block; color: var(--c-done-ink); opacity: 0.85; }
+.checkin-item__tick { color: var(--c-sage-600); flex: none; }
+.checkin-item__say { flex: none; color: var(--c-sage-700); }
+@media (hover: hover) and (pointer: fine) {
+  .checkin-item__say:hover { background: var(--c-surface); }
+}
+
+
+/* --- The weekly group check-in, using the product's own four prompts:
+       "How did your weekly habit go?" / "What went well?" /
+       "What needs improvement?" / "How did it make you feel?"
+       Rendered as a note left on paper. ------------------------------------ */
+.checkin-note { margin-block-start: var(--space-16); }
+.checkin-note__head { display: flex; align-items: center; gap: var(--space-8); margin-block-end: var(--space-12); }
+.checkin-note__kicker {
+  display: block;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-caption);
+  letter-spacing: var(--ls-caption);
+  color: var(--c-brand-600);
+}
+.checkin-note__lede {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--c-ink-strong);
+  margin-block-end: var(--space-12);
+}
+.checkin-note__qa { margin: 0; }
+.checkin-note__qa dt {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-label);
+  color: var(--c-ink-muted);
+}
+.checkin-note__qa dd {
+  margin: 0 0 var(--space-12);
+  font-size: var(--fs-body);
+  line-height: calc(var(--lh-body) / var(--fs-body));
+  color: var(--c-ink);
+}
+.checkin-note__qa dd:last-of-type { margin-block-end: var(--space-8); }
+
+
+/* --- The composer -------------------------------------------------------- */
+.composer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+  padding: var(--space-12);
+  background: var(--c-surface);
+  border-block-start: var(--stroke-hairline) solid var(--c-border);
+}
+.composer__field { flex: 1 1 160px; min-inline-size: 0; }
+.composer__field .input { inline-size: 100%; }
+.composer__send { color: var(--c-brand-600); flex: none; }
+@media (hover: hover) and (pointer: fine) {
+  .composer__send:hover { background: var(--c-brand-100); }
+}
+/* Replying-to chip: the only context the composer ever carries. */
+.composer__reply { flex: 1 0 100%; display: flex; align-items: center; gap: var(--space-4); }
+.composer__reply[hidden] { display: none; }
+
+
+/* --- Members & details pane ---------------------------------------------- */
+.detail-body { display: flex; flex-direction: column; gap: var(--space-12); }
+/* Children of a flex column inside an overflowing pane must not shrink, or the
+   hero collapses to the height of its own label. */
+.detail-body > * { flex: none; }
+.detail-hero { padding: var(--space-16); }
+.detail-hero .hero__numeral { font-size: var(--fs-h1); }
+.detail-hero__of {
+  font-family: var(--font-ui);
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-body-sm);
+  letter-spacing: var(--ls-body-sm);
+  color: var(--c-hero-ink-muted);
+  margin-inline-start: var(--space-8);
+}
+.detail-hero .avatar-stack { margin-block-start: var(--space-12); }
+.detail-hero .hero__body { margin-block-start: var(--space-4); }
+
+.detail-facts { margin: 0; }
+.detail-facts dt {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-label);
+  color: var(--c-ink-muted);
+}
+.detail-facts dd {
+  margin: 2px 0 var(--space-12);
+  font-size: var(--fs-body-sm);
+  line-height: calc(var(--lh-body-sm) / var(--fs-body-sm));
+  color: var(--c-ink);
+}
+.detail-subhead { margin-block-start: var(--space-4); }
+.detail-more { margin-block-start: var(--space-4); }
+.detail-actions { display: flex; gap: var(--space-8); flex-wrap: wrap; margin-block-start: var(--space-8); }
+
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  min-block-size: var(--target-min);
+  padding-block: var(--space-4);
+}
+.member-row__name { display: block; font-size: var(--fs-body); font-weight: 600; color: var(--c-ink-strong); }
+.member-row__meta { display: block; font-size: var(--fs-body-sm); color: var(--c-ink-muted); }
+.member-row__tick { color: var(--c-sage-600); flex: none; }
+
+/* 840-1199: the details pane is the band under the two columns, so its content
+   flows across rather than down. At 1200 it becomes a real third column. */
+@media (min-width: 840px) and (max-width: 1199px) {
+  .detail-body {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-8) var(--space-24);
+    align-items: start;
+  }
+  .detail-hero { grid-row: span 4; }
+}
+
+
+/* --- Monthly challenges. A group ring — the share of members on track —
+       instead of a raw number, and no leaderboard anywhere. [D §3.3] ------- */
+.challenge-grid {
+  display: grid;
+  gap: var(--layout-card-gap);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+}
+.challenge-card { display: flex; align-items: center; gap: var(--space-16); flex-wrap: wrap; }
+.challenge-card__kicker {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-caption);
+  letter-spacing: var(--ls-caption);
+  color: var(--c-brand-600);
+}
+.challenge-card__title {
+  font-size: var(--fs-h3);
+  line-height: calc(var(--lh-h3) / var(--fs-h3));
+  font-weight: var(--fw-h3);
+  letter-spacing: var(--ls-h3);
+  color: var(--c-ink-strong);
+  margin-block: 2px var(--space-4);
+}
+.challenge-foot { margin-block-start: var(--space-16); }
+
+/* Same 270-degree geometry and pathLength=100 normalisation as the day arc, at
+   56px. --pct is set inline per card; offset = 100 - percent. It is STATIC: a
+   progress ring that fills itself on load is a slot machine. */
+.group-ring {
+  position: relative;
+  flex: none;
+  inline-size: 56px;
+  block-size: 56px;
+  display: grid;
+  place-items: center;
+}
+.group-ring__svg { position: absolute; inset: 0; inline-size: 56px; block-size: 56px; fill: none; }
+.group-ring__track { stroke: var(--c-ring-track); stroke-width: var(--stroke-ring); stroke-linecap: round; }
+.group-ring__fill {
+  stroke: var(--c-sage-600);
+  stroke-width: var(--stroke-ring);
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: calc(100 - var(--pct, 0));
+}
+.group-ring__value {
+  position: relative;
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-label);
+  color: var(--c-ink-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* --- Events. Webinars are a TYPE TAG here, not a top-level tab. ----------- */
+.event-list { display: flex; flex-direction: column; gap: var(--layout-card-gap); margin: 0; padding: 0; list-style: none; }
+.event-row { display: flex; align-items: center; gap: var(--space-16); flex-wrap: wrap; }
+.event-row__title {
+  font-size: var(--fs-h3);
+  line-height: calc(var(--lh-h3) / var(--fs-h3));
+  font-weight: var(--fw-h3);
+  letter-spacing: var(--ls-h3);
+  color: var(--c-ink-strong);
+}
+.event-row .chip { margin-block-start: var(--space-8); }
+.event-date {
+  flex: none;
+  inline-size: 56px;
+  block-size: 56px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--c-canvas-sunken);
+  color: var(--c-ink-muted);
+}
+.event-date__month {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-caption);
+  letter-spacing: var(--ls-caption);
+  text-transform: uppercase;
+}
+.event-date__day {
+  font-size: var(--fs-h3);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--c-ink-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ############################################################################
+   APPENDED SECTION — CREATE HABIT + PROFILE
+   Everything below was added for create-habit.html and profile.html. It is
+   append-only and self-contained: it does not modify or depend on the ordering
+   of any rule above it. Semantic --c-* tokens only; no new hex. The only literal
+   colours are rgba(255,255,255,α) veils used ON the deep-blue hero surface, the
+   same device components.css already uses for .hero .day-arc__track.
+   ######################################################################### */
+
+
+/* ============================================================================
+   A. SWITCH — the toggle the kit was missing
+   Used by: Create Habit ("Remind me"), Profile (Privacy visibility rows,
+   "Quick check-in", milestone chime).
+   A real <input type="checkbox" role="switch"> carries the state, so keyboard
+   and screen-reader support are free. State is NEVER colour alone: the thumb
+   moves (a shape/position difference that survives grayscale) and every switch
+   in this system is rendered beside a text value ("Public"/"Private", "On"/"Off").
+   The hit area is 52 × 48 — the track is only 32 tall but the target is legal.
+   ========================================================================= */
+
+.switch {
+  position: relative;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  inline-size: 52px;
+  block-size: var(--target-min);
+}
+.switch input {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.switch__track {
+  pointer-events: none;
+  inline-size: 52px;
+  block-size: 32px;
+  border-radius: var(--radius-full);
+  background: var(--c-canvas-sunken);
+  /* The border IS the affordance, so it takes border-control (3.45:1). */
+  border: var(--stroke-control) solid var(--c-border-control);
+  transition: background-color var(--dur-quick) var(--ease-standard),
+              border-color var(--dur-quick) var(--ease-standard);
+}
+.switch__thumb {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 4px;
+  margin-block-start: -11px;
+  inline-size: 22px;
+  block-size: 22px;
+  border-radius: var(--radius-full);
+  background: var(--c-surface);
+  border: var(--stroke-hairline) solid var(--c-border-control);
+  pointer-events: none;
+  /* `translate` is its own property, so it never fights the spring on `scale`,
+     and the reduced-motion block in base.css drops the transition rather than
+     the position — the thumb still lands in the right place, instantly. */
+  translate: 0 0;
+  transition: translate var(--dur-quick) var(--ease-spring-snap),
+              background-color var(--dur-quick) var(--ease-standard),
+              border-color var(--dur-quick) var(--ease-standard);
+}
+.switch input:checked ~ .switch__track {
+  background: var(--c-brand-600);
+  border-color: var(--c-brand-600);
+}
+.switch input:checked ~ .switch__thumb {
+  translate: 22px 0;
+  background: var(--c-on-brand);
+  border-color: var(--c-on-brand);
+}
+.switch input:focus-visible ~ .switch__track {
+  outline: var(--stroke-focus) solid var(--c-border-focus);
+  outline-offset: 2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .switch input:hover ~ .switch__track { border-color: var(--c-brand-500); }
+}
+/* On the hero surface (Create Habit's celebration card never uses one, but the
+   Prompt card may sit on tinted stock) keep the track legible. */
+.hero .switch__track { border-color: rgba(255, 255, 255, 0.55); background: rgba(255, 255, 255, 0.12); }
+
+
+/* ============================================================================
+   B. DAY / TIME PICKER — the real scheduling UX, rebuilt
+   Used by: Create Habit → "When will you do the behavior?"
+   The shipping app uses a 250px bottom sheet with seven multi-select chips
+   (Mon Tues Wed Thurs Fri Sat Sun — its own abbreviations, kept verbatim), a
+   Select All / Unselect All toggle, one native time picker and a Confirm.
+   Here it is inline instead of a sheet: on a workbench you should be able to
+   see the whole object at once, and an inline control removes the sheet's
+   real bug (Confirm force-unwraps the time and throws if you never picked one).
+   Every day is a real <button aria-pressed>, so the whole picker is keyboard
+   operable with no custom key handling at all. Selection carries a filled dot
+   as well as the fill change, so it survives grayscale.
+   ========================================================================= */
+
+.daypick { display: flex; flex-wrap: wrap; gap: var(--space-8); }
+
+.daypick__day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-inline-size: 56px;
+  min-block-size: var(--target-min);
+  padding-inline: var(--space-8);
+  border-radius: var(--radius-full);
+  border: var(--stroke-control) solid var(--c-border-control);
+  background: var(--c-surface);
+  color: var(--c-ink);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-label);
+  transition: background-color var(--dur-micro) var(--ease-standard),
+              border-color var(--dur-micro) var(--ease-standard),
+              color var(--dur-micro) var(--ease-standard),
+              scale var(--dur-spring-snap-ui) var(--ease-spring-snap);
+}
+.daypick__day:active { scale: 0.96; transition-duration: 100ms; }
+.daypick__dot {
+  inline-size: 5px;
+  block-size: 5px;
+  border-radius: var(--radius-full);
+  background: transparent;
+}
+.daypick__day[aria-pressed="true"] {
+  background: var(--c-brand-600);
+  border-color: var(--c-brand-600);
+  color: var(--c-on-brand);
+}
+.daypick__day[aria-pressed="true"] .daypick__dot { background: var(--c-on-brand); }
+@media (hover: hover) and (pointer: fine) {
+  .daypick__day:hover { border-color: var(--c-brand-500); }
+  .daypick__day[aria-pressed="true"]:hover { background: var(--c-brand-700); }
+}
+
+/* The reminder read-out — the app's own "Mon, Wed, Fri at 7:00 AM" line. */
+.reminder-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  color: var(--c-ink-muted);
+  font-size: var(--fs-body-sm);
+  line-height: calc(var(--lh-body-sm) / var(--fs-body-sm));
+}
+.reminder-line .icon { inline-size: 16px; block-size: 16px; color: currentColor; }
+
+
+/* ============================================================================
+   C. THE WORKBENCH — Create Habit layout                             [D §3.4]
+   "The one screen where the Crafts in the name is literal."
+   xs–sm : one column. The live preview pins to the top of the scroll so the
+           thing you are making is never off screen while you type.
+   md    : same single column at a comfortable measure (the direction's 560px
+           modal, as a page).
+   lg+   : two real columns — steps left, the preview and its inspiration rail
+           sticky on the right. NOT a 400px form floating in parchment.
+   ========================================================================= */
+
+.craft-layout {
+  display: grid;
+  gap: var(--layout-grid-gap);
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+}
+.craft-steps { display: flex; flex-direction: column; gap: var(--layout-card-gap); }
+.craft-aside { display: flex; flex-direction: column; gap: var(--layout-card-gap); }
+
+/* Below 1200 the preview rides at the top of the column and stays there while
+   you write. The split waits for 1200 on purpose: from 840 the nav is already
+   a 200px extended rail, so a two-column form at 900px would leave a ~300px
+   field column — the exact "phone strip in an ocean" failure this redesign
+   exists to kill. A 650px single column with a pinned preview is the better
+   answer at that width, and it is the direction's "all four fields visible at
+   once" case. [D §3.4, §5.3] */
+@media (max-width: 1199px) {
+  .craft-aside {
+    order: -1;
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 5;
+    background: var(--c-canvas);
+    padding-block: var(--space-8);
+    margin-block-start: calc(var(--space-8) * -1);
+  }
+  /* Keep the preview card card-sized rather than letting it span the measure. */
+  .craft-preview { max-inline-size: 460px; }
+  /* And keep the fields at a form measure — at 1100px a full-bleed single
+     column would put 790px-wide text inputs on screen. 720 is the direction's
+     own lg modal width. */
+  .craft-steps { max-inline-size: 720px; }
+}
+
+@media (min-width: 1200px) {
+  .craft-layout { grid-template-columns: minmax(0, 1fr) 380px; }
+  .craft-aside { position: sticky; inset-block-start: var(--space-24); }
+}
+
+/* A companion note that only exists once the rail is a real column. Below 1200
+   the rail is a pinned strip and must stay short. */
+.craft-aside__desk { display: none; }
+@media (min-width: 1200px) { .craft-aside__desk { display: block; } }
+
+/* --- A step. Not a wizard pane and not a row in a wall of fields: a small
+       titled block that states its Fogg question in the display serif, the way
+       the app already asks it. All steps stay visible at every width; the
+       ordinal is the only thing that tracks progress. --------------------- */
+.craft-step__kicker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin-block-end: var(--space-4);
+}
+.craft-step__ordinal {
+  flex: none;
+  display: grid;
+  place-items: center;
+  inline-size: 24px;
+  block-size: 24px;
+  border-radius: var(--radius-full);
+  background: var(--c-canvas-sunken);
+  color: var(--c-ink-muted);
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transition: background-color var(--dur-base) var(--ease-standard),
+              color var(--dur-base) var(--ease-standard);
+}
+.craft-step__ordinal .icon { inline-size: 14px; block-size: 14px; color: currentColor; }
+.craft-step__type {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-caption);
+  letter-spacing: var(--ls-caption);
+  color: var(--c-ink-muted);
+}
+.craft-step__question {
+  /* It is a real <label for>, so it must be told to behave like a heading. */
+  display: block;
+  font-family: var(--font-display);
+  font-variation-settings: var(--fvs-h1);
+  font-optical-sizing: auto;
+  font-size: var(--fs-h2);
+  line-height: calc(var(--lh-h2) / var(--fs-h2));
+  font-weight: var(--fw-h2);
+  letter-spacing: var(--ls-h2);
+  color: var(--c-ink-strong);
+}
+.craft-step__help {
+  margin-block-start: var(--space-4);
+  font-size: var(--fs-body-sm);
+  line-height: calc(var(--lh-body-sm) / var(--fs-body-sm));
+  color: var(--c-ink-muted);
+}
+.craft-step__control { margin-block-start: var(--space-16); }
+
+/* Answered. Sage, quiet, and carried by a glyph as well as a fill change. */
+.craft-step.is-done .craft-step__ordinal {
+  background: var(--c-sage-100);
+  color: var(--c-sage-700);
+}
+.craft-step.is-done .craft-step__type { color: var(--c-sage-700); }
+
+/* --- The promise. The celebration step is the screen's ONE hero surface: the
+       question the redesign is built around gets the deep-blue paper, and the
+       answer is written straight onto it rather than into a boxed field. What
+       you type appears below in exactly the face and colour it will unfurl in
+       on Home, so the field is a preview of the moment, not a form input. --- */
+.hero .craft-step__ordinal { background: rgba(255, 255, 255, 0.18); color: var(--c-hero-ink); }
+.hero .craft-step__type,
+.hero .craft-step__help,
+.hero .field__label { color: var(--c-hero-ink-muted); }
+.hero .craft-step__question { color: var(--c-hero-ink); }
+
+.input--on-hero {
+  inline-size: 100%;
+  background: transparent;
+  border: 0;
+  /* rgba(255,255,255,.55) over --c-hero-fill is 3.77:1 light / 4.51:1 dark
+     (computed) — a legal control boundary in both themes. */
+  border-block-end: var(--stroke-control) solid rgba(255, 255, 255, 0.55);
+  border-radius: 0;
+  padding-inline: 0;
+  padding-block: var(--space-8);
+  color: var(--c-hero-ink);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--fs-body-lg);
+}
+.input--on-hero::placeholder { color: var(--c-hero-ink-muted); font-style: italic; }
+.input--on-hero:hover,
+.input--on-hero:focus { border-block-end-color: var(--c-hero-ink); background: transparent; }
+
+.promise-echo {
+  margin-block-start: var(--space-16);
+  padding-block-start: var(--space-16);
+  border-block-start: var(--stroke-hairline) solid rgba(255, 255, 255, 0.22);
+}
+.promise-echo__text {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--fs-body-lg);
+  line-height: calc(var(--lh-body-lg) / var(--fs-body-lg));
+  color: var(--c-hero-ink);
+}
+.promise-echo__caption {
+  margin-block-start: var(--space-4);
+  font-size: var(--fs-body-sm);
+  color: var(--c-hero-ink-muted);
+}
+
+/* --- The live preview. The exact card that will appear on Home, assembling as
+       you type. A template fill lands with one spring-snap settle. --------- */
+.craft-preview__caption {
+  margin-block-start: var(--space-8);
+  font-size: var(--fs-body-sm);
+  color: var(--c-ink-muted);
+}
+@keyframes hc-settle {
+  from { scale: 0.96; }
+  to   { scale: 1; }
+}
+.craft-preview.is-settling .habit-card {
+  animation: hc-settle var(--dur-spring-snap) var(--ease-spring-snap) both;
+}
+
+/* An optional step folds away behind a native <details>: no JS, no custom
+   keyboard handling, and the summary is a real 48px target. */
+.fold { border-block-start: var(--stroke-hairline) solid var(--c-border); }
+.fold > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-block-size: var(--target-min);
+  cursor: pointer;
+  list-style: none;
+  color: var(--c-brand-600);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-label);
+}
+.fold > summary::-webkit-details-marker { display: none; }
+.fold > summary .icon {
+  inline-size: 18px;
+  block-size: 18px;
+  color: currentColor;
+  transition: rotate var(--dur-quick) var(--ease-standard);
+}
+.fold[open] > summary .icon { rotate: 90deg; }
+.fold__body { padding-block-end: var(--space-16); }
+
+
+/* ============================================================================
+   D. PROFILE — the record, not a settings graveyard                  [D §3.5]
+   xs   : a list of category rows that pushes to a detail pane (with a back
+          affordance), exactly as the direction asks.
+   md+  : a permanent 2-pane — category list 240px | detail — no push nav.
+   The categories are real tabs (role="tablist", vertical), so arrow keys, Home
+   and End work and the panel is labelled by its tab.
+   ========================================================================= */
+
+.profile-panes {
+  display: grid;
+  gap: var(--space-24);
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (max-width: 599px) {
+  .profile-panes.is-detail  .profile-panes__nav    { display: none; }
+  .profile-panes:not(.is-detail) .profile-panes__detail { display: none; }
+}
+@media (min-width: 600px) {
+  .profile-panes { grid-template-columns: 240px minmax(0, 1fr); }
+  .profile-panes__nav { position: sticky; inset-block-start: var(--space-24); }
+  .pane-back { display: none; }
+}
+
+.pane-nav { display: flex; flex-direction: column; gap: 2px; }
+.pane-nav__btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  inline-size: 100%;
+  min-block-size: var(--target-min);
+  padding: var(--space-8) var(--space-12);
+  border-radius: var(--radius-sm);
+  color: var(--c-ink);
+  text-align: start;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-label);
+  transition: background-color var(--dur-micro) var(--ease-standard),
+              color var(--dur-micro) var(--ease-standard);
+}
+.pane-nav__btn .icon { inline-size: 20px; block-size: 20px; color: currentColor; }
+.pane-nav__btn .u-grow { text-align: start; }
+@media (hover: hover) and (pointer: fine) {
+  .pane-nav__btn:hover { background: var(--c-surface-tinted); color: var(--c-brand-600); }
+}
+/* Selected carries a 3px brand bar as well as the fill — gold is nav-only. */
+.pane-nav__btn[aria-selected="true"] {
+  background: var(--c-surface-tinted);
+  color: var(--c-brand-600);
+}
+.pane-nav__btn[aria-selected="true"]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block: var(--space-8);
+  inline-size: 3px;
+  border-radius: var(--radius-full);
+  background: var(--c-brand-600);
+}
+.pane-nav__btn .icon--chevron { margin-inline-start: auto; opacity: 0.7; }
+@media (min-width: 600px) { .pane-nav__btn .icon--chevron { display: none; } }
+
+.pane-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-block-size: var(--target-min);
+  margin-block-end: var(--space-8);
+  color: var(--c-brand-600);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-label);
+}
+.pane-back .icon { inline-size: 18px; block-size: 18px; color: currentColor; rotate: 180deg; }
+/* Restated after the base rule so it wins on source order: from 600px up both
+   panes are permanent, so there is nothing to go back from. */
+@media (min-width: 600px) { .pane-back { display: none; } }
+
+/* --- A settings row. One per line, label + value + control, hairline between.
+       No icons-in-coloured-circles, no chevron farm. -------------------- */
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  min-block-size: 64px;
+  padding-block: var(--space-12);
+  border-block-start: var(--stroke-hairline) solid var(--c-border);
+}
+.setting-row:first-child { border-block-start: 0; }
+.setting-row__body { flex: 1 1 auto; min-inline-size: 0; }
+.setting-row__label {
+  display: block;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-ink-strong);
+}
+.setting-row__value {
+  display: block;
+  margin-block-start: 2px;
+  font-size: var(--fs-body-sm);
+  line-height: calc(var(--lh-body-sm) / var(--fs-body-sm));
+  color: var(--c-ink-muted);
+}
+/* A row's value can also be the reminder read-out, which is a flex line. This
+   restates it after the block rule above so source order does not undo it. */
+.setting-row__value.reminder-line { display: flex; }
+
+/* --- The shelf of earned marks. THE hero of this screen, and the only place
+       gold appears in quantity. Each mark restates the gild it corresponds to
+       on the habit card itself: day 7 a corner tick, day 30 a gold ring, day
+       100 the embossed seal, day 365 the seal filled solid. Cosmetic, permanent,
+       and it survives streak breaks — it records what you did. [D §2.4, §3.5] */
+.shelf {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin-block-start: var(--space-16);
+  padding-block-start: var(--space-16);
+  border-block-start: var(--stroke-hairline) solid rgba(255, 255, 255, 0.22);
+}
+.mark {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-8) var(--space-12);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.08);
+}
+.mark__body { min-inline-size: 0; }
+.mark__name {
+  display: block;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-label);
+  color: var(--c-hero-ink);
+}
+.mark__tier {
+  display: block;
+  margin-block-start: 2px;
+  font-size: var(--fs-body-sm);
+  color: var(--c-hero-ink-muted);
+}
+/* The two drawn marks below are gold-500 strokes, which the palette law allows
+   ONLY because they sit on the hero: gold-500 on brand-700 is 4.98:1 ✅. The
+   ban is on gold-500 as a hairline against the light canvas (1.52:1). These
+   classes must never be used off the hero surface. [D §6]
+   Day 7 — the corner tick, at mark scale. */
+.mark__tick {
+  flex: none;
+  inline-size: 18px;
+  block-size: 18px;
+  border-block-start: 3px solid var(--c-gold-500);
+  border-inline-end: 3px solid var(--c-gold-500);
+  border-start-end-radius: var(--radius-xs);
+}
+/* Day 30 — the gold inner hairline, at mark scale. */
+.mark__ring {
+  flex: none;
+  inline-size: 20px;
+  block-size: 20px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--c-gold-500);
+}
+
+.profile-hero { display: flex; flex-direction: column; }
+.profile-hero__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-16);
+}
+/* Forces the "Preview profile" button onto its own row on a phone rather than
+   crushing the name beside it. */
+.profile-hero__head > .u-grow { min-inline-size: 150px; }
+.avatar--xl {
+  inline-size: 72px;
+  block-size: 72px;
+  font-size: var(--fs-h2);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.28);
+}
+@media (min-width: 840px) {
+  .avatar--xl { inline-size: 88px; block-size: 88px; font-size: var(--fs-h1); }
+}
+
+/* --- A goal and the habits under it. Native <details>, so it is keyboard
+       operable with nothing bolted on. --------------------------------- */
+.goal-row { border-block-start: var(--stroke-hairline) solid var(--c-border); }
+.goal-row:first-of-type { border-block-start: 0; }
+.goal-row > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  min-block-size: 64px;
+  padding-block: var(--space-8);
+  cursor: pointer;
+  list-style: none;
+}
+.goal-row > summary::-webkit-details-marker { display: none; }
+.goal-row__name { font-size: var(--fs-body-lg); font-weight: 600; color: var(--c-ink-strong); }
+.goal-row__meta { font-size: var(--fs-body-sm); color: var(--c-ink-muted); }
+.goal-row > summary .icon--chevron {
+  margin-inline-start: auto;
+  transition: rotate var(--dur-quick) var(--ease-standard);
+}
+.goal-row[open] > summary .icon--chevron { rotate: 90deg; }
+.goal-row__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding-block-end: var(--space-16);
+}
+
+/* Two-up form fields from md up, so the Profile details form is a real desktop
+   form rather than a phone column stretched down the page. */
+.field-grid {
+  display: grid;
+  gap: var(--space-16);
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 600px) {
+  .field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .field-grid__full { grid-column: 1 / -1; }
+}
+.field-pair { display: flex; gap: var(--space-8); }
+.field-pair > * { flex: 1 1 0; min-inline-size: 0; }
+
+/* The chevron glyph, shared by the pane nav, the folds and the goal rows. */
+.icon--chevron { inline-size: 18px; block-size: 18px; flex: none; color: var(--c-ink-muted); }
