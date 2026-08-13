@@ -931,7 +931,6 @@
    re-wiring cannot double-bind.
 
    Attributes owned by this module
-     data-tabs / data-tab="x" / data-tabpanel="x"   the three segments
      data-workspace + data-view="list|thread|detail" which pane is on screen <840
      data-view-set="list|thread|detail"             back / details buttons
      data-group-select="id" + data-group-panel="id" list selection -> panes
@@ -961,36 +960,14 @@
   };
 
   /* --- 1. The three segments -------------------------------------------- */
-  function initTabs(root) {
-    var tabs = $$('[data-tab]', root);
-    if (!tabs.length) return;
-
-    function select(name, focus) {
-      tabs.forEach(function (t) {
-        var on = t.getAttribute('data-tab') === name;
-        t.setAttribute('aria-selected', on ? 'true' : 'false');
-        t.tabIndex = on ? 0 : -1;
-        if (on && focus) t.focus();
-      });
-      $$('[data-tabpanel]').forEach(function (p) {
-        p.hidden = p.getAttribute('data-tabpanel') !== name;
-      });
-    }
-
-    tabs.forEach(function (tab) {
-      bind(tab, 'Tab', 'click', function () { select(tab.getAttribute('data-tab')); });
-      bind(tab, 'TabKey', 'keydown', function (e) {
-        var i = tabs.indexOf(tab), next = null;
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = tabs[(i + 1) % tabs.length];
-        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = tabs[(i - 1 + tabs.length) % tabs.length];
-        else if (e.key === 'Home') next = tabs[0];
-        else if (e.key === 'End') next = tabs[tabs.length - 1];
-        if (!next) return;
-        e.preventDefault();
-        select(next.getAttribute('data-tab'), true);
-      });
-    });
-  }
+  /* REMOVED. This module used to carry a second [data-tab] implementation that
+     bound the same buttons as the Progress module's [data-tabs] handler, so on
+     community.html every segment was wired twice. The Progress one is kept: it
+     scopes tabs to their own [data-tabs] container (this one queried the whole
+     root, so two tablists on one page would have fought), it honours whichever
+     tab the markup declares selected, and it drives the panel fade. The DOM
+     contract — data-tabs / data-tab / data-tabpanel — is unchanged.
+     ---------------------------------------------------------------------- */
 
   /* --- 2. Which pane is on screen below 840 ------------------------------ */
   function setView(ws, view) {
@@ -1181,8 +1158,7 @@
 
   function initCommunity(root) {
     var ctx = root || document;
-    if (!$('[data-workspace]', ctx) && !$('[data-tabs]', ctx)) return;
-    initTabs(ctx);
+    if (!$('[data-workspace]', ctx)) return;   /* tabs are the Progress module's */
     initViewButtons(ctx);
     initGroupList(ctx);
     initFilter(ctx);

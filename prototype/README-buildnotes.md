@@ -11,6 +11,10 @@ back, and the things you keep turn gold.** Everything you *look at* is paper
 deep-blue hero surface per screen, grain not gloss). Everything you *touch* is a
 spring (compresses, resists, snaps back with overshoot).
 
+This is one document, not a base plus appendices. Every screen described here is
+built; where a rule changed during the build the current rule is the one written
+down, and the superseded one is gone rather than left below a divider.
+
 ---
 
 ## 1. Files and load order
@@ -19,15 +23,24 @@ spring (compresses, resists, snaps back with overshoot).
 prototype/
   index.html              gallery / landing (has its own <style> block — do not copy it)
   home.html               the reference screen. COPY ITS SHELL AND NAV VERBATIM.
-  progress.html           ← to build
-  community.html          ← to build
-  create-habit.html       ← to build
-  profile.html            ← to build
+  progress.html           the ledger
+  community.html          groups, threads, the check-in feed
+  create-habit.html       the workbench
+  profile.html            the record
+  explore.html            habit ideas
+  library.html            the knowledge layer
+  library-detail.html     the reading view
+  onboarding.html         the welcome tour (logged out)
+  auth.html               login / sign up / forgot password (logged out)
   css/tokens.css          every design token. No component styles.
   css/base.css            reset, paper canvas + grain, type ramp, focus, reduced motion.
   css/components.css      the component kit + layout patterns.
   js/prototype.js         all behaviour. No per-page scripts.
 ```
+
+Eleven of the shipping app's fourteen screens have a design reference here.
+`free_trial_screen` is deliberately **not** built — it is unreachable dead code
+and ticket #60 deletes it.
 
 Every page links exactly this, in this order — tokens, then base, then
 components — and one script tag at the end of `<body>`:
@@ -47,6 +60,19 @@ same house style as the sections already there. Screen-specific *layout* (a grid
 of named areas that only Community has) may live in a small commented `<style>`
 block in that screen, but prefer `.grid12` / `.panes--2` / `.panes--3` first.
 
+### Three blocks are byte-identical on every page
+
+The icon sprite (§8), the `<nav class="app-nav">` block (§3) and the first four
+groups of the devbar (§3) are copy-paste identical across every file that
+carries them — the only permitted variation is which nav item holds
+`aria-current="page"`, and any extra devbar group a screen appends after the
+fourth. A diff of any two screens should show only their content.
+
+This is a rule with history: two parallel builds each grew their own copy of the
+sprite, one of them redrawn in a solid family, and the drift was invisible until
+the files were compared side by side. If you add an icon, add it to the block
+and paste the whole block to every page. Never fork one page's copy.
+
 ### Hard constraints
 - **Zero external dependencies.** No CDN, no webfont file, no remote image, no
   build step. Every file must open correctly by double-click from `file://`.
@@ -54,8 +80,7 @@ block in that screen, but prefer `.grid12` / `.panes--2` / `.panes--3` first.
   and photographic content — **never as icons or chrome.** `bottomNavBackground.png`
   and the eight raster icon PNGs are dead; do not resurrect them.
 - Icons are inline SVG `<symbol>` sprites on a 24px grid using `currentColor`.
-  Copy the sprite block from the top of `home.html` and extend it. One family,
-  one style. No emoji as interface elements.
+  One family, one style. No emoji as interface elements. See §8.
 - **The palette is closed.** No new hex value anywhere. If you need a colour,
   it exists in `tokens.css` or it does not exist.
 
@@ -86,13 +111,27 @@ A `[data-theme]` toggle therefore beats the OS preference in both directions.
 Never write a `@media (prefers-color-scheme: dark)` block in a component file —
 put the dark answer in the semantic mapping instead.
 
+Two role tokens exist because a signal colour lands somewhere the raw palette
+value fails:
+
+- **`--c-arc-on-hero`** — the day arc's fill when it sits on the deep-blue hero.
+  `sage-600` on `brand-700` is 1.74:1 and fails 1.4.11. Light 4.10:1, dark 5.0:1.
+  It stays *sage* on purpose, so the gold flush at completion is still a change
+  rather than something already spent.
+- **`--c-illus-line`** — illustration linework. Light = `brand-700`, as the
+  direction specifies. Dark = the brand tint: the direction's pairing names *the
+  light canvas*, and in Nightfall `brand-700` becomes the hero blue, so a stem
+  drawn in it would disappear into the canvas.
+
 ### Laws that are easy to break by accident
 - **No resting shadow on content.** Two elevation layers only: *paper* (canvas,
   cards — fill + hairline) and *floating* (nav, FAB, modals, hero, desktop
   hover-lift). `--shadow-xs` and `--shadow-sm` do not exist. In dark, all three
   shadow tokens resolve to `none`.
 - **One `--c-hero-fill` surface per screen, maximum.** Home spends it on the
-  streak card, Progress on the summary card. If your screen has two, one is wrong.
+  streak card, Progress on the summary card, Library on today's lesson,
+  Library detail on the "Make it a habit" bridge. If your screen has two, one
+  is wrong.
 - **Gold is rationed.** Legal uses: the streak flame chip, milestone moments,
   gild marks, calendar milestone ticks, the nav's 3px selected pill, and the
   milestone card's single CTA. Never chrome fill, never a hairline (`gold-500`
@@ -104,19 +143,19 @@ put the dark answer in the semantic mapping instead.
 - **13px minimum text.** No exceptions. The `caption` token is 13px, not the
   11px the brief's table shows; it differs from `body-sm` by weight and tracking.
 - **Fraunces (`--font-display`) is a daily voice**, not an event voice: h1 page
-  titles, streak numerals, milestone headlines, empty-state headings, and the
-  Create Habit step questions. Everything else — body, labels, buttons, nav — is
-  `--font-ui`. `WONK` stays 0 everywhere except milestone cards.
+  titles, streak numerals, milestone headlines, empty-state headings, article
+  titles, and the Create Habit step questions. Everything else — body, labels,
+  buttons, nav — is `--font-ui`. `WONK` stays 0 everywhere except milestone cards.
 - **Never put a spatial spring on a colour or opacity transition.** Use
   `--ease-standard` for colour. The overshoot produces a visible tint wobble.
 - **Linear easing is banned except on progress bars.** The check-in hold fill is
   the sanctioned exception.
 - **Nothing loops** except the single empty-state drift (`--dur-drift`, 4s).
-- **Do not recolour the day arc when it sits on the hero.** `sage-600` on
-  `brand-700` is 1.74:1 and fails 1.4.11, so the hero uses the role token
-  `--c-arc-on-hero` (4.10:1 light / 5.0:1 dark). It stays *sage* on purpose, so
-  the gold flush at completion is still a change rather than something already
-  spent. Same principle anywhere a signal colour lands on the hero.
+- **Do not recolour the day arc when it sits on the hero.** Use
+  `--c-arc-on-hero`. Same principle anywhere a signal colour lands on the hero.
+- **A paper button on the hero needs `.hero .btn--secondary` / `.hero .btn--ghost`.**
+  `.hero a` beats `.btn--*` on specificity, so an unqualified secondary button on
+  the deep-blue surface renders white-on-white.
 
 ---
 
@@ -133,20 +172,34 @@ BEM-ish: block `.card`, element `.card__title`, modifier `.card--hero`, state
 | `.page--wide` (1440) · `.page--read` (600) | Shell-width and reading-measure variants. |
 | `.app-nav` | **One component, three shapes.** Bottom bar <600 → collapsed rail 600 → extended rail 840 → permanent drawer 1200. |
 | `.app-nav__list` · `.nav-item` · `.nav-item__pill` · `.nav-item__label` | Destinations. Selected = `aria-current="page"` → brand-600 + the 3px gold pill. Never `opacity: 0.5`. |
+| `.nav-li--rail` | On an `<li>`: hidden below 600, shown from 600 up. Explore and Library only. |
 | `.nav-fab` · `.nav-fab__label` | The create action. brand-600 with a white glyph. Floats above the bar centre; moves to the rail/drawer top and becomes extended at 840. |
 | `.app-nav__brand` (≥840) · `.app-nav__user` (≥1200) | Logo block and the pinned user block. |
-| `.section-head` · `.skip-link` | Section title + trailing action; skip link to `#main`. |
+| `.section-head` · `.page-head` `__text` `__sub` · `.page-back` (`--compact`) | Section title + trailing action; screen header; back / breadcrumb line. |
+| `.skip-link` | Skip link to `#main`. |
 
 **Copy the whole `<nav class="app-nav">` block from `home.html` unchanged** and
-move `aria-current="page"` to your screen's item. Destinations are
-Habits · Progress · Community · Profile, plus the FAB → `create-habit.html`.
+move `aria-current="page"` to your screen's item.
 
-*Documented deviation:* the shipping app's fourth tab is **Library**, not
-Profile (Profile is a top-right button there). The prototype swaps it so all
-five prototype screens are reachable without a dead link, since Library is out
-of scope for this build. Do not "fix" this back — and if Library is ever added,
-it takes the fourth slot and Profile returns to the header / drawer user block,
-both of which already exist in `home.html`.
+**Six destinations, four of them in the bottom bar.** Habits · Progress ·
+Community · Explore · Library · Profile, plus the FAB → `create-habit.html`.
+Explore and Library carry `.nav-li--rail` and are inserted after Community:
+below 600 the bar has room for four destinations plus the FAB and no more, so
+they are hidden there and reached in-page (Home's "Find a new habit", the
+Library lesson tile, Create Habit's "Need inspiration?"). From 600 up the rail
+has vertical room and they become real destinations. `components.css §E1`.
+
+Below 600, Explore and Library carry a `.page-back--compact` link to Home, since
+nothing in the bottom bar reads as current on those two screens. That is the
+exact dead end `explore_habits_page` ships as today.
+
+`create-habit.html` carries the nav with **nothing** marked current: it is a
+task flow entered from the FAB, not a destination. `auth.html` and
+`onboarding.html` are logged out and carry **no nav chrome at all** —
+`.app-shell` is not used there. `index.html` is the gallery and has none either.
+
+The back glyph is `#i-arrow-back`, a real left-pointing arrow in the sprite. Do
+not rotate `#i-arrow` 180° to fake one.
 
 ### Surfaces
 | Class | What |
@@ -162,7 +215,8 @@ both of which already exist in `home.html`.
 `.btn` + `.btn--primary` `--secondary` `--ghost` `--danger` `--gold`, sizes
 `.btn--sm` `.btn--block`; `.icon-btn`; `.chip` + `.chip--streak` `--sage`
 `--brand`; `.segmented` + `.seg-btn`; `.field` `.field__label` `.field__help`
-`.input` `.textarea` `.select`; `.text-link`; `.icon` (+`--sm` `--lg`).
+`.input` `.textarea` `.select`; `.field--reveal` + `.pw-toggle`; `.check`;
+`.text-link`; `.icon` (+`--sm` `--lg`); `.switch`; the day/time picker.
 
 ### Habits and progress
 | Class | What |
@@ -178,9 +232,44 @@ both of which already exist in `home.html`.
 | `.stat-tile` · `__value` · `__label` | Progress stat tiles. |
 | `.cal-grid` · `.cal-cell` + `--done` `--partial` `--milestone` · `.cal-cell__glyph` | Calendar with three redundant states. **Every cell needs `role="img"` and a per-cell `aria-label` ("Mon Aug 10, completed").** Never colour alone. |
 | `.avatar` · `--lg` · `.avatar-stack` | Community member stacks. |
-| `.empty-state` · `__art` · `__art--drift` · `__title` · `__body` | Empty and done states. Flat two-colour SVG: brand-300 shapes, brand-700 linework, one sage or gold accent. |
+| `.empty-state` · `__title` · `__body` · `--compact` · `--inline` | Empty and done states. The artwork is `.illus` (§9) — there is no `__art` class. `--compact` is 96px art for panes; `--inline` is 84px for a pane's own inbox. |
 | `.lesson-tile` · `__body` · `__kicker` · `.activity-row` · `.skeleton` | Home lesson tile, activity rows, no-shimmer skeleton. |
-| `.devbar` · `.devbar__btn` · `.devbar__group` · `.devbar__reading` | Prototype control bar. **Copy it onto every screen** — copy the block from `home.html` verbatim. |
+| `.repair` + `--freeze` `--grace` `--decay` · `__now` · `__readout` | Streak repair. |
+| `.devbar` · `.devbar__btn` · `.devbar__group` · `.devbar__reading` | Prototype control bar. See below. |
+
+### Explore · Library · Reading · Onboarding · Auth
+| Class | What |
+|---|---|
+| `.browse-layout` · `.browse-rail` `__title` | Filter rail 240px at 840+ / content |
+| `.cat-list` · `.cat-btn` `__count` · `.subcat-row` · `.subcat-btn` | One `<ul>`: pill scroller <840, vertical rail 840+ |
+| `.idea-grid` · `.idea-card` `__title` `__prompt` `__foot` `__cue` · `.is-taken` | Explore habit ideas |
+| `.idea-preview__lead` `__section` `__label` `__actions` · `.modal--wide` | The idea dialog |
+| `.lib-hero` `__body` `__side` `__kicker` `__title` `__actions` · `.week-meter` `__bar` `__fill` `__label` | Library hero (today's lesson) |
+| `.lesson-list` · `.lesson-row` `__num` `__body` `__title` `__meta` `__chev` + `.is-read` `.is-current` | Ordered lessons |
+| `.week-fold` (`<details>`) `__meta` `__chev` `__body` | Earlier weeks, zero JS |
+| `.res-grid` · `.res-card` `__type` `__foot` | Resources |
+| `.read-layout` · `.read-toc` `__title` `__list` `__link` · `.article` `__meta` `__title` `__standfirst` `__body` `__quote` · `.read-bridge` · `.read-nav` | Reading view |
+| `.ob-page` `.ob-top` `.ob-brand` `.ob-card` `.ob-stage` `.ob-slide` `__art` `__text` `__title` `__body` · `.ob-foot` · `.ob-dots` `.ob-dot` | Onboarding |
+| `.auth` `__poster` `__brand` `__line` `__sub` `__art` `__panel` `__form` `__title` `__intro` `__fields` `__row` `__actions` `__switch` `__legal` | Auth |
+
+`.article` is capped at `--layout-read-max` (600px) at **every** width — 390,
+768, 1280 and 1920 all measure 600. A wide window adds the sticky contents list
+beside the column, never a wider column. The third grid track is `1fr` exactly
+so the reading column never loses when space is tight.
+
+### The devbar
+Scaffolding, not product; it deletes with the Flutter migration. **The first
+four groups — Theme, hour slider, Motion, Reset day — are byte-identical on
+every page that has one.** A screen may append its own demo groups after them,
+and only ones its own markup supports, so a control is never present with
+nothing to control: Home and Progress add Moments + Loading + Empty, Community
+adds its Empty toggle, Create Habit adds "5+ habits". Below 600 the bar stays a
+**single horizontally scrolling row** — it must not wrap; a screen carrying all
+the demo controls wrapped to five rows at 390 and covered the very thing the bar
+exists to inspect. `?frame=1` on any URL strips it entirely.
+
+*Known gap:* `index.html` still carries the pre-reconciliation three-group bar
+(no Reset day). The gallery is owned by a separate pass; fold it in there.
 
 ### Typography and utilities (base.css)
 `.t-display .t-h1 .t-h2 .t-h3 .t-body-lg .t-body .t-body-sm .t-label .t-caption`
@@ -211,6 +300,14 @@ phone column with dead margins at 1280px.
 can restyle freely. It self-boots on `DOMContentLoaded` and wires the whole
 document; call `HC.init(el)` after injecting markup.
 
+The file is one core module plus four appended modules (Progress, Community,
+Create Habit + Profile, primitives, remaining screens). Each chains onto
+`HC.init` behind its own guard flag rather than editing the core, so a module
+can be deleted and the prototype falls back gracefully. **One hook is owned by
+exactly one module** — if you find yourself writing a second handler for an
+attribute that already has one, you are creating the drift this file exists to
+prevent.
+
 ### The check-in ring — copy this markup exactly
 
 ```html
@@ -237,8 +334,7 @@ document; call `HC.init(el)` after injecting markup.
 literally a percentage (`stroke-dashoffset = 100 − percent`). Keep it on all
 three shapes and on every day-arc path.
 
-### Attribute reference
-
+### Attribute reference — the day
 | Attribute | On | Effect |
 |---|---|---|
 | `data-habit` | habit card | Registers the card. Counted by the day arc. Use `data-habit="preview"` for a non-counting demo/preview card (Create Habit's live preview should use this). |
@@ -251,16 +347,45 @@ three shapes and on every day-arc path.
 | `data-arc-done` / `data-arc-total` | inside the arc | Text nodes updated with the counts. |
 | `data-greeting` `data-name="Mark"` | the greeting element | Hour-aware greeting; crossfades to the done-for-the-day copy when the last habit lands. |
 | `data-when-complete` / `data-when-incomplete` / `data-when-empty` | any element | Auto-shown/hidden as the day state changes. |
+| `data-quick-checkin="true"` | `<html>` | The "Quick check-in (single tap)" accessibility setting — commits immediately on press. |
+
+### Attribute reference — screens
+| Attribute | Owner | Effect |
+|---|---|---|
+| `data-tabs` / `data-tab="x"` / `data-tabpanel="x"` | Progress module | The segmented control as a real ARIA tablist: click, arrows, Home, End, roving tabindex, panel fade. Container-scoped, so several tablists can coexist on a page. Used by Progress, Community and Library. |
+| `data-cal` `data-cal-step` `data-cal-month` `data-cal-name` `data-cal-label` | Progress module | Calendar month stepper. |
+| `data-workspace` + `data-view="list\|thread\|detail"` · `data-view-set` | Community | Which pane is on screen <840. |
+| `data-group-select="id"` + `data-group-panel="id"` | Community | List selection → panes. |
+| `data-filter-input` + `data-filter-scope` / `data-filter-list` / `data-filter-name` | Community | In-pane search. |
+| `data-disclosure="x"` · `data-invite-*` · `data-composer*` · `data-reply-*` | Community | Invitations inbox, composer, reply chip. |
+| `data-craft` · `data-pane-tab` / `data-pane-back` | Create Habit / Profile | The workbench; the Profile 2-pane category tabs (a separate contract from `data-tab` on purpose — the panes behave differently below 600). |
+| `data-modal-open="id"` / `data-modal="id"` / `data-modal-close` | Create Habit / Profile | The modal opener, Escape and focus restore. |
+| `data-cat-list` + `data-cat` · `data-idea-grid` + `data-cats` / `data-sub` · `data-sub` · `data-idea-heading` `data-idea-count` `data-idea-empty` `data-idea-search` | Remaining screens | Explore's category rail (an ARIA tablist with arrows, Home, End), the idea grid and its filtering. |
+| `data-modal-open="idea"` + `data-behavior` `data-prompt` `data-celebration` `data-why` `data-taken` | Remaining screens | Fills the `[data-idea-field]` slots in the **capture** phase, then the kit's existing `[data-modal-open]` opener does the opening. |
+| `data-ob-stage` `data-ob-slide` `data-ob-go` `data-ob-prev` `data-ob-next` `data-ob-done` | Remaining screens | Onboarding paging. |
+| `data-auth-view` `data-auth-go` `data-auth-form` `data-auth-sent` `data-pw-toggle` | Remaining screens | The three auth views, reveal toggle, reset confirmation. |
+
+### Attribute reference — prototype controls
+| Attribute | On | Effect |
+|---|---|---|
 | `data-theme-btn="system\|light\|dark"` | button | Theme control. |
 | `data-motion-btn="auto\|reduce"` | button | Forces the reduced-motion path for review. |
 | `data-hour-input` / `data-hour-readout` | `<input type=range>` / `<output>` | Hour simulation, 0–23. |
-| `data-demo="milestone"` `data-days="30"` | button | Fires the milestone moment. |
 | `data-demo="reset"` | button | Un-checks every habit so the moment can be replayed. |
-| `data-quick-checkin="true"` | `<html>` | The "Quick check-in (single tap)" accessibility setting — commits immediately on press. |
+| `data-demo="milestone"` `data-days="100"` | button | **First press per session = the full celebration; every press after it = the quiet streak-increment treatment.** The control demonstrates the rule rather than dodging it. |
+| `data-demo="milestone-replay"` | button | Clears the once-per-session latch so a reviewer can watch the full thing again. |
+| `data-demo="load"` / `"load-fast"` | button | Simulates a 1400ms load (skeleton appears at 400ms) / a 250ms load — **nothing is shown at all.** That is the rule, made visible. |
+| `data-demo="empty"` | button (`aria-pressed`) | Swaps the screen for its empty state. |
+| `data-demo="crowded"` | button (`aria-pressed`) | Create Habit's 5+ habits state. |
+| `data-skeleton="list\|panel"` | the content container | Marks what the skeleton stands in for and which template to paint. |
+| `data-empty-demo` / `data-empty-demo-hide` | the empty state / the populated content | Shown / hidden while the Empty toggle is on. |
+| `data-repair` `data-repair-run` `data-repair-now` `data-repair-readout` | the repair card | Scopes and runs the decay demonstration. |
 
 Attributes JS writes on `<html>`: `data-theme`, `data-motion`, `data-hour`, and
-`data-hour-late="true\|false"` (the after-20:00 hero gradient hook). Add
-`?frame=1` to a URL to strip the devbar for embedding.
+`data-hour-late="true\|false"` (the after-20:00 hero gradient hook). Written by
+JS, not authored: `[data-milestone]` on the milestone scrim, `[data-ms-count]`,
+`[data-ms-dismiss]`, `[data-skeleton-paint]`, `.confetti-piece`,
+`.is-streak-flush`.
 
 ### Public API
 
@@ -271,12 +396,17 @@ HC.refreshDay()               // recount habits; repaint arcs, greeting, state p
 HC.setTheme('system'|'light'|'dark')
 HC.setMotion('auto'|'reduce')
 HC.setHour(0..23)
-HC.fireMilestone({ days: 30 })
+HC.fireMilestone({ days, replay })
 HC.announce('…')              // polite live region
 HC.on('checkin'|'undo'|'daycomplete', fn)
 ```
 
 Also dispatched on `document`, bubbling: `hc:checkin`, `hc:undo`, `hc:daycomplete`.
+
+`HC.fireMilestone` is **reassigned** by the primitives module rather than edited
+in place, and the `[data-demo^="milestone"]` buttons are intercepted in the
+**capture phase** so the core's stub never runs. Delete that module and the
+prototype falls back to the original with nothing broken.
 
 ---
 
@@ -309,8 +439,42 @@ sage-600 → gold-500 over 300ms, and the greeting crossfades to *"That's
 everything. Go enjoy your day."* (after 20:00: *"…Sleep well."*). Then the app
 goes quiet — no modal, no confetti, no share prompt.
 
-**Gilding.** Days 7 / 30 / 100 / 365 (day 50 is cut). The *moment* fires once
-per session; the *mark* is permanent, cosmetic, and survives streak breaks.
+**Milestone.** Days 7 / 30 / 100 / 365 (day 50 is cut). Scrim 40% (the
+`--c-scrim` token *is* 40%) · card enters on `--ease-spring-gentle` at its paired
+650ms · **34 confetti pieces** (cap 40) released along the card's *top edge* in a
+60° cone, and a single sweep timer guarantees the DOM is clean at **1100ms**
+rather than trusting the animations · numeral counts up in the display serif with
+`WONK 1` · auto-dismiss at **4000ms**, or tap, or Escape · focus lands on the CTA
+and returns to the opener. **Reduced motion: no confetti is created at all, the
+card crossfades (`hc-fade-in`), the numeral renders at its final value.** That
+CSS override is load-bearing, not belt-and-braces: the entry animation moves with
+the independent `scale`/`translate` properties, which the global `transform: none`
+block does not touch. Anything in this system animating with `scale` or
+`translate` needs the same treatment. The card's entry lives in `components.css`
+§P3 and **only** there — §17 defines its box, nothing more.
+
+The *moment* fires once per session; the *mark* is permanent.
+
+**Gilding.** All four tiers sit side by side on Home (365 · 100 · 30 · 7 ·
+none), each labelled with a `.gild-note` — prototype scaffolding, delete for
+Flutter. The marks compose with every other card state by construction: the
+tick is `::after`, the hairline is an *inset* `box-shadow`, and the seal is a
+real element — while `.is-complete` only sets `background` and `border-color`,
+so it cannot clobber any of them. Verified: a day-100 habit completed today
+shows the sage tone, the gold hairline, the seal and the ring check at once.
+The mark is cosmetic and survives streak breaks.
+
+**Skeleton.** Under 400ms **nothing** — not a skeleton, not the content.
+Beyond 400ms, static blocks in `canvas-sunken` at the container's own radii
+(`.skeleton-card` is 72px pitch / 16px padding / radius-16, identical to the
+real card) with one 0.7 → 1.0 pulse, 1200ms `ease-in-out alternate`, in phase.
+No shimmer. Reduced motion: `animation: none`, `opacity: 1`.
+
+**Streak repair.** `.repair` with three rows — `--freeze` (sage, shield),
+`--grace` (amber; amber is care, not alarm — no clay, no red anywhere on this
+component) and `--decay` (the bar goes *down a little* and never to zero).
+Copy is "You showed up for 42 days straight." Zero broken-chain icons, zero red
+missed days.
 
 **The room dims.** After 20:00 the greeting changes and the hero takes a
 two-stop gradient under its grain. Nothing else. Layout identical.
@@ -339,236 +503,16 @@ Second person, short, supportive. Real strings from the product: *"Keep it
 small, you can always do more."* · *"What will you do?"* · *"When will you do
 the behavior?"* · *"How will you celebrate?"* · *"What will success look
 like?"* · *"Need inspiration? Click here for ideas."* · *"Give yourself credit
-for all the efforts you've been putting in."*
+for all the efforts you've been putting in."* · *"Habit Ideas"* · *"Get inspired
+to cultivate positive habits."* · *"Make it a habit"* · *"Let's start by creating
+your first habit."* · *"Get Started"* · *"Login"* · *"Sign Up"* · *"Sign up
+with"* · *"Forgot Password"* · *"Send Reset Link"*.
 
 Streak language is repair and grace: *"You showed up for 42 days"* — **never**
 *"You lost your 42-day streak."* No broken chains, no red missed days, no
 confirmshaming. Missed days are simply empty.
 
----
-
-## 8. Primitives build — icons, illustration, milestone, gilding, skeleton, repair
-
-Appended by the primitives build. Everything here is **additive**: one appended
-section in `css/components.css` (`P1`–`P6`), one appended IIFE in
-`js/prototype.js`, one role token in `tokens.css`, and edits to `home.html`,
-`progress.html`, `community.html`. Nothing above those append markers was
-edited or reordered.
-
-### 8.1 The icon sprite
-
-One family, one style: **hand-authored, outlined, fill-0, rounded terminals,
-1.7px stroke, 24 × 24 grid, `currentColor`.** No Material Symbols file, no
-Lucide, no raster, no emoji-as-UI — the direction says "or Lucide if bundling is
-easier, but pick one and use it exclusively", and with zero dependencies allowed
-the only way to have one family is to draw it. Icons inherit `--c-ink-muted`
-from `.icon` at rest and `brand-600` from their selected parent.
-
-**The block is canonical and byte-identical on all five screens.** If you add an
-icon, add it to the block and paste the whole block to every page. Do not fork
-one page's copy — that is exactly the drift this replaced.
-
-`i-habits` `i-progress` `i-community` `i-library` `i-person` ·
-`i-plus` `i-close` `i-check` `i-tick` `i-search` `i-send` `i-invite` ·
-`i-arrow` `i-chevron` `i-chev-right` `i-chev-left` `i-back` ·
-`i-flame` `i-calendar` `i-clock` `i-bell` `i-bulb` `i-goal` `i-target`
-`i-info` `i-lock` `i-key` `i-eye` `i-archive` `i-shield` `i-leaf`
-`i-accessibility` `i-contrast` · `i-rosette`
-
-Notes: `i-tick`/`i-check` and `i-back`/`i-arrow` and `i-chevron`/`i-chev-right`
-are deliberate aliases carrying identical geometry, so two screens naming the
-same glyph differently can never diverge. **`i-rosette` is the one solid
-symbol** — it is the gild seal's emboss, not an icon, and `.seal` /
-`.seal--solid` colour it. **`i-contrast`** carries one filled half-disc because
-the fill *is* the meaning.
-
-Implementation detail worth keeping: the stroke attributes live on an inner
-`<g>`, never on the `<symbol>`. `base.css` has a global `svg { fill: currentColor }`,
-and a document CSS rule beats a presentation attribute on the cloned symbol
-element itself — put `fill="none"` on the `<symbol>` and every icon fills solid.
-
-### 8.2 Illustration system
-
-| Class | What |
-|---|---|
-| `.illus` | The artwork root. 132px, `viewBox="0 0 120 120"`, `role="img"` + `aria-label`. |
-| `.illus__shape` | brand-300 fill + linework stroke. The object. |
-| `.illus__line` | Linework only, no fill. Stems, threads, rules. |
-| `.illus__ground` | The stone/shadow it rests on — flat brand-300 at 55%, no stroke. |
-| `.illus__accent` | **One per illustration, maximum.** Sage by default. |
-| `.illus__accent--gold` | The accent in gold, for reward states. Filled, never a hairline. |
-| `.illus__drift` | Wrap the leaf in this `<g>`. 4s, one axis, ±4px, `alternate`, infinite. |
-| `.empty-state--compact` | 96px art, tighter padding — for panes rather than pages. |
-
-The two-colour rule is enforced in CSS rather than retyped as inline fills, so
-every illustration re-tones itself in Nightfall with no second artwork.
-
-**`--c-illus-line` is a new role token** (`tokens.css`, all three mappings).
-Light = `brand-700`, as the direction specifies. Dark = the brand tint: the
-direction's pairing names *the light canvas*, and in Nightfall `brand-700`
-becomes the hero blue and a stem drawn in it disappears into the canvas. The
-dark answer lives in the semantic mapping, per §2, not in a component file.
-
-`.illus__drift` is **the only looping animation in the product.** It has
-explicit `animation: none` kills in both reduced-motion branches — the global
-`base.css` block would otherwise leave the leaf parked 4px off its drawn
-position, because it caps duration and iteration rather than stopping it.
-
-Empty states built: Home *(no habits)*, Home *(day complete)*, Progress *(no
-history yet)*, Community *(no groups)*. Each is illustration + heading + **one**
-CTA.
-
-### 8.3 New `data-*` hooks
-
-| Attribute | On | Effect |
-|---|---|---|
-| `data-demo="milestone"` `data-days="100"` | button | Fires the moment. **First press per session = the full celebration; every press after it = the quiet streak-increment treatment.** The control demonstrates the rule rather than dodging it. |
-| `data-demo="milestone-replay"` | button | Clears the once-per-session latch so a reviewer can watch the full thing again. |
-| `data-demo="load"` | button | Simulates a 1400ms load — the skeleton appears at 400ms. |
-| `data-demo="load-fast"` | button | Simulates a 250ms load — **nothing is shown at all.** That is the rule, made visible. |
-| `data-demo="empty"` | button (`aria-pressed`) | Swaps the screen for its empty state. |
-| `data-skeleton="list\|panel"` | the content container | Marks what the skeleton stands in for and which template to paint. |
-| `data-empty-demo` | the empty state | Shown while the Empty toggle is on. |
-| `data-empty-demo-hide` | populated content | Hidden while the Empty toggle is on. |
-| `data-repair` | the repair card | Scopes the decay demo. |
-| `data-repair-run` | button (`aria-pressed`) | Runs the decay demonstration. |
-| `data-repair-now` | `.repair__now` | Carries `data-full` / `data-decayed` widths. |
-| `data-repair-readout` | `<p>` | Carries `data-full` / `data-decayed` copy. |
-
-Written by JS, not authored: `[data-milestone]` on the milestone scrim,
-`[data-ms-count]`, `[data-ms-dismiss]`, `[data-skeleton-paint]` on the injected
-skeleton, `.confetti-piece`, `.is-streak-flush`.
-
-`HC.fireMilestone({ days, replay })` is **reassigned** by the appended section
-rather than edited in place, and the `[data-demo^="milestone"]` buttons are
-intercepted in the **capture phase** so the core's stub never runs. Delete the
-appended section and the prototype falls back to the original with nothing
-broken.
-
-### 8.4 Milestone, gilding, skeleton, repair — the rules as built
-
-**Milestone.** Scrim 40% (the `--c-scrim` token *is* 40%) · card enters on
-`--ease-spring-gentle` at its paired 650ms · **34 confetti pieces** (cap 40)
-released along the card's *top edge* in a 60° cone, and a single sweep timer
-guarantees the DOM is clean at **1100ms** rather than trusting the animations ·
-numeral counts up in the display serif with `WONK 1` · auto-dismiss at
-**4000ms**, or tap, or Escape · focus lands on the CTA and returns to the
-opener. **Reduced motion: no confetti is created at all, the card crossfades
-(`hc-fade-in`), the numeral renders at its final value.** That CSS override is
-load-bearing, not belt-and-braces: the entry animation moves with the
-independent `scale`/`translate` properties, which the global `transform: none`
-block does not touch. Anything in this system animating with `scale` or
-`translate` needs the same treatment.
-
-**Gilding.** All four tiers sit side by side on Home (365 · 100 · 30 · 7 ·
-none), each labelled with a `.gild-note` — prototype scaffolding, delete for
-Flutter. The marks compose with every other card state by construction: the
-tick is `::after`, the hairline is an *inset* `box-shadow`, and the seal is a
-real element — while `.is-complete` only sets `background` and `border-color`,
-so it cannot clobber any of them. Verified: a day-100 habit completed today
-shows the sage tone, the gold hairline, the seal and the ring check at once.
-
-**Skeleton.** Under 400ms **nothing** — not a skeleton, not the content.
-Beyond 400ms, static blocks in `canvas-sunken` at the container's own radii
-(`.skeleton-card` is 72px pitch / 16px padding / radius-16, identical to the
-real card) with one 0.7 → 1.0 pulse, 1200ms `ease-in-out alternate`, in phase.
-No shimmer. Reduced motion: `animation: none`, `opacity: 1`.
-
-**Streak repair.** `.repair` with three rows — `--freeze` (sage, shield),
-`--grace` (amber; amber is care, not alarm — no clay, no red anywhere on this
-component) and `--decay` (the bar goes *down a little* and never to zero).
-Copy is "You showed up for 42 days straight." Zero broken-chain icons, zero red
-missed days.
-
-### 8.5 Prototype scope, stated
-
-Fixture data is inline in the HTML. There is no data layer, no fake API and no
-persistence added by this build; the loading state is a timer on a button, the
-empty state is a toggle, and "one celebration per session" is a single boolean.
-A real build owns all three properly, plus the parts deliberately not built
-here: load failure and retry, a genuine focus trap for a multi-control modal,
-freeze-day accrual, and the actual decay curve.
-
-*(Pre-existing, not added here: the core does persist theme/motion in
-`localStorage`. It will carry across pages during review.)*
-
----
-
-## 8. The remaining screens — Explore · Library · Library detail · Onboarding · Auth
-*Appended by the remaining-screens build. Nothing above this heading was edited.*
-
-Five more files, so every screen in the 14-screen app now has a design
-reference: `explore.html` · `library.html` · `library-detail.html` ·
-`onboarding.html` · `auth.html`. `free_trial_screen` is deliberately **not**
-built — it is unreachable dead code and ticket #60 deletes it.
-
-These are prototype-grade by intent: fixture data is hardcoded in the markup,
-interactions are scripted to demonstrate the design, and there is **no data
-layer, no persistence, no form validation and no auth**. A real build needs all
-of that; this build says so rather than faking it.
-
-### Nav — two rail-only destinations
-`.nav-li--rail` on an `<li>` hides it below 600 and shows it from 600 up.
-Explore and Library are marked up that way and inserted **after Community**, so
-the bottom bar keeps exactly the four destinations plus the FAB, and the
-rail/drawer gains two more. The four core `<li>`s are still home.html's markup
-verbatim.
-
-**This supersedes the "documented deviation" in §3.** Library is now built, so
-it takes a real slot; Profile stays in the list as well as in the drawer user
-block, because the prototype has no top-right header button. **The five
-original screens still ship the four-item list** — paste the two
-`<li class="nav-li--rail">` blocks from `explore.html` into them to reconcile.
-
-Below 600, Explore and Library carry a `.page-back.page-back--compact` link to
-Home, since nothing in the bottom bar reads as current on those two screens.
-
-### New component classes (components.css §E)
-| Class | What |
-|---|---|
-| `.page-head` `__text` `__sub` · `.page-back` (`--compact`) | Screen header + back/breadcrumb line |
-| `.browse-layout` · `.browse-rail` `__title` | Filter rail 240px at 840+ / content |
-| `.cat-list` · `.cat-btn` `__count` · `.subcat-row` · `.subcat-btn` | One `<ul>`: pill scroller <840, vertical rail 840+ |
-| `.idea-grid` · `.idea-card` `__title` `__prompt` `__foot` `__cue` · `.is-taken` | Explore habit ideas |
-| `.idea-preview__lead` `__section` `__label` `__actions` · `.modal--wide` | The idea dialog |
-| `.lib-hero` `__body` `__side` `__kicker` `__title` `__actions` · `.week-meter` `__bar` `__fill` `__label` | Library hero (today's lesson) |
-| `.lesson-list` · `.lesson-row` `__num` `__body` `__title` `__meta` `__chev` + `.is-read` `.is-current` | Ordered lessons |
-| `.week-fold` (`<details>`) `__meta` `__chev` `__body` | Earlier weeks, zero JS |
-| `.res-grid` · `.res-card` `__type` `__foot` | Resources |
-| `.read-layout` · `.read-toc` `__title` `__list` `__link` · `.article` `__meta` `__title` `__standfirst` `__body` `__quote` · `.read-bridge` · `.read-nav` | Reading view |
-| `.ob-page` `.ob-top` `.ob-brand` `.ob-card` `.ob-stage` `.ob-slide` `__art` `__text` `__title` `__body` · `.ob-foot` · `.ob-dots` `.ob-dot` | Onboarding |
-| `.auth` `__poster` `__brand` `__line` `__sub` `__art` `__panel` `__form` `__title` `__intro` `__fields` `__row` `__actions` `__switch` `__legal` · `.field--reveal` `.pw-toggle` · `.check` | Auth |
-| `.hero .btn--secondary` / `.hero .btn--ghost` | Buttons that survive the deep-blue surface — `.hero a` beats `.btn--*` on specificity, so a paper button on the hero was white-on-white |
-
-`.article` is capped at `--layout-read-max` (600px) at **every** width — 390,
-768, 1280 and 1920 all measure 600. A wide window adds the sticky contents list
-beside the column, never a wider column. The third grid track is `1fr` exactly
-so the reading column never loses when space is tight.
-
-### New JS hooks (prototype.js, final append-only block)
-`[data-cat-list]` + `[data-cat]` (rail; a real ARIA tablist with arrows, Home
-and End) · `[data-idea-grid]` with per-item `data-cats` / `data-sub` ·
-`[data-sub]` chips · `[data-idea-heading]` `[data-idea-count]`
-`[data-idea-empty]` `[data-idea-search]` · `[data-modal-open="idea"]` carrying
-`data-behavior` `data-prompt` `data-celebration` `data-why` `data-taken`, which
-fill the `[data-idea-field]` slots — the fill runs in the **capture** phase and
-then the kit's existing `[data-modal-open]` opener does the opening, Escape and
-focus restore · `[data-ob-stage]` `[data-ob-slide]` `[data-ob-go]`
-`[data-ob-prev]` `[data-ob-next]` `[data-ob-done]` · `[data-auth-view]`
-`[data-auth-go]` `[data-auth-form]` `[data-auth-sent]` `[data-pw-toggle]`.
-
-### Copy: what came from the app, and what was rewritten
-Verbatim: *"Habit Ideas"* · *"Get inspired to cultivate positive habits."* ·
-*"Search"* · *"{n} habits"* · *"Library"* · *"Lessons"* · *"Resources"* ·
-*"Make it a habit"* (the app's own string, currently inside `if (false)`) ·
-*"What is a habit and how does it work?"* and its body · *"The importance of
-partnerships."* · *"Let's start by creating your first habit."* · *"Get
-Started"* · *"Login"* · *"Sign Up"* · *"Email"* · *"Password"* · *"Confirm
-Password"* · *"Name"* · *"Sign up with"* · *"Login with Google"* · *"Login with
-Apple"* · *"Forgot Password"* · *"Email Address"* · *"Enter your email..."* ·
-*"Send Reset Link"*.
-
-Rewritten because the original is broken, not because it was disliked:
+**Rewritten because the original is broken, not because it was disliked:**
 1. **Onboarding slide 2 body.** The shipping copy says partnerships foster
    *"emotional detachment"* — the opposite of the screen's point — in 30 words
    of jargon. Rewritten in product voice.
@@ -586,7 +530,94 @@ app has no seed file and every one of those strings is Firestore content. The
 *shape* is real — each habit idea carries the four fields the `habits`
 collection actually stores (`behavior` · `prompt` · `celebration` · `why`).
 
-### Defects the redesign fixes on these screens
+---
+
+## 8. Iconography — the sprite
+
+One family, one style: **hand-authored, outlined, fill-0, rounded terminals,
+1.7px stroke, 24 × 24 grid, `currentColor`.** No Material Symbols file, no
+Lucide, no raster, no emoji-as-UI — the direction says "or Lucide if bundling is
+easier, but pick one and use it exclusively", and with zero dependencies allowed
+the only way to have one family is to draw it. Icons inherit `--c-ink-muted`
+from `.icon` at rest and `brand-600` from their selected parent.
+
+**41 symbols. The block is canonical and byte-identical on all eleven files.**
+
+`i-habits` `i-progress` `i-community` `i-explore` `i-library` `i-person` ·
+`i-plus` `i-close` `i-check` `i-tick` `i-search` `i-send` `i-invite` ·
+`i-arrow` `i-chevron` `i-chev-right` `i-chev-left` `i-back` `i-arrow-back` ·
+`i-flame` `i-calendar` `i-clock` `i-bell` `i-bulb` `i-goal` `i-target`
+`i-info` `i-lock` `i-key` `i-eye` `i-archive` `i-shield` `i-leaf`
+`i-accessibility` `i-contrast` · `i-doc` `i-play` `i-worksheet` ·
+`i-rosette` `i-google` `i-apple`
+
+Notes: `i-tick`/`i-check`, `i-back`/`i-arrow` and `i-chevron`/`i-chev-right`
+are deliberate aliases carrying identical geometry, so two screens naming the
+same glyph differently can never diverge. `i-arrow-back` is a genuine left arrow
+and is **not** an alias — `.page-back` used to rotate `i-arrow` 180°, which meant
+`auth.html`'s own back button carried an inline `rotate:none` to undo it.
+
+**Three deliberately solid symbols, each with a reason.** `i-rosette` is the
+gild seal's emboss, not an icon, and `.seal` / `.seal--solid` colour it [D §2.4].
+`i-google` and `i-apple` are third-party wordmarks — not ours to redraw as
+outlines, and unrecognisable if we do. Nothing else may be added solid.
+`i-contrast` carries one filled half-disc inside an outlined disc because the
+fill *is* the meaning; it stays in the family.
+
+**The stroke attributes live on an inner `<g>`, never on the `<symbol>`.**
+`base.css` has a global `svg { fill: currentColor }`, and a document CSS rule
+beats a presentation attribute on the cloned symbol element itself — put
+`fill="none"` on the `<symbol>` and every icon fills solid.
+
+---
+
+## 9. Illustration system
+
+| Class | What |
+|---|---|
+| `.illus` | The artwork root. 132px, `viewBox="0 0 120 120"`, `role="img"` + `aria-label`. |
+| `.illus__shape` | brand-300 fill + linework stroke. The object. |
+| `.illus__line` | Linework only, no fill. Stems, threads, rules. |
+| `.illus__ground` | The stone/shadow it rests on — flat brand-300 at 55%, no stroke. |
+| `.illus__accent` | **One per illustration, maximum.** Sage by default. |
+| `.illus__accent--gold` | The accent in gold, for reward states. Filled, never a hairline. |
+| `.illus__drift` | Wrap the leaf in this `<g>`. 4s, one axis, ±4px, `alternate`, infinite. |
+
+The two-colour rule is enforced in CSS rather than retyped as inline fills, so
+every illustration re-tones itself in Nightfall with no second artwork. See
+`--c-illus-line` in §2.
+
+**`.illus` is the only way to draw one.** There used to be a second way —
+`.empty-state__art` sized the svg, `.empty-state__art--drift` looped it, and
+each path carried `fill="var(--c-brand-300)"` / `stroke="var(--c-brand-700)"`
+inline. That version could not re-tone: `brand-700` linework *is* the hero blue
+in Nightfall, so those illustrations lost their outlines against the dark
+canvas. All of them (Community ×2, Profile, Library, Explore, and the gallery's
+demo tile) now carry the classes, `.empty-state__art*` is gone, and so is the
+duplicate `hc-drift` keyframe it owned.
+
+`.illus__drift` is **the only looping animation in the product.** It has
+explicit `animation: none` kills in both reduced-motion branches, and they live
+in `components.css` §P1 beside the animation — the global `base.css` block would
+otherwise leave the leaf parked 4px off its drawn position, because it caps
+duration and iteration rather than stopping it. Wrap only the growing thing in
+the `<g>`, never the whole drawing: the stone stays planted.
+
+Empty states built: Home *(no habits)*, Home *(day complete)*, Progress *(no
+history yet)*, Community *(no groups)*, Community *(inbox empty)*, Community
+*(no messages)*, Profile *(no blocked users)*, Explore *(no results)*, Library
+*(empty collection)*. Each is illustration + heading + at most **one** CTA.
+
+**Auth's poster and the onboarding slide art are deliberately not `.illus`.**
+They sit on the deep-blue surface and on the onboarding card, so they are drawn
+in `--c-hero-ink` / `--c-hero-ink-muted` — `.illus__shape`'s brand-300 on
+brand-700 would be near-invisible. They still consume semantic tokens and still
+re-tone; do not "fix" them onto the illustration classes.
+
+---
+
+## 10. Defects the redesign fixes
+
 - Onboarding's page indicator (`dotColor == activeDotColor == #D9D9D9`): the
   active dot is now `brand-600` and 24px, inactive `--c-border` and 8px — a
   colour step **and** a width step, plus `aria-current`.
@@ -603,12 +634,26 @@ collection actually stores (`behavior` · `prompt` · `celebration` · `why`).
   the "Make it a habit" hero.
 - `explore_habits_page` has no bottom nav — a dead end. It is a real
   destination with a rail slot and a compact back link.
+- The 767px desktop clamp. See §3, breakpoints.
 
-### Verified
-Real Chrome via CDP at 390 / 768 / 1280, plus 1920 for the reading cap, in
-light and dark, with motion auto and reduced. Category filtering, subcategory
-chips, search and its empty state, the idea dialog (open, fill, Escape,
-already-yours variant), the Library tabs and week folds, onboarding paging by
-button, dot and arrow key, and the auth view switch, reveal toggle and reset
-confirmation were all exercised. Zero console errors on any page; the five
-existing screens are unchanged and still pass their own checks.
+---
+
+## 11. Prototype scope, stated
+
+Fixture data is inline in the HTML. There is **no data layer, no fake API, no
+persistence, no form validation and no auth.** The loading state is a timer on a
+button, the empty state is a toggle, and "one celebration per session" is a
+single boolean. A real build owns all three properly, plus the parts
+deliberately not built here: load failure and retry, a genuine focus trap for a
+multi-control modal, freeze-day accrual, and the actual decay curve.
+
+*(Pre-existing: the core does persist theme/motion in `localStorage`. It will
+carry across pages during review.)*
+
+Known gaps a later pass should close, listed rather than papered over:
+- `index.html` is owned by the gallery pass. Its devbar is still the old
+  three-group one, and it does not link to `auth.html` or `onboarding.html`, so
+  those two screens are currently reachable only by typing the filename.
+- Several `href="#"` placeholders remain where the destination screen is
+  genuinely out of scope: Community's "Create" group and "Want to start a
+  group?", Profile's "Open device settings".

@@ -380,8 +380,10 @@ code, kbd, samp {
     transform: none !important;
   }
 
-  /* The one permitted ambient loop stops entirely. [D §6] */
-  .empty-state__art { animation: none !important; }
+  /* The one permitted ambient loop is `.illus__drift`, and it stops entirely
+     rather than being capped — otherwise the leaf parks 4px off its drawn
+     position. Both branches of that kill live beside the animation in
+     components.css §P1, so there is exactly one place to look. */
 }
 
 :root[data-motion="reduce"] * ,
@@ -394,7 +396,6 @@ code, kbd, samp {
   animation-iteration-count: 1 !important;
   transform: none !important;
 }
-:root[data-motion="reduce"] .empty-state__art { animation: none !important; }
 
 
 /* ==========================================================================

@@ -20,9 +20,9 @@
      24 × 24 grid, `currentColor` — so an icon is ink-muted at rest (the .icon
      base rule) and brand-600 when its parent is selected, with no per-icon CSS.
 
-     THIS BLOCK IS CANONICAL AND IDENTICAL ON EVERY SCREEN. If you add an icon,
-     add it here and paste the whole block to every page — never fork one page's
-     copy. Zero raster, zero emoji-as-UI, zero mixed sharp/rounded/filled
+     THIS BLOCK IS CANONICAL AND BYTE-IDENTICAL ON EVERY PAGE. If you add an
+     icon, add it here and paste the whole block to every page — never fork one
+     page's copy. Zero raster, zero emoji-as-UI, zero mixed sharp/rounded/filled
      variants.
 
      The stroke attributes live on the inner <g>, NOT on the <symbol>: base.css
@@ -30,8 +30,11 @@
      over a presentation attribute on the cloned <symbol> element itself. On a
      <g> nothing in the cascade targets it, so the outline holds everywhere.
 
-     ONE DELIBERATE EXCEPTION: #i-rosette is solid. It is not an icon — it is
-     the gild seal's emboss, and .seal / .seal--solid colour it. [D §2.4]
+     THREE DELIBERATE SOLID EXCEPTIONS, each with a reason: #i-rosette is the
+     gild seal's emboss, not an icon (.seal / .seal--solid colour it) [D §2.4];
+     #i-google and #i-apple are third-party wordmarks, which are not ours to
+     redraw as outlines and are unrecognisable if we do. Everything else in the
+     block is outlined, and nothing else may be added solid.
      ======================================================================== -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
@@ -39,6 +42,7 @@
     <symbol id="i-habits" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="5" width="17.6" height="15.8" rx="3"/><path d="M3.2 10h17.6M8 3v4M16 3v4M9 15.4l2 2 4-4.6"/></g></symbol>
     <symbol id="i-progress" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5h17M6.5 20.5v-6M12 20.5V5.5M17.5 20.5v-9"/></g></symbol>
     <symbol id="i-community" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="8.8" r="3.6"/><path d="M3.4 19.6a6.1 6.1 0 0 1 12.2 0M16.4 6.4a3.2 3.2 0 0 1 0 6.3M18 14.6a5.3 5.3 0 0 1 2.9 4.6"/></g></symbol>
+    <symbol id="i-explore" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M15.6 8.4l-2 5.2-5.2 2 2-5.2 5.2-2z"/></g></symbol>
     <symbol id="i-library" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.6C10.4 5.1 8.4 4.5 5 4.5v13c3.4 0 5.4.6 7 2 1.6-1.4 3.6-2 7-2v-13c-3.4 0-5.4.6-7 2z"/><path d="M12 6.6v12.9"/></g></symbol>
     <symbol id="i-person" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.8"/><path d="M4.9 20a7.1 7.1 0 0 1 14.2 0"/></g></symbol>
 
@@ -51,12 +55,13 @@
     <symbol id="i-send" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 3.8L3.6 10.6a.5.5 0 0 0 0 .9l6.5 2.4 2.4 6.5a.5.5 0 0 0 .9 0l6.8-16.6z"/><path d="M20.2 3.8l-10.1 10.1"/></g></symbol>
     <symbol id="i-invite" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.4" cy="8.4" r="3.6"/><path d="M3.2 19.6a6.2 6.2 0 0 1 12.4 0M18.5 8.2v6M15.5 11.2h6"/></g></symbol>
 
-    <!-- ── Direction. One drawing, four names — same geometry, no drift. ──── -->
+    <!-- ── Direction. One drawing, several names — same geometry, no drift. ── -->
     <symbol id="i-arrow" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h14M13 6.5l5.5 5.5L13 17.5"/></g></symbol>
     <symbol id="i-chevron" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5L16 12l-6.5 6.5"/></g></symbol>
     <symbol id="i-chev-right" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5L16 12l-6.5 6.5"/></g></symbol>
     <symbol id="i-chev-left" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5L8 12l6.5 6.5"/></g></symbol>
     <symbol id="i-back" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h14M13 6.5l5.5 5.5L13 17.5"/></g></symbol>
+    <symbol id="i-arrow-back" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12h-14M11 6.5L5.5 12 11 17.5"/></g></symbol>
 
     <!-- ── Objects ────────────────────────────────────────────────────────── -->
     <symbol id="i-flame" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.4 2.6c.4 2.6 1.9 3.6 3.1 5.1A6.9 6.9 0 0 1 17 12.7a5 5 0 1 1-10 0c0-1.8.7-3.3 1.8-4.5.1 1.4.9 2.4 1.8 2.4 1 0 1.8-1.1 1.8-2.7 0-1.7.3-3.3.6-5.3z"/></g></symbol>
@@ -78,16 +83,34 @@
          solid. It stays inside the family — same 24 grid, same outer stroke. -->
     <symbol id="i-contrast" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></g></symbol>
 
+    <!-- ── Library media types ────────────────────────────────────────────── -->
+    <symbol id="i-doc" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 3.2H7.4a2.2 2.2 0 0 0-2.2 2.2v13.2a2.2 2.2 0 0 0 2.2 2.2h9.2a2.2 2.2 0 0 0 2.2-2.2V8.6l-5.4-5.4z"/><path d="M13.4 3.2v5.4h5.4M8.6 13.4h6.8M8.6 17h5"/></g></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M10.4 8.6l5.4 3.4-5.4 3.4V8.6z"/></g></symbol>
+    <symbol id="i-worksheet" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.6" y="3.2" width="14.8" height="17.6" rx="2.4"/><path d="M8.2 8.2h4M8.2 12.4h7.6M8.2 16.6h7.6"/></g></symbol>
+
     <!-- ── The gild seal. Solid on purpose — an emboss, not an icon. [D §2.4] -->
     <symbol id="i-rosette" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 2l2.2 3.1 3.7-.9.4 3.8 3.4 1.7-2.3 3 2.3 3-3.4 1.7-.4 3.8-3.7-.9L12 24l-2.2-3.1-3.7.9-.4-3.8L2.3 16l2.3-3-2.3-3 3.4-1.7.4-3.8 3.7.9L12 2zm0 5.5A4.5 4.5 0 1 0 12 16.5 4.5 4.5 0 0 0 12 7.5z"/></symbol>
+
+    <!-- ── Third-party wordmarks. Solid because a logo is not ours to restyle;
+         drawn here on the 24 grid in currentColor so there is still zero
+         dependency and no raster. Used only by auth.html's social buttons. ── -->
+    <symbol id="i-google" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M21.6 12.2c0-.7-.06-1.4-.18-2.05H12v3.88h5.4a4.6 4.6 0 0 1-2 3.02v2.5h3.23c1.89-1.74 2.97-4.3 2.97-7.35zM12 22c2.7 0 4.96-.9 6.62-2.43l-3.23-2.5c-.9.6-2.05.95-3.39.95-2.6 0-4.8-1.76-5.6-4.12H3.07v2.58A10 10 0 0 0 12 22zM6.4 13.9a6 6 0 0 1 0-3.83V7.5H3.07a10 10 0 0 0 0 9zM12 6.06c1.47 0 2.79.5 3.83 1.5l2.86-2.86A9.6 9.6 0 0 0 12 2a10 10 0 0 0-8.93 5.5L6.4 10.1c.8-2.37 3-4.03 5.6-4.03z"/></symbol>
+    <symbol id="i-apple" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M16.4 12.6c0-2.2 1.8-3.3 1.9-3.36-1.03-1.5-2.63-1.71-3.2-1.73-1.36-.14-2.66.8-3.35.8-.69 0-1.76-.78-2.9-.76-1.49.02-2.86.87-3.63 2.2-1.55 2.69-.4 6.67 1.11 8.85.74 1.07 1.62 2.27 2.77 2.22 1.11-.04 1.53-.72 2.88-.72 1.34 0 1.72.72 2.9.7 1.2-.02 1.96-1.09 2.69-2.16.85-1.24 1.2-2.44 1.22-2.5-.03-.01-2.34-.9-2.36-3.56zM14.3 5.9c.61-.74 1.02-1.77.9-2.8-.88.04-1.94.59-2.57 1.33-.56.65-1.05 1.7-.92 2.7.98.08 1.98-.5 2.59-1.23z"/></symbol>
   </defs>
 </svg>
 
 <a class="skip-link" href="#main">Skip to your groups</a>
 
 <!-- ===========================================================================
-     PROTOTYPE CONTROLS (scaffolding, not product) — copied verbatim from
-     home.html so every screen is reviewed the same way.
+     PROTOTYPE CONTROLS (scaffolding, not product). Theme, hour simulation so the
+     after-20:00 dimmed hero can be seen without waiting, a forced reduced-motion
+     path so the accessible variants can be verified, and Reset day.
+
+     THESE FOUR GROUPS ARE BYTE-IDENTICAL ON EVERY SCREEN. A screen may append
+     its own demo groups after them — and only ones its own markup supports — so
+     a control is never present with nothing to control. Below 600 the bar is a
+     single horizontally scrolling row (components.css §20). Add ?frame=1 to any
+     URL to strip it entirely.
      ======================================================================== -->
 <div class="devbar" role="group" aria-label="Prototype controls">
   <div class="devbar__group" role="group" aria-label="Theme">
@@ -104,14 +127,22 @@
     <button class="devbar__btn" type="button" data-motion-btn="auto" aria-pressed="true">Motion: auto</button>
     <button class="devbar__btn" type="button" data-motion-btn="reduce" aria-pressed="false">Reduce</button>
   </div>
-  <!-- Added by the primitives build: swaps the group list for its empty state. -->
+  <button class="devbar__btn" type="button" data-demo="reset">Reset day</button>
   <button class="devbar__btn" type="button" data-demo="empty" aria-pressed="false">No groups</button>
 </div>
 
 <div class="app-shell">
 
   <!-- =========================================================================
-       NAVIGATION — copied unchanged from home.html; aria-current moved here.
+       NAVIGATION — floating bar &lt;600 · rail 600–1199 · drawer ≥1200
+       IDENTICAL ON EVERY SCREEN; only aria-current moves. Selected = brand-600
+       plus the 3px gold pill.
+
+       Six destinations, four of them in the bottom bar. Explore and Library
+       carry .nav-li--rail: below 600 the bar has room for four plus the FAB and
+       no more, so they are hidden there and reached in-page (Home's "Find a new
+       habit", the Library lesson tile). From 600 up the rail has vertical room
+       and they become real destinations. See components.css §E1.
        ====================================================================== -->
   <nav class="app-nav" aria-label="Primary">
     <a class="app-nav__brand" href="index.html">
@@ -141,6 +172,16 @@
         <svg class="icon" aria-hidden="true"><use href="#i-community"></use></svg>
         <span class="nav-item__label">Community</span>
       </a></li>
+      <li class="nav-li--rail"><a class="nav-item" href="explore.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-explore"></use></svg>
+        <span class="nav-item__label">Explore</span>
+      </a></li>
+      <li class="nav-li--rail"><a class="nav-item" href="library.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-library"></use></svg>
+        <span class="nav-item__label">Library</span>
+      </a></li>
       <li><a class="nav-item" href="profile.html">
         <span class="nav-item__pill" aria-hidden="true"></span>
         <svg class="icon" aria-hidden="true"><use href="#i-person"></use></svg>
@@ -166,8 +207,8 @@
          a single pinned inbox row (a queue, not a place you live) and Webinars
          fold into Events as a type tag. [D §3.3]
          ================================================================== -->
-    <header class="community-head">
-      <div>
+    <header class="page-head">
+      <div class="page-head__text">
         <h1 class="t-h1">Community</h1>
         <p class="t-body-sm t-muted">The people who are in it with you.</p>
       </div>
@@ -247,11 +288,11 @@
                 <!-- Reachable empty state: handle both invitations and the
                      queue empties. Flat two-colour art, one sage accent. -->
                 <div class="empty-state empty-state--inline" data-invite-empty hidden>
-                  <svg class="empty-state__art" viewBox="0 0 120 120" role="img"
+                  <svg class="illus" viewBox="0 0 120 120" role="img"
                        aria-label="An empty tray with a leaf resting in it">
-                    <ellipse cx="60" cy="94" rx="34" ry="8" fill="var(--c-brand-300)" opacity=".55"/>
-                    <path d="M28 62h64l-8 26H36l-8-26z" fill="none" stroke="var(--c-brand-700)" stroke-width="2.5" stroke-linejoin="round"/>
-                    <path d="M60 62c0-14 10-22 24-21-1 13-10 21-24 21z" fill="var(--c-sage-500)" stroke="var(--c-brand-700)" stroke-width="2"/>
+                    <ellipse class="illus__ground" cx="60" cy="94" rx="34" ry="8"/>
+                    <path class="illus__line" d="M28 62h64l-8 26H36l-8-26z"/>
+                    <path class="illus__accent" d="M60 62c0-14 10-22 24-21-1 13-10 21-24 21z"/>
                   </svg>
                   <p class="empty-state__title">Nothing waiting</p>
                   <p class="empty-state__body t-body-sm">You are all caught up.</p>
@@ -724,12 +765,15 @@
               </div>
 
               <div class="empty-state">
-                <svg class="empty-state__art empty-state__art--drift" viewBox="0 0 120 120" role="img"
+                <svg class="illus" viewBox="0 0 120 120" role="img"
                      aria-label="A folded paper note resting on a stone">
-                  <ellipse cx="60" cy="98" rx="32" ry="8" fill="var(--c-brand-300)" opacity=".55"/>
-                  <path d="M34 44h52v44H34z" fill="var(--c-brand-300)" stroke="var(--c-brand-700)" stroke-width="2.5"/>
-                  <path d="M34 44l26 20 26-20" fill="none" stroke="var(--c-brand-700)" stroke-width="2.5" stroke-linejoin="round"/>
-                  <circle cx="86" cy="42" r="6" fill="var(--c-sage-500)"/>
+                  <ellipse class="illus__ground" cx="60" cy="98" rx="32" ry="8"/>
+                  <!-- Only the note drifts; the stone stays planted. -->
+                  <g class="illus__drift">
+                    <path class="illus__shape" d="M34 44h52v44H34z"/>
+                    <path class="illus__line" d="M34 44l26 20 26-20"/>
+                    <circle class="illus__accent" cx="86" cy="42" r="6"/>
+                  </g>
                 </svg>
                 <p class="empty-state__title">No messages yet.</p>
                 <p class="empty-state__body t-body">Introduce yourself to the group.</p>

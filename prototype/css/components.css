@@ -1045,14 +1045,13 @@ button.chip[aria-pressed="true"] { background: var(--c-brand-100); color: var(--
   align-items: center;
   gap: var(--space-12);
 }
-.empty-state__art { inline-size: 132px; block-size: 132px; }
-@keyframes hc-drift {
-  from { translate: 0 -4px; }
-  to   { translate: 0 4px; }
-}
-.empty-state__art--drift {
-  animation: hc-drift var(--dur-drift) ease-in-out infinite alternate;
-}
+/* The artwork itself is `.illus` / `.illus__*` — see §P1. There used to be a
+   second, parallel way to draw an empty state: `.empty-state__art` sized the
+   svg, `.empty-state__art--drift` looped it, and the two-colour rule was
+   retyped as inline `fill="var(--c-brand-300)"` on every path. That version
+   could not re-tone in Nightfall — linework hard-coded to `brand-700` is the
+   hero blue in dark and vanishes into the canvas — so it is gone and all five
+   illustrations that used it now carry the classes. */
 .empty-state__title {
   font-family: var(--font-display);
   font-variation-settings: var(--fvs-h1);
@@ -1120,14 +1119,12 @@ button.chip[aria-pressed="true"] { background: var(--c-brand-100); color: var(--
 }
 @media (min-width: 840px) { .modal--wide { max-inline-size: 720px; } }
 
-@keyframes hc-modal-in {
-  from { opacity: 0; scale: 0.92; translate: 0 16px; }
-  to   { opacity: 1; scale: 1; translate: 0 0; }
-}
+/* The milestone card's ENTRY (keyframes, duration, easing) and its two
+   reduced-motion overrides live in §P3 — one definition, not two. This block is
+   its box only. */
 .modal--milestone {
   max-inline-size: 380px;
   text-align: center;
-  animation: hc-modal-in var(--dur-slow) var(--ease-spring-gentle) both;
 }
 .modal--milestone .modal__numeral {
   font-family: var(--font-display);
@@ -1233,12 +1230,24 @@ button.chip[aria-pressed="true"] { background: var(--c-brand-100); color: var(--
    .devbar markup when this moves to Flutter. */
 body:has(.devbar) .page { padding-block-end: 128px; }
 
+/* Below 600 the bar sits above the bottom nav and stays a SINGLE horizontally
+   scrolling row. It must not wrap: a screen carrying the Moments / Loading /
+   Empty controls wrapped to five rows at 390 and covered the very thing the bar
+   exists to inspect. Scrolling keeps the footprint one row tall whatever a
+   screen appends to it. */
 @media (max-width: 599px) {
   .devbar {
     inset-block-end: calc(var(--layout-nav-bar-h) + var(--space-32));
     inset-inline: var(--space-8);
-    justify-content: center;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    justify-content: flex-start;
+    scrollbar-width: none;
   }
+  .devbar::-webkit-scrollbar { display: none; }
+  .devbar__group { flex: none; }
+  .devbar__btn { white-space: nowrap; }
   body:has(.devbar) .app-shell {
     padding-block-end: calc(var(--layout-nav-bar-h) + var(--space-64) + var(--space-48));
   }
@@ -1794,21 +1803,11 @@ body:has(.devbar) .page { padding-block-end: 128px; }
    ######################################################################### */
 
 /* --- Header: title + the three segments. The five-tab bar is gone. --------- */
-.community-head {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-16);
-  margin-block-end: var(--space-24);
-}
-@media (min-width: 600px) {
-  .community-head {
-    flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
-  }
-}
-/* The segmented control scrolls rather than wrapping on the narrowest phones. */
-.community-head .segmented { max-inline-size: 100%; overflow-x: auto; }
+/* Community's header was `.community-head`, a second implementation of the same
+   thing §E2 calls `.page-head`. There is now one: community.html uses
+   `.page-head` and the only rule that was genuinely Community's — the segmented
+   control scrolling rather than wrapping on the narrowest phones — moved to
+   §E2 beside it. */
 
 
 /* --- The workspace grid --------------------------------------------------- */
@@ -1952,7 +1951,7 @@ body:has(.devbar) .page { padding-block-end: 128px; }
 }
 .invite-item__actions { display: flex; gap: var(--space-4); flex: none; }
 .empty-state--inline { padding-block: var(--space-16); }
-.empty-state--inline .empty-state__art { inline-size: 84px; block-size: 84px; }
+.empty-state--inline .illus { inline-size: 84px; block-size: 84px; }
 
 
 /* --- The group list. The avatar stack of who checked in today is the hero of
@@ -3011,14 +3010,6 @@ body:has(.devbar) .page { padding-block-end: 128px; }
   translate: none !important;
 }
 
-/* The kit's own art class gets the same treatment, so the pre-existing
-   .empty-state__art--drift illustrations and the new .illus ones behave
-   identically under the motion toggle. */
-:root[data-motion="reduce"] .empty-state__art {
-  animation: none !important;
-  translate: none !important;
-}
-
 /* Empty-state polish: the CTA never pulses or breathes — it is a still button
    under a moving leaf, which is the whole point of the one-loop rule. */
 .empty-state .illus { margin-block-end: var(--space-4); }
@@ -3367,7 +3358,8 @@ body:has(.devbar) .page { padding-block-end: 128px; }
 
 /* ============================================================================
    E1. NAV — the two rail-only destinations
-   Used by: explore.html, library.html (and, once reconciled, every screen).
+   Used by: every screen that carries the nav (all but auth and onboarding,
+   which are logged out, and index, which is the gallery).
    [B §6.2] gives the ≥1200 drawer four groups — Habits · Progress · Community ·
    Library — and [B §6.3] Home says "Explore leaves the tab bar and becomes a
    rail destination". Both are true only above the bottom bar: at <600 there is
@@ -3405,6 +3397,9 @@ body:has(.devbar) .page { padding-block-end: 128px; }
 }
 .page-head__text { min-inline-size: 0; }
 .page-head__sub { color: var(--c-ink-muted); margin-block-start: var(--space-4); }
+/* A segmented control in the head scrolls rather than wrapping on the narrowest
+   phones. Came from Community, which used to carry its own header block. */
+.page-head .segmented { max-inline-size: 100%; overflow-x: auto; }
 
 /* The back / breadcrumb line above a detail title. */
 .page-back {
@@ -3418,7 +3413,10 @@ body:has(.devbar) .page { padding-block-end: 128px; }
   text-decoration: none;
 }
 .page-back:hover { text-decoration: underline; }
-.page-back .icon { color: currentColor; rotate: 180deg; }
+/* The glyph is #i-arrow-back, a real left-pointing arrow in the sprite — not a
+   rotated #i-arrow. The rotate hack meant auth.html's own back button had to
+   carry an inline `rotate:none` to undo it. */
+.page-back .icon { color: currentColor; }
 
 /* Explore and Library are rail-only destinations, so below 600 they are not in
    the bottom bar and nothing in it reads as current. That would leave the
@@ -3836,7 +3834,11 @@ body:has(.devbar) .page { padding-block-end: 128px; }
 .read-toc__title { color: var(--c-ink-muted); margin-block-end: var(--space-8); }
 .read-toc__list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
 .read-toc__link {
-  display: block;
+  /* Flex + min-height so the row meets the system's 40px minimum target even
+     though it is a pointer-only desktop control. Was 35px on padding alone. */
+  display: flex;
+  align-items: center;
+  min-block-size: 40px;
   padding: var(--space-8) var(--space-12);
   border-inline-start: 2px solid var(--c-border);
   color: var(--c-ink-muted);
@@ -4173,28 +4175,4 @@ body:has(.devbar) .page { padding-block-end: 128px; }
   margin-block-start: 2px;
   accent-color: var(--c-brand-600);
   flex: none;
-}
-
-
-/* ############################################################################
-   P6. DEVBAR FOOTPRINT — a scaffolding fix, not a design change
-   The primitives build adds five review controls (Milestone, Replay, Load,
-   Load (fast), Empty). At 390 the bar wrapped to five rows and covered the
-   screen it exists to inspect. Below 600 it now stays a SINGLE row and scrolls
-   horizontally instead of wrapping, so the page under it is still reviewable.
-   Prototype-only chrome; deletes with the .devbar markup. Add ?frame=1 to any
-   URL to remove it entirely.
-   ######################################################################### */
-
-@media (max-width: 599px) {
-  .devbar {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    justify-content: flex-start;
-    scrollbar-width: none;
-  }
-  .devbar::-webkit-scrollbar { display: none; }
-  .devbar__group { flex: none; }
-  .devbar__btn { white-space: nowrap; }
 }
