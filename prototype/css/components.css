@@ -991,7 +991,10 @@ button.chip[aria-pressed="true"] { background: var(--c-brand-100); color: var(--
 }
 .cal-cell__glyph { inline-size: 6px; block-size: 6px; border-radius: 50%; background: transparent; }
 .cal-cell--done { background: var(--c-sage-600); color: var(--c-on-brand); }
-.cal-cell--done .cal-cell__glyph { background: #FFFFFF; }
+/* The glyph sits on the sage "done" fill, so it takes the on-fill role token
+   rather than a literal white — in Nightfall --c-on-brand flips to the light
+   canvas value and stays legible. The palette is closed. */
+.cal-cell--done .cal-cell__glyph { background: var(--c-on-brand); }
 .cal-cell--partial { background: transparent; border-color: var(--c-sage-300); }
 .cal-cell--partial .cal-cell__glyph { background: var(--c-sage-600); }
 .cal-cell--milestone::after {
