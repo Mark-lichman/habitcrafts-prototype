@@ -1,65 +1,83 @@
 # HabitCrafts Prototype
 
-This is the **design-exploration prototype** for the HabitCrafts redesign. It is a
-sandbox for research, design thinking, and clickable static mockups — nothing in
-this repo ships directly to users.
+The **design-exploration prototype** for the HabitCrafts redesign — research, design
+direction, and clickable static mockups of every screen. Nothing in this repo ships
+directly to users.
 
 The **production app** is the Flutter repo at
-[`Mark-lichman/HabitCrafts`](https://github.com/Mark-lichman/HabitCrafts). Any design
-direction validated here gets re-implemented there in Flutter.
+[`Mark-lichman/HabitCrafts`](https://github.com/Mark-lichman/HabitCrafts) (private). Design
+validated here gets re-implemented there in Flutter, tracked under the design-system epic.
+
+## The idea — paper and springs
+
+**Everything you look at is paper. Everything you touch is a spring.**
+
+Calm and fun usually pull against each other. Here they are separated into different
+channels, so neither has to be diluted:
+
+- **Calm is a material quality** — warm parchment canvas, matte white cards with hairline
+  borders, blue as ink rather than as a field, grain instead of gloss, one deep-blue hero
+  surface per screen, stillness at rest.
+- **Fun is a behavioural quality** — objects compress under your finger, resist, snap back
+  with overshoot. Rewards accrue to the things you made.
+
+That gives a veto rule running in both directions: anything decorating the *environment*
+fails "paper stays quiet," and anything leaving an *interaction* inert fails "objects must
+spring."
 
 ## What lives here
 
-- `docs/` — the design research brief and design recommendations that drive the redesign.
-- `prototype/` — static HTML/CSS/JS prototypes of the key screens, for both mobile and
-  desktop-web layouts.
-- `assets/images/` — brand assets (logos, icons, onboarding art, backgrounds) copied from
-  the production Flutter app so the prototypes look like the real product.
+- `docs/design-research-brief.md` — the evidence base: audit of the existing design system,
+  exact palette values with computed contrast ratios for light and dark, motion tokens,
+  breakpoints, and a Flutter-web checklist.
+- `docs/design-direction.md` — the point of view. Overrules the brief in five places, each
+  marked and reasoned.
+- `prototype/` — the working prototype: ten screens plus a design-system gallery.
+- `prototype/README-buildnotes.md` — the build contract: CSS architecture, token naming,
+  component classes, JS hooks.
+- `assets/images/` — brand assets copied from the production app.
+
+## Scope
+
+Prototype means **minimal data model, scripted interactions, and UI/UX only.** Fixture data
+is hardcoded. There is no data layer, no persistence, and no validation. Interactions are
+scripted to demonstrate the design, not to be generally correct.
 
 ## How to view
 
-No build step, no dependencies. Open the entry page directly in a browser:
+Start at the **design-system gallery** — `prototype/index.html`. It documents the whole
+system (colour with live-measured contrast ratios, type, components in every state, the
+icon sprite, motion moments each with a reduced-motion variant) and links every screen.
 
-```
-prototype/index.html
-```
-
-Double-click the file, or from the repo root run:
+No build step, no dependencies. Double-click `prototype/index.html`, or serve it locally:
 
 ```sh
-# macOS
-open prototype/index.html
-
-# Windows (PowerShell)
-start prototype\index.html
+node scripts/serve.js          # http://localhost:5173
+node scripts/serve.js 8080     # pick a different port
 ```
 
-Optionally, serve it locally if you want relative paths and any future fetch calls to
-behave like production:
+The server uses only Node built-ins — no `npm install`.
 
-```sh
-python -m http.server 8000
-# then visit http://localhost:8000/prototype/
-```
+### Screens
 
-## Screens (placeholder list)
+Home · Progress · Community · Create Habit · Profile · Explore · Library · Library Detail ·
+Onboarding · Auth
 
-These are the screens planned for the prototype. This list is a placeholder and will be
-updated as screens are built.
+Every screen is responsive across 390 / 768 / 1280 in both light and dark. The navigation
+renders as a bottom bar, a rail, an extended rail, or a drawer from identical markup.
 
-- Onboarding / welcome
-- Sign up & sign in
-- Home / today dashboard
-- Habit detail & check-in
-- Create / edit habit
-- Goals
-- Groups & group detail
-- Progress & streak stats
-- Notifications
-- Profile & settings
+## Deployment
 
-Each screen is intended to exist in both a mobile layout and a desktop-web layout.
+Pushing to `main` publishes `prototype/` to GitHub Pages via
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). The workflow uploads the
+directory as-is — there is no build — after checking that every screen the gallery links to
+actually exists on disk.
 
-## Status
+To deploy manually, run the **Deploy prototype to GitHub Pages** workflow from the Actions
+tab.
 
-Early scaffold. The research brief and prototype screens are in progress.
+## A note on this repo being public
+
+This repo is public so GitHub Pages can serve it for free. It contains design research and
+static mockups only — no credentials, no production code, and no user data. Implementation
+detail about the production app is tracked privately in the app repo.

@@ -1,0 +1,49 @@
+name: Deploy prototype to GitHub Pages
+
+# The prototype is plain static HTML with no build step and no dependencies,
+# so this just uploads the prototype/ directory as-is.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Allow GITHUB_TOKEN to deploy to Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time. Don't cancel a run in progress — let it finish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sanity-check the prototype before publishing
+        run: |
+          set -euo pipefail
+          test -f prototype/index.html || { echo "::error::prototype/index.html is missing"; exit 1; }
+          # Every screen the gallery links to must actually exist on disk.
+          missing=0
+          for f in $(grep -ohE 'href="[a-z0-9-]+\.html"' prototype/*.html \
+                     | sed -E 's/href="([^"]+)"/\1/' | sort -u); do
+            if [ ! -f "prototype/$f" ]; then echo "::error::broken link target: $f"; missing=1; fi
+          done
+          exit $missing
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: prototype
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

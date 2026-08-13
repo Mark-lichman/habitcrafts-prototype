@@ -1934,7 +1934,9 @@ A non-negotiable checklist. Several of these were wrong in my first draft and ar
   Add a build ID to `flutter_bootstrap.js?v=…` to defeat stale deploys.
 - **Beware the browser back-navigation gesture** on near-horizontal drags (flutter#152588) — this
   directly threatens swipe-to-complete on habit cards.
-- Add `requireAuth: true` to the 14 signed-in routes. On web every route is a public URL today.
+- Review route-level auth guards for the signed-in routes as part of the shell-route work. Details
+  are tracked privately in the app repo (`Mark-lichman/HabitCrafts`), not here — this document is
+  public.
 
 ---
 
@@ -1973,5 +1975,5 @@ HTML prototype should demonstrate 1–5 and 9 first.
 
 **Also worth scheduling:** delete the unreachable 675-line `free_trial_screen`; replace the eight
 raster PNG icons with vectors; unify on one Material icon style (rounded); move the FlutterFlow-CDN
-image reference to local assets; add `requireAuth: true` to the 14 signed-in routes; wrap
+image reference to local assets; review route-level auth guards (tracked privately); wrap
 text-bearing screens in `SelectionArea`; real-device iOS Safari load test for flutter#178524.
