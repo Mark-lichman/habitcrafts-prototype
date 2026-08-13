@@ -19,31 +19,51 @@ down, and the superseded one is gone rather than left below a divider.
 
 ## 1. Files and load order
 
+**The prototype is now a single-page app.** The ten screens used to be ten
+standalone HTML files; creating a habit did not add it to Home, checking one in
+did not move Progress, and every navigation was a full page load, so the
+designed page transitions never ran once. That is fixed: `app.html` is the whole
+app, `js/router.js` swaps views inside it, and `js/store.js` is the one place
+state lives. **§12 is the architecture — read it before writing a view.**
+
 ```
 prototype/
-  index.html              gallery / landing (has its own <style> block — do not copy it)
-  home.html               the reference screen. COPY ITS SHELL AND NAV VERBATIM.
-  progress.html           the ledger
-  community.html          groups, threads, the check-in feed
-  create-habit.html       the workbench
-  profile.html            the record
-  explore.html            habit ideas
-  library.html            the knowledge layer
-  library-detail.html     the reading view
-  onboarding.html         the welcome tour (logged out)
-  auth.html               login / sign up / forgot password (logged out)
+  index.html              THE HARNESS. Device frame + control bar. Open this first.
+  app.html                THE APP. Sprite + nav + <main>. Everything else is rendered.
+  system.html             the design-system gallery (was index.html; unchanged but its links)
+
+  js/data.js              the fixture data model — one source, every screen
+  js/store.js             state, mutations, derived selectors
+  js/router.js            hash routes + the page transitions
+  js/app.js               bootstrap: shell, the HC⇄store bridge, state→view
+  js/ui.js                html`` templating, icon(), cls(), restoreRings()
+  js/views/home.js        THE REFERENCE VIEW. Read it before building another.
+  js/views/*.js           one file per route
+  js/prototype.js         all behaviour — the press, the arc, milestones, FLIP. Unchanged.
+
   css/tokens.css          every design token. No component styles.
   css/base.css            reset, paper canvas + grain, type ramp, focus, reduced motion.
   css/components.css      the component kit + layout patterns.
-  js/prototype.js         all behaviour. No per-page scripts.
+
+  home.html               ┐
+  progress.html           │  THE ORIGINAL STATIC SCREENS. No longer reachable
+  community.html          │  product — they are kept as the MARKUP REFERENCE the
+  create-habit.html       │  views are built from. When you build a view, open
+  profile.html            │  its static screen beside you and port the markup;
+  explore.html            │  it is correct, it is reviewed, and re-deriving it
+  library.html            │  from the spec will only introduce drift.
+  library-detail.html     │
+  onboarding.html         │  Do not link to them from the app. Do not edit them.
+  auth.html               ┘
 ```
 
 Eleven of the shipping app's fourteen screens have a design reference here.
 `free_trial_screen` is deliberately **not** built — it is unreachable dead code
 and ticket #60 deletes it.
 
-Every page links exactly this, in this order — tokens, then base, then
-components — and one script tag at the end of `<body>`:
+`app.html`, `index.html` and `system.html` link exactly this, in this order —
+tokens, then base, then components. The static reference screens each carry one
+script tag at the end of `<body>`:
 
 ```html
 <link rel="stylesheet" href="css/tokens.css">
@@ -75,7 +95,18 @@ and paste the whole block to every page. Never fork one page's copy.
 
 ### Hard constraints
 - **Zero external dependencies.** No CDN, no webfont file, no remote image, no
-  build step. Every file must open correctly by double-click from `file://`.
+  npm package, no bundler, no build step. Hand-written ES modules only.
+- **It needs the local server.** ES modules do not load over `file://`, and the
+  harness reaches into the app's iframe, which the `file://` origin rules block
+  as well. Double-clicking `index.html` gives you a blank frame.
+
+  ```
+  node scripts/serve.js        →  http://localhost:5173
+  ```
+
+  This is the deliberate trade for the SPA, and the repo deploys to GitHub Pages
+  over `http://` anyway, so the served path is the real one. The ten static
+  reference screens still open from `file://` — they have no modules.
 - Brand images are at `assets/images/` — 22 PNGs, inside `prototype/` so the directory is
   self-contained and deployable as-is. Use them only for the logo
   and photographic content — **never as icons or chrome.** `bottomNavBackground.png`
@@ -179,11 +210,17 @@ BEM-ish: block `.card`, element `.card__title`, modifier `.card--hero`, state
 | `.section-head` · `.page-head` `__text` `__sub` · `.page-back` (`--compact`) | Section title + trailing action; screen header; back / breadcrumb line. |
 | `.skip-link` | Skip link to `#main`. |
 
-**Copy the whole `<nav class="app-nav">` block from `home.html` unchanged** and
-move `aria-current="page"` to your screen's item.
+**The nav lives once, in `app.html`, and a view never renders it.** Each item
+carries a `data-nav` id; the router moves `aria-current="page"` onto the one
+matching your view's `meta.nav` (§12.4). Selected is brand-600 plus the 3px gold
+pill, off that attribute alone — never a class, never `opacity: 0.5`, so there
+is nothing to get out of sync. Set `meta.nav = null` for a task flow and
+`meta.chrome = false` for a logged-out screen, which hides the nav entirely.
+*(On the static reference screens the rule is still the old one: copy the whole
+`<nav class="app-nav">` block from `home.html` and move `aria-current` yourself.)*
 
 **Six destinations, four of them in the bottom bar.** Habits · Progress ·
-Community · Explore · Library · Profile, plus the FAB → `create-habit.html`.
+Community · Explore · Library · Profile, plus the FAB → `#/create`.
 Explore and Library carry `.nav-li--rail` and are inserted after Community:
 below 600 the bar has room for four destinations plus the FAB and no more, so
 they are hidden there and reached in-page (Home's "Find a new habit", the
@@ -259,6 +296,11 @@ beside the column, never a wider column. The third grid track is `1fr` exactly
 so the reading column never loses when space is tight.
 
 ### The devbar
+**In the app this is gone.** `app.html` carries no devbar at all — the review
+controls live in `index.html`, outside the iframe, where they cannot be mistaken
+for product UI (§12.6). What follows describes the devbar as it still exists on
+the ten static reference screens, which is where you will meet it.
+
 Scaffolding, not product; it deletes with the Flutter migration. **The first
 four groups — Theme, hour slider, Motion, Reset day — are byte-identical on
 every page that has one.** A screen may append its own demo groups after them,
@@ -269,8 +311,9 @@ adds its Empty toggle, Create Habit adds "5+ habits". Below 600 the bar stays a
 the demo controls wrapped to five rows at 390 and covered the very thing the bar
 exists to inspect. `?frame=1` on any URL strips it entirely.
 
-*Known gap:* `index.html` still carries the pre-reconciliation three-group bar
-(no Reset day). The gallery is owned by a separate pass; fold it in there.
+*Resolved:* `index.html` used to carry a pre-reconciliation three-group bar. The
+gallery moved to `system.html` and `index.html` is now the harness, whose bar is
+a different component (`.hz-*`, harness-local) with the full control set.
 
 ### Typography and utilities (base.css)
 `.t-display .t-h1 .t-h2 .t-h3 .t-body-lg .t-body .t-body-sm .t-label .t-caption`
@@ -338,7 +381,7 @@ three shapes and on every day-arc path.
 ### Attribute reference — the day
 | Attribute | On | Effect |
 |---|---|---|
-| `data-habit` | habit card | Registers the card. Counted by the day arc. Use `data-habit="preview"` for a non-counting demo/preview card (Create Habit's live preview should use this). |
+| `data-habit="<habitId>"` | habit card | Registers the card. Counted by the day arc. **The value is the habit's id** — it is the whole join between the animation layer and the store (§12.5). Use `data-habit="preview"` for a non-counting demo/preview card (Create Habit's live preview should use this). |
 | `data-celebration="…"` | habit card | The user's own "How will you celebrate?" answer. Unfurls verbatim at commit. |
 | `data-checkin` | the ring `<button>` | Wires press-and-hold. Mouse, touch and keyboard (hold Space/Enter). |
 | `data-echo` | `<p>` in the card | Where the celebration text is written. |
@@ -641,20 +684,329 @@ re-tone; do not "fix" them onto the illustration classes.
 
 ## 11. Prototype scope, stated
 
-Fixture data is inline in the HTML. There is **no data layer, no fake API, no
-persistence, no form validation and no auth.** The loading state is a timer on a
-button, the empty state is a toggle, and "one celebration per session" is a
-single boolean. A real build owns all three properly, plus the parts
-deliberately not built here: load failure and retry, a genuine focus trap for a
+There is a data layer now (§12) but there is still **no backend, no fake API, no
+network, no form validation and no auth.** State is fixture data in memory,
+mirrored to `sessionStorage` so it survives a reload but not a new tab. A real
+build owns validation, load failure and retry, a genuine focus trap for a
 multi-control modal, freeze-day accrual, and the actual decay curve.
 
-*(Pre-existing: the core does persist theme/motion in `localStorage`. It will
-carry across pages during review.)*
+*(The behaviour layer persists theme/motion in `localStorage` — a reviewer sets
+dark mode once. Everything else is `sessionStorage`, on purpose: a prototype
+that remembers yesterday's demo is one nobody can hand to the next reviewer.)*
 
 Known gaps a later pass should close, listed rather than papered over:
-- `index.html` is owned by the gallery pass. Its devbar is still the old
-  three-group one, and it does not link to `auth.html` or `onboarding.html`, so
-  those two screens are currently reachable only by typing the filename.
+- Ten of the eleven views are still `_scaffold` placeholders. Home is built.
 - Several `href="#"` placeholders remain where the destination screen is
   genuinely out of scope: Community's "Create" group and "Want to start a
   group?", Profile's "Open device settings".
+- The harness's fixed viewport widths are the iframe's *content* width. On a
+  platform with classic (space-taking) scrollbars, an overflowing page inside
+  the frame costs the app ~15px of that, the same way a real desktop browser
+  window would. Phones use overlay scrollbars and do not.
+- The devbar's `data-demo` controls (skeleton, empty toggle, milestone replay,
+  `crowded`) still exist in `prototype.js` and on the static reference screens,
+  but the app has no devbar — the harness bar replaces it and deliberately
+  carries only real controls. Skeletons are consequently unreachable in the app.
+
+---
+
+## 12. The app architecture
+
+Everything in this section is new with the SPA conversion. **If you are building
+a view, this section plus `js/views/home.js` is everything you need.**
+
+The shape mirrors the evercred prototype conceptually — `data/`, store, router,
+views — but in plain ES modules with no framework and no build step.
+
+```
+    data.js  ──▶  store.js  ──▶  views/*.js  ──▶  HTML string
+                     ▲               │
+                     │               ▼
+                  app.js  ◀──  prototype.js   (the press, the arc, milestones)
+                     │
+                  router.js  ──▶  <main class="view-stack">
+```
+
+One sentence per file:
+
+| File | What it owns |
+|---|---|
+| `js/data.js` | The fixtures. Plain exported objects. No dependencies at all. |
+| `js/store.js` | The state, the mutations, the derived selectors. |
+| `js/router.js` | Hash routes and the two page transitions. |
+| `js/app.js` | Bootstrap; the bridge between `prototype.js` and the store. |
+| `js/ui.js` | ``html`` `` templating, `icon()`, `cls()`, `on()`, `restoreRings()`. |
+| `js/views/*.js` | One file per route. Pure render + optional mount. |
+
+### 12.1 The data shape
+
+`data.js` exports `user`, `habits`, `groups`, `people`, `invitations`, `lessons`,
+`resources`, `categories`, `ideas`, `onboarding`, `MILESTONES`, plus the date
+helpers `iso()`, `today()`, `daysAgo()`, `longDate()`, `WEEKDAY`, `MONTH`.
+
+A habit is the four fields the real `habits` collection stores, plus a schedule
+and a history:
+
+```js
+{
+  id: 'h-meditate',
+  behavior: 'Meditate for two minutes',      // "What will you do?"
+  prompt: 'After I pour my morning coffee',  // "When will you do the behavior?"
+  celebration: 'Fist pump!',                 // "How will you celebrate?"
+  why: 'Two minutes of quiet before…',       // "What will success look like?"
+  days: [0,1,2,3,4,5,6],                     // weekday numbers, 0 = Sunday
+  time: '07:15',
+  category: 'mind',
+  archived: false,
+  history: ['2026-08-12', '2026-08-11', …],  // local-midnight ISO day keys
+}
+```
+
+**There is no `streak` field, and there must never be one.** A stored streak is
+a second fact that can disagree with the first, which is exactly how the static
+screens drifted. History is the only fact; `store.streakOf()` derives the rest.
+That is also why a check-in raises the streak for free and an undo lowers it,
+with nothing to keep in sync.
+
+Histories are **generated** at module load from a seed (`streak`, `density`,
+`span`) by a deterministic LCG keyed off the habit id — the same arrays every
+reload, enough depth for Progress to draw a real calendar and a real chart, and
+no 400 hand-typed date strings. The day immediately before a streak begins is
+always empty, so the streak has a real boundary rather than melting into the
+noise behind it.
+
+Dates are **local-midnight ISO keys** built by `iso()`. Never
+`new Date().toISOString()` — that is UTC and puts the evening of the 13th on
+the 14th.
+
+Six habits. Five are daily and reproduce `home.html`'s gild ladder exactly
+(365 · 100 · 30 · 7 · none). The sixth, "Ten push-ups", is **weekend-only**, so
+the schedule filter is demonstrably real: on a Tuesday it is not on Home at all,
+and its streak counts twenty *Saturdays and Sundays*, not twenty days.
+
+### 12.2 The store API
+
+```js
+import * as store from '../store.js';
+```
+
+**State**
+
+```js
+store.state         // { user, habits, groups, invitations, lessons,
+                    //   dismissedLessons, theme, motion }
+store.subscribe(fn) // → unsubscribe. You will not need this — see 12.4.
+```
+
+**Mutations** — mutate through these, never by hand. `store.state.habits.push()`
+updates no screen and is lost on reload. Every mutation persists and notifies.
+
+```js
+store.checkIn(id, {date, origin})    // → 7|30|100|365 if a milestone was crossed, else null
+store.undoCheckIn(id, {date, origin})
+store.createHabit({behavior, prompt, celebration, why, days, time, category}) // → the habit
+store.archiveHabit(id)  ·  store.restoreHabit(id)
+store.sendMessage(groupId, text)
+store.dismissLesson(id) ·  store.markLessonRead(id)
+store.acceptInvitation(id)
+store.setTheme('system'|'light'|'dark')  ·  store.setMotion('auto'|'reduce')
+store.setQuickCheckIn(bool)
+store.resetAll()
+```
+
+**Selectors** — pure, memoised per commit, safe to call in a render loop.
+
+```js
+store.habitById(id)
+store.todayHabits()        // scheduled today, incomplete first, completed sunk
+store.activeHabits()  ·  store.archivedHabits()
+store.isScheduled(habit, date)  ·  store.isDoneOn(habit, date)
+store.streakOf(habit)      // consecutive SCHEDULED days; an open today is not a break
+store.bestStreakOf(habit)  // the longest run ever
+store.gildOf(habit)        // 0|7|30|100|365 → the .habit-card--gild-N modifier
+store.milestoneAhead(habit)
+store.dayProgress()        // { done, total, complete } — the day arc
+store.dayState(date)       // { state:'none'|'partial'|'done', done, total } — calendar cells
+store.recentDays(n)        // the last n days, newest last, each with its dayState
+store.daysWithCheckIn(n)   // "4 of 7 days"
+store.overallStreak()      // consecutive days with at least one check-in
+store.data                 // read-only re-export of data.js
+```
+
+Two rules worth stating outright:
+
+- **`gildOf` reads the BEST streak, not the current one.** The mark records what
+  you did and survives a break; the moment fires on the current streak. [D §2.4]
+- **If you read a selector between a hand mutation and its commit, call
+  `memo.clear()` first.** Selectors are memoised per commit. This bit `checkIn`
+  once — it read back a streak cached from before today was added and fired the
+  milestone a day early.
+
+**Persistence** is `sessionStorage`, key `hc:proto:v1`, whole-state JSON. Bump
+the version if you change the shape; a stale blob is dropped, not migrated.
+
+### 12.3 How to add a route
+
+Four lines and one file.
+
+1. Add a row to `ROUTES` in `js/router.js`. `path` may carry `:params`:
+   ```js
+   { path: '/habit/:id', load: () => import('./views/habit-detail.js') },
+   ```
+2. Create `js/views/<name>.js` exporting `meta` and `render` (12.4).
+3. Give it `level: 1` if it is a push into detail rather than a destination.
+4. Give it `nav: '<id>'` matching a `data-nav` attribute in `app.html` if it
+   should light up a nav item.
+
+That is the whole integration. Nothing else in `router.js` should ever need
+editing. Link to it with a plain `<a href="#/habit/h-water">` — keyboard- and
+middle-click-friendly for free — or `router.go('/habit/h-water')`.
+
+Routes live: `#/home` `#/progress` `#/community` `#/create` `#/profile`
+`#/explore` `#/library` `#/library/:id` `#/habit/:id` `#/onboarding` `#/auth`.
+
+**The transitions.** Which one runs is decided by the two views' `level`, never
+by a view asking for one — that is what keeps it coherent as views are added.
+
+| From → to | Transition |
+|---|---|
+| level 0 → 0 | **Fade-through.** Top-level destinations are siblings; nothing slides. |
+| level 0 → 1 | **Shared-axis X, forward.** Old exits left, new enters from the right. |
+| level 1 → 0 | **Shared-axis X, backward.** Mirrored. |
+
+Total is `--dur-moderate` (340ms) — the token already named "page transition
+total" — with `--ease-exit` leaving and `--ease-enter` arriving. This is the
+work of ticket #49: ten separate files meant the browser tore the old document
+down before anything could animate out of it, so these never ran once.
+
+**The reduced-motion branch is in JS, not CSS, and that is load-bearing.** The
+transitions run through the Web Animations API, and `base.css`'s global
+`transform: none !important` does not reach a running WAAPI animation — a
+CSS-only branch would look like it worked and would not. Under reduced motion
+the router drops the translate and the scale entirely and crossfades over
+`--dur-micro`. **Anything you animate from JS needs the same treatment:** branch
+on `HC.reducedMotion()`, which honours the OS preference *or* the `[data-motion]`
+hook the harness sets.
+
+### 12.4 How a view is structured
+
+Three exports, two optional. Copy `js/views/home.js`.
+
+```js
+import * as store from '../store.js';
+import { html, icon, cls, on, restoreRings } from '../ui.js';
+
+export const meta = {
+  title: 'Progress',     // → "Progress · HabitCrafts"
+  nav: 'progress',       // which [data-nav] gets aria-current; null for none
+  level: 0,              // 0 = destination (fade-through), 1 = detail (shared-axis X)
+  chrome: true,          // false = logged out: no nav, no shell insets
+  ownsCheckIn: false,    // see below
+};
+
+export function render(params) {
+  return String(html`<div class="page">…</div>`);
+}
+
+export function mount(root, params) {
+  on(root, 'click', '[data-thing]', (e, el) => { … });
+  return function destroy() { /* only if something outlives the view */ };
+}
+```
+
+**`render` is a pure function of the store.** It reads, it returns markup, it
+writes nothing. It is called again from scratch on every state change, so it
+must not depend on anything it left in the DOM last time. It returns the view's
+own `.page` (or `.page--wide` / `.page--read`) — the router's `.view` wrapper
+adds no padding, so a view keeps full control of its own measure.
+
+**`mount` runs after the markup is in the document and after `HC.init` has wired
+it.** Use it for delegated listeners and anything that needs real nodes. Return
+a function only if something would outlive the view — a timer, a listener on
+`document` or `window`. Listeners bound to `root` need no cleanup; the router
+removes the whole element.
+
+**You never subscribe to the store.** `app.js` re-renders the mounted view on
+every change. Write no subscription code.
+
+**Templating.** `` html`…` `` escapes every interpolation, joins arrays with no
+separator (so `${list.map(row)}` works), and drops `null` / `false` (so
+`${cond && html`…`}` reads cleanly). Escaping is not ceremony — group messages
+are user input, and a view that pastes them in raw is one `<img onerror>` away
+from being a bad example for the Flutter build to copy. `raw()` opts out; use it
+only for nested `html` results.
+
+**`meta.ownsCheckIn` — and why your view probably should not set it.** The
+press-and-hold is ~700ms of choreography `prototype.js` runs directly on the
+card: ring fill, checkmark draw, flecks, celebration echo, FLIP reorder, arc
+close. If the view re-rendered when the store recorded that check-in, every
+animating node would be replaced mid-flight and the signature moment would
+become a flicker. `ownsCheckIn: true` tells `app.js` to skip the re-render for
+DOM-originated check-ins **on that view only**. Home sets it. Every other view
+re-renders normally on those same events, which is exactly right — Progress
+genuinely does need to redraw when Home checks something in.
+
+Set it only if your view renders `[data-checkin]` rings *and* would be damaged
+by a re-render. A view that merely displays streaks wants the re-render.
+
+**If you render habit cards in their completed state, call `restoreRings(root)`
+in `mount()`.** `HC.init` finishes by writing an inline `stroke-dashoffset: 100`
+onto every ring — correct for a fresh card, wrong for one that was already
+checked in. An inline style cannot be beaten from the stylesheet, so the fix is
+to write the completed values back afterwards. This is what makes a check-in
+survive a trip to Progress and back.
+
+### 12.5 The bridge to `prototype.js`
+
+**`prototype.js` is unchanged and is not to be rewritten.** It is still the
+whole behaviour layer — the press-and-hold, the day arc, the greeting, the
+milestone, the FLIP reorder, the skeletons, the theme/motion/hour controls — and
+it still keys off `data-*` attributes only. Everything in §4 and §5 still
+applies verbatim. It self-boots and exposes `window.HC`; the router calls
+`HC.init(viewEl)` on every injected view and `HC.refreshDay()` after.
+
+The join between the animation layer and the data layer is **one attribute**:
+
+```html
+<article class="card habit-card" data-habit="h-meditate" data-celebration="Fist pump!">
+```
+
+`data-habit` now carries the habit id (`data-habit="preview"` still means a
+non-counting preview card). `prototype.js` fires `hc:checkin` / `hc:undo` with
+the card element; `app.js` reads the id off it and calls `store.checkIn(id,
+{origin: 'dom'})`. If that returns a milestone, `app.js` hands it to
+`HC.fireMilestone({days})`, which already owns the once-per-session rule —
+one hook, one owner.
+
+`window.HCApp = { store, router, reset(), summary() }` exists solely so the
+harness can drive the app through the iframe. Nothing else is global.
+
+### 12.6 The harness (`index.html`)
+
+`index.html` used to be the gallery; that moved to `system.html` unchanged but
+for its links. `index.html` is now the review harness: the app in a resizable
+frame with the controls around it — viewport (Mobile 390 · Tablet 768 · Desktop
+1280 · Full width), theme, motion, an hour simulator, Reset data, and a link to
+the design system.
+
+**The app runs in an iframe, and that is not a detail.** CSS media queries
+respond to the viewport, not to a container, so shrinking a `<div>` would leave
+the app rendering at desktop breakpoints inside a phone-shaped box. An iframe
+has its own viewport, so 390 genuinely triggers the mobile bar-shaped nav.
+`.hz-frame` is `box-sizing: content-box` for the same reason — under the global
+`border-box` reset, `inline-size: 390px` would mean 390 *including* the hairline
+border and the app would get 388.
+
+Changing the viewport only changes the width; the iframe is never reloaded, so
+the app keeps its route and its state while you step 390 → 768 → 1280 and watch
+the nav change shape underneath it.
+
+The bar reaches straight into `contentWindow` and calls the app's own public API
+(`HC` for theme/motion/hour, `HCApp` for the store) rather than inventing a
+message protocol. Same-origin, which is another reason the local server is not
+optional.
+
+**`app.html` carries no devbar.** The control bar is scaffolding and lives one
+level up, outside the frame, styled deliberately as an undesigned toolbar —
+system-ui, square corners, flat, no shadow, no gold — so nobody reviews it as a
+designed surface. A screenshot of the frame is a screenshot of the app.

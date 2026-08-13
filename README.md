@@ -32,32 +32,50 @@ spring."
   breakpoints, and a Flutter-web checklist.
 - `docs/design-direction.md` — the point of view. Overrules the brief in five places, each
   marked and reasoned.
-- `prototype/` — the working prototype: ten screens plus a design-system gallery.
+- `prototype/` — the working prototype: a single-page app preview, the ten original static
+  screens it was built from, and a design-system gallery.
 - `prototype/README-buildnotes.md` — the build contract: CSS architecture, token naming,
-  component classes, JS hooks.
+  component classes, JS hooks, and (§12) the app architecture — data model, store API, how
+  to add a route, how a view is structured.
 - `prototype/assets/images/` — brand assets copied from the production app. They live inside
   `prototype/` so that directory is self-contained and can be deployed as-is.
 
 ## Scope
 
-Prototype means **minimal data model, scripted interactions, and UI/UX only.** Fixture data
-is hardcoded. There is no data layer, no persistence, and no validation. Interactions are
-scripted to demonstrate the design, not to be generally correct.
+A preview of the working app, without the data flows. Creating a habit adds it to Home;
+checking one in advances the day arc, raises the streak, reorders the list and can fire a
+milestone. But it is still **UI/UX only**: fixture data, in-session state, **no backend, no
+network, no validation and no auth.**
 
-## How to view
+## How to run
 
-Start at the **design-system gallery** — `prototype/index.html`. It documents the whole
-system (colour with live-measured contrast ratios, type, components in every state, the
-icon sprite, motion moments each with a reduced-motion variant) and links every screen.
-
-No build step, no dependencies. Double-click `prototype/index.html`, or serve it locally:
+**It needs the local server. Double-clicking will not work** — the app is hand-written ES
+modules, and ES modules do not load over `file://`.
 
 ```sh
 node scripts/serve.js          # http://localhost:5173
 node scripts/serve.js 8080     # pick a different port
 ```
 
-The server uses only Node built-ins — no `npm install`.
+Still no build step and no dependencies; the server uses only Node built-ins, no
+`npm install`. GitHub Pages serves it over `http://` too, so the served path is the real
+one.
+
+Then open **`http://localhost:5173/`** — the prototype harness. The app runs in a device
+frame with a control bar around it: viewport (Mobile 390 · Tablet 768 · Desktop 1280 · Full
+width), light/dark/auto, motion auto/reduce, an hour simulator for the after-20:00 state,
+and Reset data. The bar is scaffolding and is styled plainly so it is never mistaken for
+product.
+
+| Path | What |
+|---|---|
+| `/` | the harness — the app in a resizable frame, with the review controls |
+| `/app.html` | the app on its own, no scaffolding. What to screenshot. |
+| `/system.html` | the design-system gallery — colour with live contrast ratios, type, every component state, the icon sprite, the motion moments |
+
+The ten original static screens (`home.html`, `progress.html`, …) are still in the
+directory. They are no longer reachable product — they are the reviewed markup reference the
+app's views are built from.
 
 ### Screens
 

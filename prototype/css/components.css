@@ -1190,6 +1190,50 @@ button.chip[aria-pressed="true"] { background: var(--c-brand-100); color: var(--
 
 
 /* ############################################################################
+   19b. THE VIEW STACK — the single-page app's page container      [ticket #49]
+   Used by: app.html only. The router appends one `.view` per route into
+   `.view-stack` and keeps TWO of them alive for the length of a transition —
+   which is the entire reason the app is one page. Ten separate HTML files meant
+   the browser tore the old document down before anything could animate out of
+   it, so the designed page transitions never ran once.
+
+   The box is all this needs to be. The MOTION is not here: it runs through the
+   Web Animations API in router.js, because base.css's global
+   `transform: none !important` does not reach a running WAAPI animation, so a
+   CSS-only reduced-motion branch would look like it worked and would not. The
+   branch is in JS. See the header comment in js/router.js.
+   ######################################################################### */
+
+.view-stack {
+  position: relative;
+  display: block;
+}
+
+/* Each `.view` is a plain block in the flow. It carries no padding of its own —
+   the view inside it opens with `.page` (or `.page--wide` / `.page--read`), so
+   a view keeps full control of its own measure. */
+.view { display: block; }
+
+/* The outgoing view for the ~120ms both are on screen. Taking it out of the
+   flow lets the incoming view lay out at its natural height immediately
+   instead of being pushed down by a page that is already leaving. It is
+   `aria-hidden` and inert to the pointer for that window, so nothing can be
+   clicked or focused on its way out. */
+.view--leaving {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  pointer-events: none;
+}
+
+/* Logged-out routes (auth, onboarding) carry NO nav chrome at all, so the
+   shell's bottom-bar padding and rail inset go with it — otherwise the page
+   sits in a rail-shaped hole. Driven by `meta.chrome === false` on the view,
+   applied by app.js. */
+.app-shell[data-chrome="none"] { padding: 0; }
+
+
+/* ############################################################################
    20. PROTOTYPE-ONLY CHROME
    The reviewer's control bar (theme, hour simulation, motion). Not part of the
    product design system — it is scaffolding, and it is styled deliberately
@@ -4178,4 +4222,211 @@ body:has(.devbar) .page { padding-block-end: 128px; }
   margin-block-start: 2px;
   accent-color: var(--c-brand-600);
   flex: none;
+}
+
+
+/* ############################################################################
+   Z1. LOGGED-OUT ROUTES IN THE APP SHELL — onboarding + auth
+   APPENDED BLOCK — owned by js/views/onboarding.js and js/views/auth.js.
+   Nothing above this line is edited by it. Two adjustments only, both of them
+   consequences of the SPA conversion rather than new design.
+   ######################################################################### */
+
+/* 1. THE ONBOARDING ART IS DRAWN ON A 300-UNIT GRID, NOT THE 120 THE EMPTY
+      STATES USE. §P1's stroke weights are tuned for a 120-unit artwork drawn at
+      132px; the same numbers on a 300-unit artwork drawn at 300px land at half
+      the optical weight and the drawing goes wiry. The COLOURS still come from
+      §P1 — this scales the line with the grid and touches nothing else, so
+      there is still exactly one illustration system. */
+.ob-slide__art .illus__shape,
+.ob-slide__art .illus__accent { stroke-width: 3; }
+.ob-slide__art .illus__line   { stroke-width: 3; }
+
+/* 2. `.ob-page`'s deep bottom padding is prototype scaffolding: onboarding is
+      the one screen pinned to the viewport instead of scrolling, so on the ten
+      static reference pages the fixed devbar would otherwise sit on top of the
+      Back / dots / Next row. THE APP HAS NO DEVBAR — the review controls live
+      outside the iframe (§12.6) — so inside the app shell the row takes its
+      real spacing and the card sits optically centred. */
+.app-shell[data-chrome="none"] .ob-page {
+  padding-block-end: var(--space-32);
+}
+
+
+/* ############################################################################
+   APPENDED — Progress / Profile views (js/views/progress.js, profile.js)
+   Self-contained. Nothing above this line is edited.
+
+   ONE addition only. The rest of both screens is built from classes that
+   already exist in this file: .prog-*, .cal-cell, .repair, .shelf, .mark,
+   .pane-nav, .setting-row, .switch, .goal-row, .field-grid.
+   ######################################################################### */
+
+/* --- The PARTIAL dot in a micro-strip --------------------------------------
+   The 7-day strips and the hero week strip carry the same three-state encoding
+   the calendar does, and the calendar has a partial state the strip did not:
+   a day where SOME of what was scheduled got kept. Without it a partial day had
+   to be drawn as either kept or missed, and both are lies.
+
+   It is deliberately the calendar's own partial encoding, transposed — a
+   transparent centre inside a sage-300 hairline, with a sage-600 core — so the
+   two components agree and the difference survives greyscale as a fill/hole
+   difference, not a hue difference. No new hex: --c-sage-300 / --c-sage-600 are
+   the same tokens .cal-cell--partial uses. [D §3.2]
+--------------------------------------------------------------------------- */
+.prog-dot--partial {
+  background: transparent;
+  border: 2px solid var(--c-sage-300);
+  box-shadow: inset 0 0 0 2px var(--c-sage-600);
+}
+
+/* On the hero the ink flips, exactly as .prog-dots--on-hero already does for
+   the kept and open states: sage on brand-700 is 1.74:1, so the marker takes
+   --c-arc-on-hero and the hairline the same 22% white the hero arc track uses. */
+.prog-dots--on-hero .prog-dot--partial {
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: inset 0 0 0 2px var(--c-arc-on-hero);
+}
+
+
+/* ############################################################################
+   Z1. HABIT DETAIL — #/habit/:id  (js/views/habit-detail.js)
+
+   APPEND-ONLY BLOCK. Nothing above this line is touched.
+
+   There is no static reference screen for habit detail, so this is the only
+   component work the route needed: a two-column shell, the read-back of the
+   four questions, a legend for the per-habit history grid, and the recent
+   check-in list. Everything else on that screen is existing kit — `.hero
+   --streak`, `.cal-grid` / `.cal-cell`, `.stat-tile`, `.card`, `.daypick`,
+   `.field`, `.seal`, `.chip`.
+
+   No literal colours: every value is a semantic --c-* / --space-* / --fs-*
+   token that already exists in tokens.css. The palette is closed.
+   ######################################################################### */
+
+/* --- Shell ---------------------------------------------------------------
+   One column until 1200, where the drawer lands and there is genuinely room
+   for a second. Deliberately NOT the 840 switch the browse screens use: this
+   page's main column is a calendar grid and a form, and squeezing a 340px rail
+   beside it at 840 leaves both too narrow to read. [D §5.3] */
+.hd-layout { display: grid; gap: var(--layout-card-gap); align-items: start; }
+@media (min-width: 1200px) {
+  .hd-layout { grid-template-columns: minmax(0, 1fr) 340px; gap: var(--space-32); }
+}
+.hd-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--layout-card-gap);
+  min-inline-size: 0;
+}
+.hd-actions { display: flex; flex-wrap: wrap; gap: var(--space-8); }
+
+/* --- The four questions, read back ---------------------------------------
+   The question is the quiet label and the answer is the content, which is the
+   inverse of `.setting-row` — there the label is the thing you scan for. The
+   celebration takes the display italic it will unfurl in inside the card, so
+   the promise looks the same everywhere it appears. [D §2.2] */
+.hd-field + .hd-field {
+  margin-block-start: var(--space-16);
+  padding-block-start: var(--space-16);
+  border-block-start: var(--stroke-hairline) solid var(--c-border);
+}
+.hd-field__q { display: block; color: var(--c-ink-muted); }
+.hd-field__a { margin-block-start: var(--space-4); color: var(--c-ink-strong); }
+.hd-field__a--celebration {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--c-sage-700);
+}
+
+/* --- History grid extras -------------------------------------------------
+   A day this habit was never scheduled for is not a gap, and must not read as
+   one: dashed hairline, no fill, no glyph — a different SHAPE, not a paler
+   version of "missed". There is no "missed" state anywhere in this app. [D §7] */
+.hd-cal { display: flex; flex-direction: column; gap: var(--space-16); }
+.cal-cell.hd-cell--off { background: transparent; border-style: dashed; }
+
+.hd-legend { display: flex; flex-wrap: wrap; gap: var(--space-16); }
+.hd-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  font-size: var(--fs-body-sm);
+  color: var(--c-ink-muted);
+}
+.hd-legend__swatch {
+  inline-size: 14px;
+  block-size: 14px;
+  border-radius: 4px;
+  flex: none;
+  background: var(--c-canvas-sunken);
+  border: var(--stroke-hairline) solid var(--c-border);
+}
+.hd-legend__swatch--done { background: var(--c-sage-600); border-color: var(--c-sage-600); }
+.hd-legend__swatch--off { background: transparent; border-style: dashed; }
+
+/* --- Recent check-ins ----------------------------------------------------- */
+.hd-recent {
+  list-style: none;
+  margin: var(--space-8) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.hd-recent__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding-block: var(--space-8);
+  font-size: var(--fs-body-sm);
+  color: var(--c-ink);
+  border-block-start: var(--stroke-hairline) solid var(--c-border);
+}
+.hd-recent__row:first-child { border-block-start: 0; }
+.hd-recent__row .icon { color: var(--c-sage-600); flex: none; }
+
+/* 3. LINKS INSIDE THE TERMS SENTENCE FLOW AS TEXT.
+      `.text-link` is `inline-flex` with `min-height: var(--target-min)`, which
+      is right for a link that stands on its own line and wrong for two links
+      inside a wrapping sentence: each one becomes a 48px-tall inline box and
+      the sentence opens a chasm between its lines at 390. Inline links inside
+      a block of text are exactly the case WCAG 2.5.8 exempts from the target
+      size, so the target is dropped HERE ONLY — inside `.check`, which is the
+      terms gate. Every standalone `.text-link` keeps its 48px. */
+.check .text-link {
+  display: inline;
+  min-height: 0;
+}
+
+
+/* ############################################################################
+   S1. SOCIAL + CONTENT VIEWS — the SPA additions
+   Appended for js/views/community.js, library.js and library-detail.js during
+   the SPA conversion. APPEND-ONLY and self-contained: it modifies nothing above
+   this line and depends on no rule's position. Semantic --c-* tokens only, no
+   new literal hex — the palette is closed.
+
+   Everything those three views need was already in §22, §E5 and §E6; this is
+   the one gap the static reference screens never exposed, because on
+   library-detail.html the contents list had nothing to be current about.
+   ######################################################################### */
+
+/* The contents rail marks where you are.
+   `.read-toc__link` shipped with a hover state and nothing for the entry you
+   are actually reading, so on a window wide enough to show the rail the list
+   gave no clue which lesson was open. The SPA rail lists the week and is
+   navigable between lessons, which makes that a real gap rather than a
+   cosmetic one.
+
+   The treatment follows the nav's rule — selected is ink plus a rule, never
+   opacity — so it reads the same way `aria-current="page"` reads everywhere
+   else in the system, and it is driven by that attribute alone. Nothing to
+   keep in sync, and it inherits both themes for free because every value here
+   is a semantic token. */
+.read-toc__link[aria-current="page"] {
+  color: var(--c-brand-600);
+  font-weight: var(--fw-label);
+  border-inline-start-color: var(--c-brand-600);
+  background: var(--c-surface-tinted);
 }
