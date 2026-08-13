@@ -3,2351 +3,346 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HabitCrafts — the design system</title>
-<meta name="description" content="The system reference for the HabitCrafts redesign: tokens, components, icons, illustration, motion, and the veto list.">
+<title>HabitCrafts — prototype</title>
+<meta name="description" content="The HabitCrafts prototype harness: the working app preview in a resizable device frame, with theme, motion and hour controls.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="assets/images/favicon.png">
-<!-- Order matters: tokens → base → components. -->
+<!-- Order matters: tokens → base → components. The harness loads them only so
+     it can consume the semantic --c-* layer; it uses no component classes. -->
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
 <style>
 /* ===========================================================================
-   GALLERY-ONLY SCAFFOLDING.  [README §1: index.html has its own <style> block]
+   HARNESS-ONLY SCAFFOLDING. This page has its own <style> block for the same
+   reason the gallery does: none of it is product, and no screen may copy it.
 
-   This block is the reference page's own furniture — contents rail, specimen
-   tiles, swatch chips, device frames, and the three motion demos the product
-   does not implement (page transition, list-item entrance, empty-state
-   entrance). It is NOT part of the design system and no screen may copy it.
+   THE BAR IS DELIBERATELY UNDESIGNED. It is prototype scaffolding wrapped
+   around the app, and if it looked like a designed surface someone would
+   eventually review it as one. So: system-ui, not Figtree. Square corners, not
+   radius-16. A flat sunken strip, no shadow, no hero, no gold. It should read
+   as a browser toolbar, not as HabitCrafts.
 
-   Three rules it keeps anyway, because a reference that breaks its own system
-   is worthless:
-     - every colour comes from the semantic --c-* layer. There is not one
-       literal hex in this file. The swatch chips are painted at runtime from
-       the computed token values, which is the sanctioned "colour as data"
-       exception AND the only way the theme toggle can update them live.
-     - 13px floor holds, including on the mono spec captions.
-     - everything animated below has its prefers-reduced-motion branch BUILT.
+   It still keeps the two rules that are about correctness rather than taste —
+   every colour comes from the semantic --c-* layer (there is not one literal
+   hex in this file, so the bar re-tones in Nightfall along with the app), and
+   the 13px text floor holds.
    ======================================================================== */
 
-/* base.css sets `code { font-size: 0.92em }`, which drops a token name sitting
-   inside a 13px line to 12px. No product screen uses <code>, but this page is
-   made of them, so it holds its own floor. */
-code { font-size: 1em; }
-
-/* ---- Shell -------------------------------------------------------------- */
-.gal-hero { padding-block: var(--space-48) var(--space-24); }
-.gal-lede {
-  max-inline-size: 30ch;
-  font-family: var(--font-display);
-  font-variation-settings: var(--fvs-display);
-  font-optical-sizing: auto;
-  font-size: var(--fs-h1);
-  line-height: 1.18;
-  letter-spacing: var(--ls-h1);
-  color: var(--c-ink-strong);
-  margin-block: var(--space-16);
-}
-.gal-shell { display: block; }
-.gal-section { padding-block: var(--space-48) var(--space-24); border-block-start: var(--stroke-hairline) solid var(--c-border); }
-.gal-section:first-child { border-block-start: 0; }
-.gal-note { color: var(--c-ink-muted); max-inline-size: 68ch; margin-block-end: var(--space-24); }
-.gal-sub { margin-block: var(--space-32) var(--space-12); }
-.gal-sub:first-of-type { margin-block-start: var(--space-16); }
-.gal-eyebrow {
-  display: block;
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-caption);
-  letter-spacing: var(--ls-caption);
-  color: var(--c-ink-subtle);
-  margin-block-end: var(--space-8);
-}
-.gal-mono { font-family: var(--font-mono); font-size: var(--fs-body-sm); color: var(--c-ink-muted); }
-.gal-rule { color: var(--c-ink); max-inline-size: 68ch; }
-.gal-rule + .gal-rule { margin-block-start: var(--space-8); }
-
-/* The in-page contents. A sticky scrolling strip below 1200, a sticky rail
-   beside the content at 1200+, where the drawer breakpoint gives us the room. */
-.gal-toc {
-  position: sticky;
-  inset-block-start: 0;
-  z-index: 30;
-  margin-inline: calc(var(--layout-gutter) * -1);
-  padding-inline: var(--layout-gutter);
-  padding-block: var(--space-8);
-  background: var(--c-canvas);
-  border-block-end: var(--stroke-hairline) solid var(--c-border);
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-}
-.gal-toc::-webkit-scrollbar { display: none; }
-.gal-toc ul { display: flex; gap: var(--space-4); margin: 0; padding: 0; list-style: none; }
-.gal-toc li { flex: none; }
-.gal-toc a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 40px;
-  padding-inline: var(--space-12);
-  border-radius: var(--radius-full);
-  color: var(--c-ink-muted);
-  text-decoration: none;
-  white-space: nowrap;
-  font-size: var(--fs-label);
-  font-weight: var(--fw-label);
-  letter-spacing: var(--ls-label);
-}
-.gal-toc a:hover { background: var(--c-surface-tinted); color: var(--c-brand-600); }
-@media (min-width: 1200px) {
-  .gal-shell { display: grid; grid-template-columns: 208px minmax(0, 1fr); gap: var(--space-48); align-items: start; }
-  .gal-toc {
-    position: sticky;
-    inset-block-start: var(--space-24);
-    margin: 0;
-    padding: 0;
-    background: transparent;
-    border-block-end: 0;
-    border-inline-start: var(--stroke-hairline) solid var(--c-border);
-    overflow: visible;
-  }
-  .gal-toc ul { flex-direction: column; gap: 0; }
-  /* Keep the 40px floor from the base rule — the sidebar variant is a denser
-     stack, not an excuse to drop under the system's minimum target. */
-  .gal-toc a { min-height: 40px; }
-}
-
-/* ---- Specimens ---------------------------------------------------------- */
-.gal-grid { display: grid; gap: var(--space-24); grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); align-items: start; }
-.gal-grid--wide { grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr)); }
-.gal-row { display: flex; flex-wrap: wrap; gap: var(--space-12); align-items: center; }
-.spec { display: flex; flex-direction: column; gap: var(--space-8); min-inline-size: 0; }
-.spec__label {
-  font-family: var(--font-mono);
-  font-size: var(--fs-caption);
-  line-height: calc(var(--lh-caption) / var(--fs-caption));
-  color: var(--c-ink-muted);
-  overflow-wrap: anywhere;
-}
-.spec__label b { color: var(--c-ink-strong); font-weight: 600; }
-.gal-well { background: var(--c-canvas-sunken); border-radius: var(--radius-md); padding: var(--space-16); }
-.gal-well--roomy { padding: var(--space-24); }
-
-/* ---- Colour swatches. Chip fill, hex and ratio are all written at runtime
-        from the computed token value, so the theme toggle re-paints them
-        without a reload. ------------------------------------------------- */
-.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: var(--space-12); }
-.sw { border: var(--stroke-hairline) solid var(--c-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--c-surface); }
-.sw__chip {
-  block-size: 64px;
-  display: grid;
-  place-items: center;
-  font-size: var(--fs-label);
-  font-weight: var(--fw-label);
-  letter-spacing: var(--ls-label);
-}
-.sw__meta { padding: var(--space-8) var(--space-12) var(--space-12); }
-.sw__name { font-family: var(--font-mono); font-size: var(--fs-body-sm); color: var(--c-ink-strong); overflow-wrap: anywhere; }
-.sw__hex { font-family: var(--font-mono); font-size: var(--fs-caption); color: var(--c-ink-muted); }
-.sw__ratio { font-size: var(--fs-caption); color: var(--c-ink-muted); margin-block-start: var(--space-4); }
-.sw__use { font-size: var(--fs-body-sm); color: var(--c-ink-muted); margin-block-start: var(--space-4); }
-.sw--warn .sw__ratio { color: var(--c-clay-600); font-weight: 600; }
-
-/* ---- Type ramp ---------------------------------------------------------- */
-.type-row {
-  display: grid;
-  gap: var(--space-8);
-  padding-block: var(--space-16);
-  border-block-end: var(--stroke-hairline) solid var(--c-border);
-}
-@media (min-width: 840px) { .type-row { grid-template-columns: 26ch minmax(0, 1fr); align-items: baseline; gap: var(--space-24); } }
-.type-row__spec { font-family: var(--font-mono); font-size: var(--fs-caption); line-height: 1.5; color: var(--c-ink-muted); }
-.type-row__spec b { display: block; color: var(--c-ink-strong); font-weight: 600; }
-.type-row__sample { min-inline-size: 0; overflow-wrap: anywhere; }
-
-/* ---- Spacing / radius / elevation --------------------------------------- */
-.scale-row { display: flex; align-items: center; gap: var(--space-16); padding-block: var(--space-8); }
-.scale-row__bar { block-size: 16px; border-radius: var(--radius-full); background: var(--c-brand-300); flex: none; }
-.scale-row__name { font-family: var(--font-mono); font-size: var(--fs-caption); color: var(--c-ink-muted); min-inline-size: 12ch; }
-.radius-tile { block-size: 88px; background: var(--c-brand-100); border: var(--stroke-hairline) solid var(--c-brand-200); }
-.stroke-demo { display: flex; align-items: center; gap: var(--space-12); }
-.stroke-demo__line { flex: 1 1 auto; background: var(--c-ink-muted); }
-.elev-tile { block-size: 88px; border-radius: var(--radius-md); background: var(--c-surface); border: var(--stroke-hairline) solid var(--c-border); }
-
-/* ---- Icons -------------------------------------------------------------- */
-.icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 116px), 1fr)); gap: var(--space-8); }
-.icon-cell {
+html, body { block-size: 100%; }
+body {
+  margin: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-8);
-  padding: var(--space-12) var(--space-4);
-  border-radius: var(--radius-sm);
-  background: var(--c-surface);
-  border: var(--stroke-hairline) solid var(--c-border);
-  text-align: center;
+  background: var(--c-canvas-sunken);
+  overflow: hidden;                 /* the iframe scrolls, the harness does not */
 }
-.icon-cell code { font-size: var(--fs-caption); color: var(--c-ink-muted); overflow-wrap: anywhere; }
-.icon-cell .icon { color: var(--c-ink); }
 
-/* ---- Device frames. Each is a real page in an iframe, scaled by container
-        query units so the comparison holds at any window size. ------------ */
-.frames { display: grid; gap: var(--space-24); grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); align-items: start; }
-.frame { margin: 0; min-inline-size: 0; }
-.frame__viewport {
+/* ---- The control bar ---------------------------------------------------- */
+.hz-bar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-16);
+  padding: var(--space-8) var(--space-12);
+  background: var(--c-surface);
+  border-block-end: var(--stroke-hairline) solid var(--c-border);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 13px;
+  color: var(--c-ink);
+}
+
+.hz-group { display: flex; align-items: center; gap: var(--space-4); }
+
+.hz-legend {
+  color: var(--c-ink-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 13px;
+  margin-inline-end: var(--space-4);
+}
+
+.hz-btn {
+  min-block-size: 30px;
+  padding: 2px var(--space-8);
+  font: inherit;
+  color: var(--c-ink-muted);
+  background: var(--c-canvas-sunken);
+  border: var(--stroke-hairline) solid var(--c-border);
+  border-radius: 4px;               /* square-ish on purpose. Not radius-sm. */
+  cursor: pointer;
+}
+.hz-btn:hover { color: var(--c-ink); }
+.hz-btn[aria-pressed="true"] {
+  background: var(--c-ink-strong);
+  border-color: var(--c-ink-strong);
+  color: var(--c-canvas);
+}
+
+.hz-bar input[type="range"] { inline-size: 96px; accent-color: var(--c-ink-strong); }
+.hz-read {
+  font-variant-numeric: tabular-nums;
+  color: var(--c-ink-muted);
+  min-inline-size: 44px;
+}
+
+.hz-spacer { flex: 1 1 auto; }
+.hz-link { color: var(--c-ink-muted); text-decoration: underline; }
+.hz-link:hover { color: var(--c-ink); }
+
+/* ---- The device frame ---------------------------------------------------
+   The app runs in an IFRAME, and that is not a detail — CSS media queries
+   respond to the VIEWPORT, not to a container, so shrinking a div would leave
+   the app rendering at desktop breakpoints inside a phone-shaped box. An
+   iframe has its own viewport, so 390px here genuinely triggers the mobile
+   bar-shaped nav, the same as a phone would.
+------------------------------------------------------------------------- */
+.hz-stage {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  display: flex;
+  /* `safe center` so that when the selected width is wider than the window the
+     frame overflows to the RIGHT and the stage scrolls to it, instead of being
+     centred with its left edge clipped past the scroll origin. */
+  justify-content: safe center;
+  padding: var(--space-16);
+  overflow: auto;
+}
+
+.hz-frame {
+  /* content-box is LOAD-BEARING. The reset sets border-box globally, which
+     would make `inline-size: 390px` mean 390px INCLUDING the hairline border —
+     giving the app a 388px viewport. The whole point of the switcher is that
+     390 means 390, so the border has to sit outside the measurement. */
+  box-sizing: content-box;
+  block-size: 100%;
   inline-size: 100%;
-  aspect-ratio: var(--w) / var(--h);
-  container-type: size;
-  overflow: hidden;
-  border-radius: var(--radius-md);
+  /* flex:none is the other half of the stage's `overflow:auto` + `safe center`.
+     As a flex item the frame defaults to flex-shrink:1, so a 1280px selection
+     in a 1300px window silently shrank to ~1231 — the switcher quietly lying
+     about the width it claimed to be showing. Refusing to shrink makes it
+     overflow and the stage scroll to it, so 1280 means 1280 at any window. */
+  flex: none;
   border: var(--stroke-hairline) solid var(--c-border);
   background: var(--c-canvas);
-}
-.frame iframe {
-  inline-size: calc(var(--w) * 1px);
-  block-size: calc(var(--h) * 1px);
-  border: 0;
   display: block;
-  transform-origin: 0 0;
-  scale: calc(100cqw / (var(--w) * 1px));
 }
-.frame figcaption { margin-block-start: var(--space-8); color: var(--c-ink-muted); font-size: var(--fs-body-sm); }
-.frame figcaption b { display: block; color: var(--c-ink-strong); font-weight: 600; }
-
-/* ---- Screen index ------------------------------------------------------- */
-.screen-links { display: grid; gap: var(--space-16); grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
-.screen-links a { text-decoration: none; color: inherit; display: block; block-size: 100%; }
-.screen-links h3 { margin-block-end: var(--space-4); }
-
-/* ---- Motion: the A / B comparison rig ----------------------------------- */
-.gal-moment + .gal-moment { margin-block-start: var(--space-24); }
-.gal-moment__spec { font-family: var(--font-mono); font-size: var(--fs-caption); line-height: 1.6; color: var(--c-ink-muted); margin-block: var(--space-4) var(--space-16); overflow-wrap: anywhere; }
-.gal-ab { display: grid; gap: var(--space-16); grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 840px) { .gal-ab { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.gal-pane { min-inline-size: 0; background: var(--c-canvas-sunken); border-radius: var(--radius-md); padding: var(--space-16); }
-.gal-pane__head { display: flex; align-items: center; gap: var(--space-8); margin-block-end: var(--space-12); }
-.gal-pane__head .gal-eyebrow { margin: 0; }
-.gal-actions { display: flex; flex-wrap: wrap; gap: var(--space-8); margin-block-start: var(--space-16); }
-
-/* The page transition (M4), the list-item entrance (M5) and the empty-state
-   entrance (M6) have no product implementation — the prototype is a set of
-   real pages with no router, and the list stagger is a first-mount behaviour
-   Flutter owns. These three keyframes are therefore the SPEC, rendered, and
-   they are the only motion on this page not lifted from the kit. Durations and
-   curves are the tokens, not hand-picked numbers. */
-@keyframes gal-fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes gal-pt-out { from { opacity: 1; } to { opacity: 0; } }
-@keyframes gal-pt-in  { from { opacity: 0; scale: 0.97; } to { opacity: 1; scale: 1; } }
-@keyframes gal-rise-in { from { opacity: 0; translate: 0 12px; } to { opacity: 1; translate: 0 0; } }
-@keyframes gal-rise-in-8 { from { opacity: 0; translate: 0 8px; } to { opacity: 1; translate: 0 0; } }
-
-.gal-screen { position: relative; }
-.gal-screen.is-leaving  { animation: gal-pt-out 100ms var(--ease-exit) both; }
-/* No CSS delay: the spec's 100ms offset is the swap itself, which the runner
-   performs after the outgoing 100ms fade has finished. */
-.gal-screen.is-entering { animation: gal-pt-in 220ms var(--ease-enter) both; }
-.gal-item.is-entering   { animation: gal-rise-in 225ms var(--ease-enter) calc(var(--i, 0) * 40ms) both; }
-.gal-rise               { animation: gal-rise-in-8 var(--dur-echo-in) var(--ease-enter) calc(var(--i, 0) * 60ms) both; }
-
-/* REDUCED MOTION, BUILT. These overrides are load-bearing rather than
-   belt-and-braces: gal-pt-in / gal-rise-in move with the independent `scale`
-   and `translate` properties, which base.css §6's `transform: none` block does
-   not touch — the same trap components.css §P3 documents for the milestone
-   card. Both branches are written, exactly as the kit does it. */
-@media (prefers-reduced-motion: reduce) {
-  .gal-screen.is-leaving  { animation: gal-pt-out var(--dur-micro) var(--ease-standard) both !important; }
-  .gal-screen.is-entering { animation: gal-fade-in var(--dur-micro) var(--ease-standard) both !important; }
-  .gal-item.is-entering   { animation: gal-fade-in 160ms var(--ease-standard) both !important; }
-  .gal-rise               { animation: gal-fade-in 160ms var(--ease-standard) both !important; }
+.hz-build {
+  color: var(--c-ink-muted);
+  font-size: var(--fs-label);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
-:root[data-motion="reduce"] .gal-screen.is-leaving  { animation: gal-pt-out var(--dur-micro) var(--ease-standard) both !important; }
-:root[data-motion="reduce"] .gal-screen.is-entering { animation: gal-fade-in var(--dur-micro) var(--ease-standard) both !important; }
-:root[data-motion="reduce"] .gal-item.is-entering   { animation: gal-fade-in 160ms var(--ease-standard) both !important; }
-:root[data-motion="reduce"] .gal-rise               { animation: gal-fade-in 160ms var(--ease-standard) both !important; }
 
-/* A frozen ring specimen: the exact two dashoffsets the check-in JS writes at
-   commit, so a static tile can show the completed ring without being wired. */
-.gal-ring-checked .ring__fill,
-.gal-ring-checked .ring__check { stroke-dashoffset: 0; }
-.gal-ring-checked .ring__fill { stroke: var(--c-ring-end); }
+/* Full width means edge to edge: no frame padding, no border to measure past. */
+.hz-stage[data-size="full"] { padding: 0; }
+.hz-stage[data-size="full"] .hz-frame { border: 0; }
 
-/* This page has no .app-shell (the gallery carries no nav chrome), so the
-   kit's bottom-bar clearance rule does not apply. Reserve room for the devbar
-   ourselves at the widths where it sits above the fold of the content. */
-@media (max-width: 599px) { body:has(.devbar) .page { padding-block-end: 168px; } }
+@media (max-width: 599px) {
+  .hz-bar { gap: var(--space-8); padding: var(--space-8); }
+  .hz-legend { display: none; }
+  .hz-stage { padding: 0; }
+}
 </style>
 </head>
 <body>
 
 <!-- ===========================================================================
-     ICON SPRITE — ONE FAMILY, ONE STYLE.  [D §6 "Iconography"]
-     Hand-authored, outlined, fill-0, rounded terminals, 1.7px stroke on a
-     24 × 24 grid, `currentColor` — so an icon is ink-muted at rest (the .icon
-     base rule) and brand-600 when its parent is selected, with no per-icon CSS.
+     THE PROTOTYPE HARNESS.
 
-     THIS BLOCK IS CANONICAL AND BYTE-IDENTICAL ON EVERY PAGE. If you add an
-     icon, add it here and paste the whole block to every page — never fork one
-     page's copy. Zero raster, zero emoji-as-UI, zero mixed sharp/rounded/filled
-     variants.
+     index.html used to be the design-system gallery; that moved to system.html
+     unchanged, and this is now the thing you open first: the working app in a
+     resizable frame with the review controls around it.
 
-     The stroke attributes live on the inner <g>, NOT on the <symbol>: base.css
-     carries a global `svg { fill: currentColor }`, and a document CSS rule wins
-     over a presentation attribute on the cloned <symbol> element itself. On a
-     <g> nothing in the cascade targets it, so the outline holds everywhere.
+     WHAT IS SCAFFOLDING AND WHAT IS PRODUCT
+       · everything on this page  — scaffolding. Deletes with the Flutter
+         migration and never ships.
+       · everything inside the frame (app.html) — product. It carries no devbar
+         of its own, so a screenshot of the frame is a screenshot of the app.
 
-     THREE DELIBERATE SOLID EXCEPTIONS, each with a reason: #i-rosette is the
-     gild seal's emboss, not an icon (.seal / .seal--solid colour it) [D §2.4];
-     #i-google and #i-apple are third-party wordmarks, which are not ours to
-     redraw as outlines and are unrecognisable if we do. Everything else in the
-     block is outlined, and nothing else may be added solid.
+     ES MODULES DO NOT LOAD OVER file://. This will not work by double-click.
+     Serve it:   node scripts/serve.js   →   http://localhost:5173
      ======================================================================== -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-  <defs>
-    <!-- ── Navigation ─────────────────────────────────────────────────────── -->
-    <symbol id="i-habits" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="5" width="17.6" height="15.8" rx="3"/><path d="M3.2 10h17.6M8 3v4M16 3v4M9 15.4l2 2 4-4.6"/></g></symbol>
-    <symbol id="i-progress" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5h17M6.5 20.5v-6M12 20.5V5.5M17.5 20.5v-9"/></g></symbol>
-    <symbol id="i-community" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="8.8" r="3.6"/><path d="M3.4 19.6a6.1 6.1 0 0 1 12.2 0M16.4 6.4a3.2 3.2 0 0 1 0 6.3M18 14.6a5.3 5.3 0 0 1 2.9 4.6"/></g></symbol>
-    <symbol id="i-explore" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M15.6 8.4l-2 5.2-5.2 2 2-5.2 5.2-2z"/></g></symbol>
-    <symbol id="i-library" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.6C10.4 5.1 8.4 4.5 5 4.5v13c3.4 0 5.4.6 7 2 1.6-1.4 3.6-2 7-2v-13c-3.4 0-5.4.6-7 2z"/><path d="M12 6.6v12.9"/></g></symbol>
-    <symbol id="i-person" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.8"/><path d="M4.9 20a7.1 7.1 0 0 1 14.2 0"/></g></symbol>
 
-    <!-- ── Actions ────────────────────────────────────────────────────────── -->
-    <symbol id="i-plus" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></g></symbol>
-    <symbol id="i-close" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 6.2l11.6 11.6M17.8 6.2L6.2 17.8"/></g></symbol>
-    <symbol id="i-check" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.6l4.6 4.6L19 6.8"/></g></symbol>
-    <symbol id="i-tick" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.6l4.6 4.6L19 6.8"/></g></symbol>
-    <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.6" cy="10.6" r="6.1"/><path d="M15.1 15.1l4.4 4.4"/></g></symbol>
-    <symbol id="i-send" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 3.8L3.6 10.6a.5.5 0 0 0 0 .9l6.5 2.4 2.4 6.5a.5.5 0 0 0 .9 0l6.8-16.6z"/><path d="M20.2 3.8l-10.1 10.1"/></g></symbol>
-    <symbol id="i-invite" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.4" cy="8.4" r="3.6"/><path d="M3.2 19.6a6.2 6.2 0 0 1 12.4 0M18.5 8.2v6M15.5 11.2h6"/></g></symbol>
+<h1 class="visually-hidden">HabitCrafts prototype harness</h1>
 
-    <!-- ── Direction. One drawing, several names — same geometry, no drift. ── -->
-    <symbol id="i-arrow" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h14M13 6.5l5.5 5.5L13 17.5"/></g></symbol>
-    <symbol id="i-chevron" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5L16 12l-6.5 6.5"/></g></symbol>
-    <symbol id="i-chev-right" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5L16 12l-6.5 6.5"/></g></symbol>
-    <symbol id="i-chev-left" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5L8 12l6.5 6.5"/></g></symbol>
-    <symbol id="i-back" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h14M13 6.5l5.5 5.5L13 17.5"/></g></symbol>
-    <symbol id="i-arrow-back" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12h-14M11 6.5L5.5 12 11 17.5"/></g></symbol>
+<div class="hz-bar" role="group" aria-label="Prototype controls">
 
-    <!-- ── Objects ────────────────────────────────────────────────────────── -->
-    <symbol id="i-flame" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.4 2.6c.4 2.6 1.9 3.6 3.1 5.1A6.9 6.9 0 0 1 17 12.7a5 5 0 1 1-10 0c0-1.8.7-3.3 1.8-4.5.1 1.4.9 2.4 1.8 2.4 1 0 1.8-1.1 1.8-2.7 0-1.7.3-3.3.6-5.3z"/></g></symbol>
-    <symbol id="i-calendar" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="5" width="17.6" height="15.8" rx="3"/><path d="M3.2 10h17.6M8 3v4M16 3v4"/></g></symbol>
-    <symbol id="i-clock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 6.9v5.4l3.4 2"/></g></symbol>
-    <symbol id="i-bell" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16.2V11a6 6 0 1 0-12 0v5.2L4.6 18.6h14.8L18 16.2z"/><path d="M9.9 21a2.4 2.4 0 0 0 4.2 0"/></g></symbol>
-    <symbol id="i-bulb" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8.9 17.4a6 6 0 1 1 6.2 0v1.7H8.9v-1.7z"/><path d="M10.2 21.6h3.6"/></g></symbol>
-    <symbol id="i-goal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21.5V3.5"/><path d="M6 4.6h11.4l-2.3 3.7 2.3 3.7H6"/></g></symbol>
-    <symbol id="i-target" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="3.5"/></g></symbol>
-    <symbol id="i-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.2v5.2M12 7.7v.4"/></g></symbol>
-    <symbol id="i-lock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.6" y="10" width="14.8" height="10.4" rx="2.6"/><path d="M8 10V7.6a4 4 0 0 1 8 0V10"/></g></symbol>
-    <symbol id="i-key" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.2" cy="14.4" r="4.2"/><path d="M11.2 11.4L20 2.6M17.4 5.2l2 2M15.2 7.4l2 2"/></g></symbol>
-    <symbol id="i-eye" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 12S6.2 6.6 12 6.6 21.4 12 21.4 12 17.8 17.4 12 17.4 2.6 12 2.6 12z"/><circle cx="12" cy="12" r="3"/></g></symbol>
-    <symbol id="i-archive" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="4.4" width="17.2" height="4.6" rx="1.6"/><path d="M5.4 9v9.4a2.2 2.2 0 0 0 2.2 2.2h8.8a2.2 2.2 0 0 0 2.2-2.2V9"/><path d="M10 13h4"/></g></symbol>
-    <symbol id="i-shield" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8l7 2.6v5.7c0 4.2-2.8 7.7-7 9.3-4.2-1.6-7-5.1-7-9.3V5.4l7-2.6z"/></g></symbol>
-    <symbol id="i-leaf" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 3.8C10 3.8 4.4 8 4.4 14.4A5.6 5.6 0 0 0 10 20c6.4 0 10-5.6 10-16.2z"/><path d="M15.4 8.4L6.4 17.4"/></g></symbol>
-    <symbol id="i-accessibility" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.4" r="1.9"/><path d="M4.6 8.2c4.8 1.6 10 1.6 14.8 0M12 8.6v5.2M12 13.8l-3.2 6.6M12 13.8l3.2 6.6"/></g></symbol>
-    <!-- Contrast is the one glyph whose meaning IS a fill: half the disc is
-         solid. It stays inside the family — same 24 grid, same outer stroke. -->
-    <symbol id="i-contrast" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></g></symbol>
-
-    <!-- ── Library media types ────────────────────────────────────────────── -->
-    <symbol id="i-doc" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 3.2H7.4a2.2 2.2 0 0 0-2.2 2.2v13.2a2.2 2.2 0 0 0 2.2 2.2h9.2a2.2 2.2 0 0 0 2.2-2.2V8.6l-5.4-5.4z"/><path d="M13.4 3.2v5.4h5.4M8.6 13.4h6.8M8.6 17h5"/></g></symbol>
-    <symbol id="i-play" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M10.4 8.6l5.4 3.4-5.4 3.4V8.6z"/></g></symbol>
-    <symbol id="i-worksheet" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.6" y="3.2" width="14.8" height="17.6" rx="2.4"/><path d="M8.2 8.2h4M8.2 12.4h7.6M8.2 16.6h7.6"/></g></symbol>
-
-    <!-- ── The gild seal. Solid on purpose — an emboss, not an icon. [D §2.4] -->
-    <symbol id="i-rosette" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 2l2.2 3.1 3.7-.9.4 3.8 3.4 1.7-2.3 3 2.3 3-3.4 1.7-.4 3.8-3.7-.9L12 24l-2.2-3.1-3.7.9-.4-3.8L2.3 16l2.3-3-2.3-3 3.4-1.7.4-3.8 3.7.9L12 2zm0 5.5A4.5 4.5 0 1 0 12 16.5 4.5 4.5 0 0 0 12 7.5z"/></symbol>
-
-    <!-- ── Third-party wordmarks. Solid because a logo is not ours to restyle;
-         drawn here on the 24 grid in currentColor so there is still zero
-         dependency and no raster. Used only by auth.html's social buttons. ── -->
-    <symbol id="i-google" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M21.6 12.2c0-.7-.06-1.4-.18-2.05H12v3.88h5.4a4.6 4.6 0 0 1-2 3.02v2.5h3.23c1.89-1.74 2.97-4.3 2.97-7.35zM12 22c2.7 0 4.96-.9 6.62-2.43l-3.23-2.5c-.9.6-2.05.95-3.39.95-2.6 0-4.8-1.76-5.6-4.12H3.07v2.58A10 10 0 0 0 12 22zM6.4 13.9a6 6 0 0 1 0-3.83V7.5H3.07a10 10 0 0 0 0 9zM12 6.06c1.47 0 2.79.5 3.83 1.5l2.86-2.86A9.6 9.6 0 0 0 12 2a10 10 0 0 0-8.93 5.5L6.4 10.1c.8-2.37 3-4.03 5.6-4.03z"/></symbol>
-    <symbol id="i-apple" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M16.4 12.6c0-2.2 1.8-3.3 1.9-3.36-1.03-1.5-2.63-1.71-3.2-1.73-1.36-.14-2.66.8-3.35.8-.69 0-1.76-.78-2.9-.76-1.49.02-2.86.87-3.63 2.2-1.55 2.69-.4 6.67 1.11 8.85.74 1.07 1.62 2.27 2.77 2.22 1.11-.04 1.53-.72 2.88-.72 1.34 0 1.72.72 2.9.7 1.2-.02 1.96-1.09 2.69-2.16.85-1.24 1.2-2.44 1.22-2.5-.03-.01-2.34-.9-2.36-3.56zM14.3 5.9c.61-.74 1.02-1.77.9-2.8-.88.04-1.94.59-2.57 1.33-.56.65-1.05 1.7-.92 2.7.98.08 1.98-.5 2.59-1.23z"/></symbol>
-  </defs>
-</svg>
-
-<a class="skip-link" href="#main">Skip to the system reference</a>
-
-<!-- ===========================================================================
-     PROTOTYPE CONTROLS (scaffolding, not product). Theme, hour simulation so the
-     after-20:00 dimmed hero can be seen without waiting, a forced reduced-motion
-     path so the accessible variants can be verified, and Reset day.
-
-     THESE FOUR GROUPS ARE BYTE-IDENTICAL ON EVERY SCREEN. A screen may append
-     its own demo groups after them — and only ones its own markup supports — so
-     a control is never present with nothing to control. Below 600 the bar is a
-     single horizontally scrolling row (components.css §20). Add ?frame=1 to any
-     URL to strip it entirely.
-
-     The gallery appends nothing: every demo control it needs sits beside the
-     thing it demonstrates, in §8 Motion.
-     ======================================================================== -->
-<div class="devbar" role="group" aria-label="Prototype controls">
-  <div class="devbar__group" role="group" aria-label="Theme">
-    <button class="devbar__btn" type="button" data-theme-btn="system" aria-pressed="true">Auto</button>
-    <button class="devbar__btn" type="button" data-theme-btn="light" aria-pressed="false">Light</button>
-    <button class="devbar__btn" type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+  <!-- Viewport. The reason the app is in an iframe at all. -->
+  <div class="hz-group" role="group" aria-label="Viewport">
+    <span class="hz-legend" aria-hidden="true">Viewport</span>
+    <button class="hz-btn" type="button" data-size="390"  aria-pressed="false">Mobile 390</button>
+    <button class="hz-btn" type="button" data-size="768"  aria-pressed="false">Tablet 768</button>
+    <button class="hz-btn" type="button" data-size="1280" aria-pressed="false">Desktop 1280</button>
+    <button class="hz-btn" type="button" data-size="full" aria-pressed="true">Full width</button>
   </div>
-  <div class="devbar__group">
-    <label for="hour" class="visually-hidden">Simulated hour of day</label>
-    <input id="hour" type="range" min="0" max="23" step="1" data-hour-input>
-    <output class="devbar__reading" data-hour-readout>—</output>
+
+  <div class="hz-group" role="group" aria-label="Theme">
+    <span class="hz-legend" aria-hidden="true">Theme</span>
+    <button class="hz-btn" type="button" data-theme-set="system" aria-pressed="true">Auto</button>
+    <button class="hz-btn" type="button" data-theme-set="light"  aria-pressed="false">Light</button>
+    <button class="hz-btn" type="button" data-theme-set="dark"   aria-pressed="false">Dark</button>
   </div>
-  <div class="devbar__group" role="group" aria-label="Motion">
-    <button class="devbar__btn" type="button" data-motion-btn="auto" aria-pressed="true">Motion: auto</button>
-    <button class="devbar__btn" type="button" data-motion-btn="reduce" aria-pressed="false">Reduce</button>
+
+  <div class="hz-group" role="group" aria-label="Motion">
+    <span class="hz-legend" aria-hidden="true">Motion</span>
+    <button class="hz-btn" type="button" data-motion-set="auto"   aria-pressed="true">Auto</button>
+    <button class="hz-btn" type="button" data-motion-set="reduce" aria-pressed="false">Reduce</button>
   </div>
-  <button class="devbar__btn" type="button" data-demo="reset">Reset day</button>
+
+  <!-- Hour simulation, so the after-20:00 hero and the evening greeting can be
+       seen without waiting until 8pm. [D §2.5] -->
+  <div class="hz-group">
+    <label class="hz-legend" for="hz-hour">Hour</label>
+    <input id="hz-hour" type="range" min="0" max="23" step="1" data-hour>
+    <output class="hz-read" data-hour-read>—</output>
+  </div>
+
+  <span class="hz-spacer"></span>
+
+  <button class="hz-btn" type="button" data-reset>Reset data</button>
+  <a class="hz-link" href="system.html">Design system →</a>
+  <!-- Which build am I looking at? GitHub Pages sets its own cache headers, so a
+       returning visitor can be served a stale build with no signal that is what
+       happened. build.json is written by the deploy workflow; absent locally. -->
+  <span class="hz-build" data-build title="Deployed build">local</span>
 </div>
 
-<main id="main" class="page page--wide">
+<div class="hz-stage" data-stage data-size="full">
+  <iframe class="hz-frame" src="app.html#/home" title="HabitCrafts app preview" data-frame></iframe>
+</div>
 
-  <header class="gal-hero">
-    <p class="gal-eyebrow">HabitCrafts · design system reference · v1.0</p>
-    <h1 class="t-h1">Paper and springs</h1>
-    <p class="gal-lede">A quiet paper studio where everything you touch springs back, and the things you keep turn gold.</p>
-    <p class="gal-note t-body">
-      This page is the system, not a tour of it. Every specimen below is the real
-      component from <code>css/components.css</code>, drawn with the real tokens
-      from <code>css/tokens.css</code> and wired to the real behaviour in
-      <code>js/prototype.js</code> — the gallery is built <em>out of</em> the system
-      it documents. Build against this page; where it and
-      <code>docs/design-direction.md</code> disagree, the direction wins and this
-      page is wrong.
-    </p>
-  </header>
-
-  <div class="gal-shell">
-
-    <nav class="gal-toc" aria-label="Sections of this page">
-      <ul>
-        <li><a href="#concept">1 · Concept</a></li>
-        <li><a href="#colour">2 · Colour</a></li>
-        <li><a href="#type">3 · Type</a></li>
-        <li><a href="#space">4 · Space &amp; elevation</a></li>
-        <li><a href="#components">5 · Components</a></li>
-        <li><a href="#icons">6 · Icons</a></li>
-        <li><a href="#illustration">7 · Illustration</a></li>
-        <li><a href="#motion">8 · Motion</a></li>
-        <li><a href="#veto">9 · The veto list</a></li>
-        <li><a href="#screens">10 · Screens</a></li>
-      </ul>
-    </nav>
-
-    <div>
-
-<!-- =========================================================================
-     1. THE CONCEPT
-     ====================================================================== -->
-<section class="gal-section" id="concept" aria-labelledby="h-concept">
-  <div class="section-head"><h2 id="h-concept" class="t-h2">1 · The concept</h2></div>
-
-  <p class="gal-note t-body-lg t-measure">
-    Everything you <em>look at</em> is paper: a warm parchment canvas, matte white
-    cards with hairline borders, soft ink-blue text, one deep-blue hero surface per
-    screen, grain instead of gloss. Everything you <em>touch</em> is a spring: it
-    compresses under your finger, resists slightly, snaps back with a little
-    overshoot. Calm and fun stop fighting because they live in different channels —
-    calm is a material quality (colour, texture, spacing, stillness at rest), fun is
-    a behavioural quality (physics, reward events). The environment never entertains;
-    the objects never sit dead. Gold is not a paint colour; it is what long-kept
-    things earn.
-  </p>
-
-  <p class="gal-note t-body">
-    That split is not a mood, it is a <strong>test</strong>. Two rules fall out of it,
-    and between them they settle arguments mechanically rather than by taste:
-  </p>
-
-  <div class="gal-grid gal-grid--wide">
-    <article class="card card--roomy">
-      <h3 class="t-h3">Paper stays quiet</h3>
-      <p class="t-body" style="margin-block-start:var(--space-8)">
-        <strong>The test:</strong> does the proposal decorate the environment? A gradient
-        background, an ambient animation, a second accent in the chrome, a shadow under a
-        resting card, a shimmer on a skeleton. If yes, it is vetoed — the room is not the
-        show.
-      </p>
-      <p class="t-body-sm t-muted" style="margin-block-start:var(--space-12)">
-        Nothing on this page loops except one leaf (§7). Nothing rests on a shadow except
-        the floating layer (§4).
-      </p>
-    </article>
-
-    <article class="card card--roomy">
-      <h3 class="t-h3">Objects must spring</h3>
-      <p class="t-body" style="margin-block-start:var(--space-8)">
-        <strong>The test:</strong> does the proposal leave an interaction inert? A tap with
-        no press state, a completion with no spring, a toggle whose thumb teleports, a
-        button that only changes colour. If yes, it is vetoed — the thing you touched has
-        to answer.
-      </p>
-      <p class="t-body-sm t-muted" style="margin-block-start:var(--space-12)">
-        The 450ms hold in §8 is the whole claim. Press one and let go early: it runs
-        backwards at 2× and costs you nothing.
-      </p>
-    </article>
-  </div>
-</section>
-
-<!-- =========================================================================
-     2. COLOUR
-     Every semantic --c-* token, its live hex, and its measured ratio against
-     the background it is designed to sit on. The chips are painted from the
-     COMPUTED token values at runtime, which is why the theme control repaints
-     them without a reload — and it is the one place literal colour is data
-     rather than UI.
-     ====================================================================== -->
-<section class="gal-section" id="colour" aria-labelledby="h-colour">
-  <div class="section-head"><h2 id="h-colour" class="t-h2">2 · Colour</h2></div>
-
-  <p class="gal-note t-body">
-    The palette is <strong>closed</strong>. There is no new hex anywhere in this
-    codebase; extensions happen in OKLCH, in <code>tokens.css</code>, or not at all.
-    Raw <code>--l-*</code> (Daylight) and <code>--d-*</code> (Nightfall) ramps are
-    declared once and <strong>never consumed directly</strong> — components read only
-    the semantic <code>--c-*</code> layer below, which is remapped per theme in three
-    places: <code>:root</code>, the <code>prefers-color-scheme: dark</code> block, and
-    <code>:root[data-theme="dark"]</code>. The last two are identical and must be kept
-    in sync.
-  </p>
-  <p class="gal-note t-body">
-    Every hex and every ratio below is read from the live document and computed with
-    the WCAG 2.x relative-luminance formula at paint time. <strong>Switch the theme in
-    the control bar and this whole section re-measures itself</strong> — the two
-    palettes can be compared without a reload. Translucent tokens are composited over
-    their stated backdrop before measuring.
-  </p>
-  <noscript><p class="gal-note t-body t-clay">The swatches are painted from the live computed token values, so this section needs JavaScript. The token names and roles are in the page source either way.</p></noscript>
-
-  <h3 class="t-h3 gal-sub">Surfaces and lines</h3>
-  <div class="swatches">
-    <div class="sw" data-token="--c-canvas" data-pair="--c-ink" data-min="4.5" data-use="The page ground. Warm parchment, never a neutral grey."></div>
-    <div class="sw" data-token="--c-canvas-sunken" data-pair="--c-canvas" data-min="0" data-use="Recessed sections, ring tracks, chip fills. A tone step, never a shadow."></div>
-    <div class="sw" data-token="--c-surface" data-pair="--c-ink" data-min="4.5" data-use="Cards, sheets, inputs. Fill plus a hairline, nothing else."></div>
-    <div class="sw" data-token="--c-surface-raised" data-pair="--c-ink" data-min="4.5" data-use="Menus and hover. Light has no second card tone; Nightfall does."></div>
-    <div class="sw" data-token="--c-surface-tinted" data-pair="--c-ink" data-min="4.5" data-use="Info panels, selected rows, the lesson tile, your own chat bubbles."></div>
-    <div class="sw" data-token="--c-border" data-pair="--c-surface" data-min="0" data-use="The decorative hairline. It is not an affordance — see border-control."></div>
-    <div class="sw" data-token="--c-border-control" data-pair="--c-surface" data-min="3" data-use="Where the border IS the affordance: inputs, secondary buttons, switches."></div>
-    <div class="sw" data-token="--c-border-focus" data-pair="--c-canvas" data-min="3" data-use="The 2px focus ring at 2px offset. Instant — never animated."></div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Ink — blue as ink, never neutral grey</h3>
-  <div class="swatches">
-    <div class="sw" data-token="--c-ink-strong" data-pair="--c-canvas" data-min="4.5" data-use="Display, headlines, card titles."></div>
-    <div class="sw" data-token="--c-ink" data-pair="--c-canvas" data-min="4.5" data-use="Body copy. The document default."></div>
-    <div class="sw" data-token="--c-ink-muted" data-pair="--c-canvas" data-min="4.5" data-use="Secondary lines, the 13px meta line, icons at rest."></div>
-    <div class="sw" data-token="--c-ink-subtle" data-pair="--c-canvas" data-min="3" data-use="Placeholder and disabled only. Never body text."></div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Brand blue — structure and action</h3>
-  <p class="gal-note t-body-sm">In Nightfall the ramp collapses: the interactive steps all resolve to the one accessible brand tint and the structural steps to tinted surfaces. Toggle the theme and watch 500/600 converge.</p>
-  <div class="swatches">
-    <div class="sw" data-token="--c-brand-50" data-pair="--c-canvas" data-min="0" data-use="The faintest wash."></div>
-    <div class="sw" data-token="--c-brand-100" data-pair="--c-brand-600" data-min="4.5" data-use="Chip fill and your own chat bubble, with a brand-600 label on it."></div>
-    <div class="sw" data-token="--c-brand-200" data-pair="--c-surface" data-min="0" data-use="Borders on tinted stock, chart gridlines."></div>
-    <div class="sw" data-token="--c-brand-300" data-pair="--c-illus-line" data-min="0" data-use="Illustration shape fill, measured against its own linework. Illustration is decorative — every empty state carries a heading and body saying the same thing — so 1.4.11 does not bind here. Worth knowing anyway: the shape-to-line separation is 4.34:1 in Daylight and only 2.45:1 in Nightfall."></div>
-    <div class="sw" data-token="--c-brand-400" data-pair="--c-canvas" data-min="0" data-use="Decorative only."></div>
-    <div class="sw" data-token="--c-brand-500" data-pair="--c-on-brand" data-min="4.5" data-use="The ring's start colour and chart series A. White label on it."></div>
-    <div class="sw" data-token="--c-brand-600" data-pair="--c-canvas" data-min="4.5" data-use="Interactive text, links, icons, the FAB, the primary button fill."></div>
-    <div class="sw" data-token="--c-brand-700" data-pair="--c-hero-ink" data-min="4.5" data-use="The hero surface — one per screen, maximum. White on it."></div>
-    <div class="sw" data-token="--c-brand-800" data-pair="--c-hero-ink" data-min="4.5" data-use="Pressed on brand-700, and the after-20:00 gradient stop."></div>
-    <div class="sw" data-token="--c-brand-900" data-pair="--c-canvas" data-min="4.5" data-use="Equals ink-strong. The ramp closes where the ink begins."></div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Gold — the reward colour, rationed</h3>
-  <p class="gal-note t-body-sm">
-    Legal uses, and no others: the streak flame chip, milestone moments, gild marks,
-    the calendar's milestone ticks, the nav's 3px selected pill, and the milestone
-    card's single CTA. <strong>Never chrome fill, never a hairline, never text on
-    light.</strong> <code>gold-500</code> is 1.52:1 on the canvas — filled shapes only;
-    text uses <code>gold-700</code>.
-  </p>
-  <div class="swatches">
-    <div class="sw" data-token="--c-gold-300" data-pair="--c-surface" data-min="0" data-use="Confetti, glow, chart fill."></div>
-    <div class="sw" data-token="--c-gold-400" data-pair="--c-hero-fill" data-min="4.5" data-use="Secondary reward, measured where it lands: on the hero."></div>
-    <div class="sw" data-token="--c-gold-500" data-pair="--c-hero-fill" data-min="4.5" data-use="Gild marks, nav pill, the arc's completion flush. On canvas it is 1.52:1 — FILLED SHAPES ONLY."></div>
-    <div class="sw" data-token="--c-gold-700" data-pair="--c-canvas" data-min="4.5" data-use="The only legal gold TEXT on light."></div>
-    <div class="sw" data-token="--c-gold-surface" data-pair="--c-gold-700" data-min="4.5" data-under="--c-surface" data-use="The streak flame chip's fill, with the gold-700 flame and count on it."></div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Sage — growth and success</h3>
-  <div class="swatches">
-    <div class="sw" data-token="--c-sage-100" data-pair="--c-sage-700" data-min="4.5" data-use="The completed habit-card fill, with its sage-700 title."></div>
-    <div class="sw" data-token="--c-sage-300" data-pair="--c-surface" data-min="0" data-use="Ring track alternate, chart fill, the partial calendar cell's outline."></div>
-    <div class="sw" data-token="--c-sage-500" data-pair="--c-surface" data-min="0" data-use="Decorative fill and check-in flecks. NOT a boundary."></div>
-    <div class="sw" data-token="--c-sage-600" data-pair="--c-surface" data-min="3" data-use="Rings, checkmarks, the done calendar cell, success text."></div>
-    <div class="sw" data-token="--c-sage-700" data-pair="--c-sage-100" data-min="4.5" data-use="Text on a sage surface, and the celebration echo."></div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Clay and amber — care, not alarm</h3>
-  <div class="swatches">
-    <div class="sw" data-token="--c-clay-600" data-pair="--c-canvas" data-min="4.5" data-use="Destructive actions. Never red-alarm styling, never a missed day."></div>
-    <div class="sw" data-token="--c-clay-surface" data-pair="--c-clay-600" data-min="4.5" data-use="The danger button's hover fill."></div>
-    <div class="sw" data-token="--c-amber-700" data-pair="--c-canvas" data-min="4.5" data-use="The streak-repair grace window. Amber is care; clay never appears there."></div>
-    <div class="sw" data-token="--c-amber-750" data-pair="--c-amber-surface" data-min="4.5" data-use="Amber text on the amber surface."></div>
-    <div class="sw" data-token="--c-amber-surface" data-pair="--c-amber-750" data-min="4.5" data-use="The grace row's fill."></div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Teal — retired</h3>
-  <p class="gal-note t-body-sm">
-    Kept only so illustration compositions have a legal fourth shape colour.
-    <strong>Never a UI fill, never text, never a chart series.</strong> Chart series
-    are brand-500, sage-600, gold-700, clay-600 — four maximum, direct-labelled.
-  </p>
-  <div class="swatches">
-    <div class="sw" data-token="--c-teal-400" data-pair="--c-canvas" data-min="0" data-use="RETIRED FROM THE UI. Illustration fill only."></div>
-    <div class="sw" data-token="--c-teal-650" data-pair="--c-canvas" data-min="0" data-use="RETIRED FROM THE UI. Illustration linework only."></div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Role tokens</h3>
-  <p class="gal-note t-body-sm">
-    These exist because the light and dark answers differ <em>structurally</em> rather
-    than in value — a signal colour landing somewhere the raw ramp fails. They are the
-    only things a component should reach for in that situation; the alternative is a
-    dark-mode block in a component file, which this system does not allow.
-  </p>
-  <div class="swatches">
-    <div class="sw" data-token="--c-hero-fill" data-pair="--c-hero-ink" data-min="4.5" data-use="The one deep-blue surface per screen."></div>
-    <div class="sw" data-token="--c-hero-fill-late" data-pair="--c-hero-ink" data-min="4.5" data-use="The after-20:00 gradient's second stop. Nothing else changes at 20:00."></div>
-    <div class="sw" data-token="--c-hero-ink" data-pair="--c-hero-fill" data-min="4.5" data-use="Type on the hero."></div>
-    <div class="sw" data-token="--c-hero-ink-muted" data-pair="--c-hero-fill" data-min="4.5" data-use="Secondary type on the hero."></div>
-    <div class="sw" data-token="--c-hero-border" data-pair="--c-hero-fill" data-min="0" data-under="--c-hero-fill" data-use="Transparent in Daylight; a real hairline in Nightfall, where the hero is only 1.75:1 against the canvas."></div>
-    <div class="sw" data-token="--c-on-brand" data-pair="--c-brand-600" data-min="4.5" data-use="The label on a brand-500/600 fill. White in light, canvas in dark."></div>
-    <div class="sw" data-token="--c-arc-on-hero" data-pair="--c-hero-fill" data-min="3" data-use="The day arc's fill ON the hero. sage-600 there is 1.74:1 and fails; this stays SAGE so the gold flush is still a change."></div>
-    <div class="sw" data-token="--c-ring-track" data-pair="--c-surface" data-min="0" data-use="The check-in ring's unfilled track."></div>
-    <div class="sw" data-token="--c-ring-start" data-pair="--c-surface" data-min="3" data-use="The hold at t=0. JS reads this token directly."></div>
-    <div class="sw" data-token="--c-ring-end" data-pair="--c-surface" data-min="3" data-use="The hold at t=450, and the drawn checkmark."></div>
-    <div class="sw" data-token="--c-spark-a" data-pair="--c-surface" data-min="0" data-use="Check-in fleck A."></div>
-    <div class="sw" data-token="--c-spark-b" data-pair="--c-surface" data-min="0" data-use="Check-in fleck B."></div>
-    <div class="sw" data-token="--c-done-surface" data-pair="--c-done-ink" data-min="4.5" data-use="The completed habit card's fill."></div>
-    <div class="sw" data-token="--c-done-border" data-pair="--c-done-surface" data-min="0" data-use="Its hairline."></div>
-    <div class="sw" data-token="--c-done-ink" data-pair="--c-done-surface" data-min="4.5" data-use="Its title and meta line."></div>
-    <div class="sw" data-token="--c-illus-line" data-pair="--c-canvas" data-min="3" data-use="Illustration linework, measured where it has to hold up: against the canvas it is drawn on. It INVERTS to the brand tint in Nightfall, because brand-700 there IS the hero blue and a stem drawn in it vanishes."></div>
-    <div class="sw" data-token="--c-scrim" data-pair="--c-canvas" data-min="0" data-under="--c-canvas" data-use="The modal scrim. The token IS 40% ink-strong; shown here composited over the canvas."></div>
-  </div>
-</section>
-
-<!-- =========================================================================
-     3. TYPOGRAPHY
-     ====================================================================== -->
-<section class="gal-section" id="type" aria-labelledby="h-type">
-  <div class="section-head"><h2 id="h-type" class="t-h2">3 · Typography</h2></div>
-
-  <p class="gal-note t-body">
-    Nine sizes, real tracking, real line heights, rendered here at their true size.
-    <strong>The floor is 13px, with no exceptions</strong> — <code>caption</code> is
-    13px, not the 11px the research table shows, and it differs from
-    <code>body-sm</code> by weight and tracking rather than by size. Every value is a
-    token; never hard-code a size. No webfont is loaded anywhere in this prototype, so
-    the stacks name the intended faces first and then degrade through the best local
-    humanist sans and transitional serif — which is why the display stack ends in
-    Georgia and never in <code>sans-serif</code>.
-  </p>
-
-  <div>
-    <div class="type-row">
-      <p class="type-row__spec"><b>--fs-display · .t-display</b>48 / 52 · 600 · −0.02em<br>Fraunces · SOFT 50 · WONK 0 · opsz 48<br>tabular lining figures</p>
-      <p class="type-row__sample t-display">112</p>
-    </div>
-    <div class="type-row">
-      <p class="type-row__spec"><b>--fs-h1 · .t-h1</b>32 / 38 · 600 · −0.015em<br>Fraunces · opsz 32<br>page titles, greeting</p>
-      <p class="type-row__sample t-h1">Good morning, Mark</p>
-    </div>
-    <div class="type-row">
-      <p class="type-row__spec"><b>--fs-h2 · .t-h2</b>24 / 30 · 600 · −0.01em<br>Figtree</p>
-      <p class="type-row__sample t-h2">Today</p>
-    </div>
-    <div class="type-row">
-      <p class="type-row__spec"><b>--fs-h3 · .t-h3</b>20 / 26 · 600 · −0.005em<br>Figtree · habit card titles</p>
-      <p class="type-row__sample t-h3">Meditate for two minutes</p>
-    </div>
-    <div class="type-row">
-      <p class="type-row__spec"><b>--fs-body-lg · .t-body-lg</b>17 / 26 · 400 · 0<br>Figtree · article body, lede</p>
-      <p class="type-row__sample t-body-lg">Keep it small, you can always do more.</p>
-    </div>
-    <div class="type-row">
-      <p class="type-row__spec"><b>--fs-body · .t-body</b>15 / 22 · 400 · 0<br>Figtree · the document default</p>
-      <p class="type-row__sample t-body">Give yourself credit for all the efforts you've been putting in.</p>
-    </div>
-    <div class="type-row">
-      <p class="type-row__spec"><b>--fs-body-sm · .t-body-sm</b>13 / 19 · 400 · 0.005em<br>Figtree · THIS REPLACES THE APP'S 10px TEXT</p>
-      <p class="type-row__sample t-body-sm">After I pour my morning coffee · 112 day streak</p>
-    </div>
-    <div class="type-row">
-      <p class="type-row__spec"><b>--fs-label · .t-label</b>13 / 16 · 600 · 0.01em<br>Figtree · buttons, field labels, nav</p>
-      <p class="type-row__sample t-label">Send Reset Link</p>
-    </div>
-    <div class="type-row">
-      <p class="type-row__spec"><b>--fs-caption · .t-caption</b>13 / 16 · 500 · 0.02em<br>Figtree · kickers, eyebrows, gild notes</p>
-      <p class="type-row__sample t-caption">Today's lesson</p>
-    </div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Where the display serif is allowed — and where it is not</h3>
-  <p class="gal-note t-body">
-    Fraunces is a <strong>daily voice, not an event voice</strong>. Scoping it to
-    milestones would mean 95% of sessions render 100% Figtree, and a neutral sans is
-    exactly what the research flags as overused. Spend the personality budget where it
-    is seen every day.
-  </p>
-  <div class="gal-grid gal-grid--wide">
-    <article class="card card--roomy">
-      <p class="gal-eyebrow">Allowed · --font-display</p>
-      <ul class="t-body" style="padding-inline-start:1.2em;list-style:disc">
-        <li><code>h1</code> page titles and the greeting</li>
-        <li>Streak numerals (<code>.hero__numeral</code>, <code>.stat-tile__value</code>)</li>
-        <li>Milestone headlines and the counting numeral</li>
-        <li>Empty-state headings</li>
-        <li>Article titles in the reading view</li>
-        <li>The Create Habit step questions</li>
-        <li>The celebration echo — display <em>italic</em>, sage-700</li>
-        <li>The wordmark in the nav drawer</li>
-      </ul>
-      <p class="t-body-sm t-muted" style="margin-block-start:var(--space-12)">
-        <code>WONK</code> stays 0 everywhere except the milestone card, which is the one
-        place it may go to 1.
-      </p>
-    </article>
-    <article class="card card--roomy">
-      <p class="gal-eyebrow">Never · --font-ui</p>
-      <ul class="t-body" style="padding-inline-start:1.2em;list-style:disc">
-        <li>Body copy at every size</li>
-        <li><code>h2</code> and below — the serif is a display voice, not a heading font</li>
-        <li>Buttons and every control label</li>
-        <li>Navigation items and the FAB</li>
-        <li>Form fields, help text, placeholders</li>
-        <li>Chips, captions, metadata, the 13px meta line</li>
-        <li>Chat bubbles and the check-in feed</li>
-      </ul>
-      <p class="t-body-sm t-muted" style="margin-block-start:var(--space-12)">
-        If the serif appears in chrome it is wrong. If it never appears in a session,
-        that is also wrong.
-      </p>
-    </article>
-  </div>
-</section>
-
-<!-- =========================================================================
-     4. SPACING · RADIUS · STROKE · ELEVATION — rendered, not listed
-     ====================================================================== -->
-<section class="gal-section" id="space" aria-labelledby="h-space">
-  <div class="section-head"><h2 id="h-space" class="t-h2">4 · Spacing, radius, elevation</h2></div>
-
-  <h3 class="t-h3 gal-sub">Spacing — the 8px grid, value-named</h3>
-  <p class="gal-note t-body-sm">Eight steps, 12 being the one half-step. Each bar below is drawn at its own token value, so the ramp is the ruler.</p>
-  <div class="gal-well">
-    <div class="scale-row"><span class="scale-row__name">--space-4</span><span class="scale-row__bar" style="inline-size:var(--space-4)"></span></div>
-    <div class="scale-row"><span class="scale-row__name">--space-8</span><span class="scale-row__bar" style="inline-size:var(--space-8)"></span></div>
-    <div class="scale-row"><span class="scale-row__name">--space-12</span><span class="scale-row__bar" style="inline-size:var(--space-12)"></span></div>
-    <div class="scale-row"><span class="scale-row__name">--space-16</span><span class="scale-row__bar" style="inline-size:var(--space-16)"></span></div>
-    <div class="scale-row"><span class="scale-row__name">--space-24</span><span class="scale-row__bar" style="inline-size:var(--space-24)"></span></div>
-    <div class="scale-row"><span class="scale-row__name">--space-32</span><span class="scale-row__bar" style="inline-size:var(--space-32)"></span></div>
-    <div class="scale-row"><span class="scale-row__name">--space-48</span><span class="scale-row__bar" style="inline-size:var(--space-48)"></span></div>
-    <div class="scale-row"><span class="scale-row__name">--space-64</span><span class="scale-row__bar" style="inline-size:var(--space-64)"></span></div>
-  </div>
-  <p class="gal-note t-body-sm" style="margin-block-start:var(--space-12)">
-    Screen gutter <code>--layout-gutter</code> is 24px, stepping to 40px at 1200+. Grid
-    and card gaps are 16px, stepping to 24px at 600+. Minimum interactive target
-    <code>--target-min</code> is <strong>48px at every breakpoint</strong> — one number
-    satisfying WCAG 2.5.8 AA, 2.5.5 AAA, Apple 44pt and Material 48dp at once.
-  </p>
-
-  <h3 class="t-h3 gal-sub">Radius — six values, replacing the app's nine drifting ones</h3>
-  <div class="gal-grid">
-    <div class="spec"><div class="radius-tile" style="border-radius:var(--radius-xs)"></div><p class="spec__label"><b>--radius-xs</b> 8px · focus ring, small controls</p></div>
-    <div class="spec"><div class="radius-tile" style="border-radius:var(--radius-sm)"></div><p class="spec__label"><b>--radius-sm</b> 12px · inputs, wells, repair rows</p></div>
-    <div class="spec"><div class="radius-tile" style="border-radius:var(--radius-md)"></div><p class="spec__label"><b>--radius-md</b> 16px · every card, the habit card</p></div>
-    <div class="spec"><div class="radius-tile" style="border-radius:var(--radius-lg)"></div><p class="spec__label"><b>--radius-lg</b> 24px · sheets, modals, the floating nav bar</p></div>
-    <div class="spec"><div class="radius-tile" style="border-radius:var(--radius-xl)"></div><p class="spec__label"><b>--radius-xl</b> 32px</p></div>
-    <div class="spec"><div class="radius-tile" style="border-radius:var(--radius-full)"></div><p class="spec__label"><b>--radius-full</b> 999px · pills, chips, buttons, rings</p></div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Stroke</h3>
-  <div class="gal-well">
-    <div class="stroke-demo" style="margin-block-end:var(--space-16)"><span class="scale-row__name">--stroke-hairline</span><span class="stroke-demo__line" style="block-size:var(--stroke-hairline)"></span><span class="spec__label">1px · card outline, dividers</span></div>
-    <div class="stroke-demo" style="margin-block-end:var(--space-16)"><span class="scale-row__name">--stroke-control</span><span class="stroke-demo__line" style="block-size:var(--stroke-control)"></span><span class="spec__label">1.5px · form-control boundary</span></div>
-    <div class="stroke-demo" style="margin-block-end:var(--space-16)"><span class="scale-row__name">--stroke-ring</span><span class="stroke-demo__line" style="block-size:var(--stroke-ring)"></span><span class="spec__label">3px · check-in ring, day arc, the nav's gold pill</span></div>
-    <div class="stroke-demo"><span class="scale-row__name">--stroke-focus</span><span class="stroke-demo__line" style="block-size:var(--stroke-focus)"></span><span class="spec__label">2px · the focus ring, at 2px offset</span></div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Elevation — two layers, and only one of them casts</h3>
-  <p class="gal-note t-body">
-    <strong>Paper</strong> is the canvas and every card: fill plus a 1px hairline and
-    <strong>zero resting shadow</strong>. <strong>Floating</strong> is the nav bar, the
-    FAB, modals and sheets, the hero card, and the desktop hover-lift — those are the
-    only things in the system that cast. <code>--shadow-xs</code> and
-    <code>--shadow-sm</code> do not exist and must not be re-added: if you want a shadow
-    on resting content you want a tone step (<code>--c-canvas-sunken</code>) or a
-    hairline. Because lift is rare, lift means something.
-  </p>
-
-  <p class="gal-eyebrow">Paper — these rest, and cast nothing</p>
-  <div class="gal-grid" style="margin-block-end:var(--space-32)">
-    <div class="spec"><div class="card" style="block-size:88px"></div><p class="spec__label"><b>.card</b> surface + hairline + radius 16 + padding 16. No shadow, at any breakpoint, in either theme.</p></div>
-    <div class="spec"><div class="card card--sunken" style="block-size:88px"></div><p class="spec__label"><b>.card--sunken</b> the tone step that replaces a shadow.</p></div>
-    <div class="spec"><div class="card card--tinted" style="block-size:88px"></div><p class="spec__label"><b>.card--tinted</b> surface-tinted + brand-200 hairline.</p></div>
-    <div class="spec"><div class="card card--interactive" style="block-size:88px"></div><p class="spec__label"><b>.card--interactive</b> hover it with a real pointer: −1px and <code>--shadow-md</code> over 120ms. Pointer-only, and the one shadow a card can earn.</p></div>
-  </div>
-
-  <p class="gal-eyebrow">Floating — the complete list of things that cast</p>
-  <div class="gal-grid">
-    <div class="spec"><div class="elev-tile" style="box-shadow:var(--shadow-md)"></div><p class="spec__label"><b>--shadow-md</b> desktop hover-lift only.</p></div>
-    <div class="spec"><div class="elev-tile" style="box-shadow:var(--shadow-lg)"></div><p class="spec__label"><b>--shadow-lg</b> the bottom nav bar, the FAB, modals and sheets, the skip link, the control bar.</p></div>
-    <div class="spec"><div class="elev-tile" style="box-shadow:var(--shadow-hero);background:var(--c-hero-fill);border-color:var(--c-hero-border)"></div><p class="spec__label"><b>--shadow-hero</b> the deep-blue hero card, and nothing else.</p></div>
-  </div>
-  <p class="gal-note t-body-sm" style="margin-block-start:var(--space-16)">
-    Shadow colour is <code>rgba(22,35,47,α)</code> — the ink hue, never neutral black.
-    <strong>In Nightfall all three tokens resolve to <code>none</code>:</strong> dark
-    carries elevation by tone and border only. Switch the theme control to Dark and the
-    three tiles above go flat while the paper row above them is unchanged — that is the
-    model working, not a bug.
-  </p>
-</section>
-
-<!-- =========================================================================
-     5. COMPONENTS — every component, in every state
-     Everything below is the real class from css/components.css. Where a
-     specimen needs to be frozen mid-state it carries no data-* hook, so the
-     kit's JS never registers it; where a specimen is live, it says so.
-     ====================================================================== -->
-<section class="gal-section" id="components" aria-labelledby="h-components">
-  <div class="section-head"><h2 id="h-components" class="t-h2">5 · Components</h2></div>
-  <p class="gal-note t-body">
-    BEM-ish: block <code>.card</code>, element <code>.card__title</code>, modifier
-    <code>.card--hero</code>, state <code>.is-complete</code>. States are always
-    <code>.is-*</code>. Behaviour keys off <code>data-*</code> attributes and never off
-    class names, so you can restyle any of this without touching
-    <code>js/prototype.js</code>.
-  </p>
-
-  <h3 class="t-h3 gal-sub">Buttons</h3>
-  <div class="gal-well">
-    <div class="gal-row">
-      <button class="btn btn--primary" type="button">Craft your first habit</button>
-      <button class="btn btn--secondary" type="button">Need inspiration?</button>
-      <button class="btn btn--ghost" type="button">Undo</button>
-      <button class="btn btn--danger" type="button">Delete account</button>
-      <button class="btn btn--gold" type="button">Nice</button>
-    </div>
-    <div class="gal-row" style="margin-block-start:var(--space-16)">
-      <button class="btn btn--primary btn--sm" type="button">Small</button>
-      <button class="btn btn--secondary btn--sm" type="button">Small</button>
-      <button class="btn btn--primary" type="button"><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>With a glyph</button>
-      <button class="btn btn--primary" type="button" disabled>Disabled</button>
-      <button class="btn btn--secondary" type="button" aria-disabled="true">aria-disabled</button>
-      <button class="icon-btn" type="button" aria-label="Dismiss"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-close"></use></svg></button>
-    </div>
-    <div style="margin-block-start:var(--space-16);max-inline-size:420px">
-      <button class="btn btn--primary btn--block" type="button">.btn--block</button>
-    </div>
-  </div>
-  <p class="gal-note t-body-sm" style="margin-block-start:var(--space-12)">
-    Press is <code>scale 0.98</code> over 100ms <code>--ease-standard</code>; release
-    rides <code>--ease-spring-snap</code> at 180ms. Every button is at least 48px tall.
-    <code>.btn--gold</code> is reserved for the milestone card's single CTA and appears
-    nowhere else. <code>.btn--danger</code> is clay, never red-alarm styling.
-  </p>
-
-  <h3 class="t-h3 gal-sub">Surfaces</h3>
-  <div class="gal-grid gal-grid--wide">
-    <div class="spec">
-      <article class="card"><h4 class="t-h3 card__title">.card</h4><p class="t-body card__meta">The paper primitive. Fill, hairline, radius 16, padding 16.</p></article>
-      <p class="spec__label"><b>.card</b> · <b>.card__title</b> · <b>.card__meta</b></p>
-    </div>
-    <div class="spec">
-      <article class="card card--roomy"><h4 class="t-h3 card__title">.card--roomy</h4><p class="t-body card__meta">24px padding. Used where a card carries a whole idea.</p></article>
-      <p class="spec__label"><b>.card--roomy</b> · also <b>.card--sunken</b>, <b>.card--tinted</b>, <b>.card--flush</b></p>
-    </div>
-  </div>
-
-  <div class="gal-grid gal-grid--wide" style="margin-block-start:var(--space-24)">
-    <div class="spec">
-      <!-- THE ONE HERO ON THIS PAGE. One --c-hero-fill surface per screen,
-           maximum — a reference page is not exempt from its own law. -->
-      <section class="hero hero--streak">
-        <div>
-          <p class="hero__numeral">112</p>
-          <p class="hero__label t-label">day streak</p>
-          <p class="hero__body t-body-sm" style="margin-block-start:var(--space-8)">You showed up 4 of the last 5 days.</p>
-          <span class="chip chip--streak" style="margin-block-start:var(--space-12)">
-            <svg class="icon" aria-hidden="true"><use href="#i-flame"></use></svg><span>Best yet</span>
-          </span>
-          <div class="gal-row" style="margin-block-start:var(--space-16)">
-            <a class="btn btn--secondary btn--sm" href="#components">.hero .btn--secondary</a>
-            <a class="btn btn--ghost btn--sm" href="#components">.hero .btn--ghost</a>
-          </div>
-        </div>
-        <div class="day-arc">
-          <svg class="day-arc__svg" viewBox="0 0 72 72" aria-hidden="true" focusable="false">
-            <path class="day-arc__track" d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100"/>
-            <path class="day-arc__fill" d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100" style="stroke-dashoffset:25"/>
-            <path class="day-arc__glint" d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100"/>
-          </svg>
-          <span class="day-arc__count" aria-hidden="true"><strong>3</strong><span>of <span>4</span></span></span>
-        </div>
-      </section>
-      <p class="spec__label"><b>.hero</b> · <b>.hero--streak</b> · <b>.hero__numeral</b> <b>__label</b> <b>__body</b> — grain overlay built in, <code>--shadow-hero</code>, and the after-20:00 gradient applied automatically from <code>[data-hour-late]</code>. Drag the hour slider past 20 to see it. A paper button on this surface needs the <code>.hero</code>-qualified selector, or <code>.hero a</code> beats <code>.btn--*</code> and it renders white on white.</p>
-    </div>
-    <div class="spec">
-      <div class="gal-well gal-well--roomy">
-        <div class="modal" style="max-inline-size:none">
-          <h4 class="t-h3">Make it a habit</h4>
-          <p class="t-body t-muted" style="margin-block:var(--space-8) var(--space-16)">The floating layer: <code>--shadow-lg</code>, radius 24, and a <code>--ease-spring-gentle</code> entry at its paired 650ms.</p>
-          <div class="gal-row"><button class="btn btn--primary" type="button">Create it</button><button class="btn btn--ghost" type="button">Not now</button></div>
-        </div>
-      </div>
-      <p class="spec__label"><b>.modal</b> (560px) · <b>.modal--wide</b> (720px at 840+) · <b>.modal--milestone</b> (380px, in §8) · <b>.scrim</b> — 40% ink-strong, Escape closes, focus returns to the opener.</p>
-    </div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Chips</h3>
-  <div class="gal-well">
-    <div class="gal-row">
-      <span class="chip">.chip</span>
-      <span class="chip chip--streak"><svg class="icon" aria-hidden="true"><use href="#i-flame"></use></svg><span>112 days</span></span>
-      <span class="chip chip--sage"><svg class="icon" aria-hidden="true"><use href="#i-tick"></use></svg><span>Kept today</span></span>
-      <span class="chip chip--brand"><svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg><span>07:00</span></span>
-      <button class="chip" type="button" aria-pressed="false">Filter, off</button>
-      <button class="chip" type="button" aria-pressed="true">Filter, on</button>
-    </div>
-  </div>
-  <p class="gal-note t-body-sm" style="margin-block-start:var(--space-12)">
-    The streak flame chip is one of only five sanctioned appearances of gold. On the
-    hero it swaps to <code>gold-500</code> on a 16% gold wash (4.98:1) — see the hero
-    above. An interactive chip carries a real 40px pitch plus 4px block margin, so the
-    target is met rather than relied on by exception.
-  </p>
-
-  <h3 class="t-h3 gal-sub">Form controls</h3>
-  <div class="gal-grid gal-grid--wide">
-    <div class="spec">
-      <div class="card card--roomy u-stack">
-        <div class="field">
-          <label class="field__label" for="g-behaviour">What will you do?</label>
-          <input class="input" id="g-behaviour" type="text" value="Meditate for two minutes">
-          <p class="field__help">Keep it small, you can always do more.</p>
-        </div>
-        <div class="field">
-          <label class="field__label" for="g-empty">Placeholder and ink-subtle</label>
-          <input class="input" id="g-empty" type="text" placeholder="After I pour my morning coffee">
-        </div>
-        <div class="field">
-          <label class="field__label" for="g-why">What will success look like?</label>
-          <textarea class="textarea" id="g-why">Calmer mornings.</textarea>
-        </div>
-        <div class="field">
-          <label class="field__label" for="g-sel">Repeat</label>
-          <select class="select" id="g-sel"><option>Every day</option><option>Weekdays</option><option>Mon, Wed, Fri</option></select>
-        </div>
-      </div>
-      <p class="spec__label"><b>.field</b> <b>__label</b> <b>__help</b> · <b>.input</b> <b>.textarea</b> <b>.select</b> — the border IS the affordance here, so it takes <code>--c-border-control</code> at 1.5px rather than the decorative hairline.</p>
-    </div>
-
-    <div class="spec">
-      <div class="card card--roomy u-stack">
-        <div class="field field--reveal">
-          <label class="field__label" for="g-pw">Password</label>
-          <input class="input" id="g-pw" type="password" value="correcthorse">
-          <button class="pw-toggle" type="button" data-pw-toggle aria-pressed="false">Show</button>
-        </div>
-        <label class="check">
-          <input type="checkbox" checked>
-          <span class="t-body-sm">I agree to the Terms and the Privacy Policy.</span>
-        </label>
-        <div class="u-between">
-          <span class="t-body">Remind me</span>
-          <span class="u-flow-tight">
-            <span class="t-body-sm t-muted" id="g-sw1-v">On</span>
-            <span class="switch"><input type="checkbox" checked aria-labelledby="g-sw1-v" aria-label="Remind me"><span class="switch__track"></span><span class="switch__thumb"></span></span>
-          </span>
-        </div>
-        <div class="u-between">
-          <span class="t-body">Quick check-in (single tap)</span>
-          <span class="u-flow-tight">
-            <span class="t-body-sm t-muted" id="g-sw2-v">Off</span>
-            <span class="switch"><input type="checkbox" aria-labelledby="g-sw2-v" aria-label="Quick check-in, single tap"><span class="switch__track"></span><span class="switch__thumb"></span></span>
-          </span>
-        </div>
-        <div>
-          <p class="field__label" id="g-days-l">When will you do the behavior?</p>
-          <div class="daypick" role="group" aria-labelledby="g-days-l" style="margin-block-start:var(--space-8)">
-            <button class="daypick__day" type="button" aria-pressed="true">Mon<span class="daypick__dot"></span></button>
-            <button class="daypick__day" type="button" aria-pressed="false">Tues<span class="daypick__dot"></span></button>
-            <button class="daypick__day" type="button" aria-pressed="true">Wed<span class="daypick__dot"></span></button>
-            <button class="daypick__day" type="button" aria-pressed="false">Thurs<span class="daypick__dot"></span></button>
-            <button class="daypick__day" type="button" aria-pressed="true">Fri<span class="daypick__dot"></span></button>
-          </div>
-          <p class="reminder-line" style="margin-block-start:var(--space-12)"><svg class="icon" aria-hidden="true"><use href="#i-bell"></use></svg><span>Mon, Wed, Fri at 7:00 AM</span></p>
-        </div>
-      </div>
-      <p class="spec__label"><b>.field--reveal</b> + <b>.pw-toggle</b> · <b>.check</b> · <b>.switch</b> <b>__track</b> <b>__thumb</b> · <b>.daypick</b> <b>__day</b> <b>__dot</b> · <b>.reminder-line</b> — a switch is never colour alone: the thumb moves and every switch is rendered beside its text value. Each day carries a filled dot as well as a fill change, so selection survives grayscale.</p>
-    </div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Segmented control</h3>
-  <p class="gal-note t-body-sm">A real WAI-ARIA tablist — click, arrow keys, Home, End, roving tabindex, and panels genuinely removed from the accessibility tree when inactive. It replaces the app's Material TabBars; there is no full-width underline indicator anywhere in this system.</p>
-  <div class="gal-well">
-    <div class="segmented" role="tablist" aria-label="Specimen segments" data-tabs>
-      <button class="seg-btn" role="tab" type="button" data-tab="gal-seg-a" aria-selected="true" aria-controls="gal-seg-a-p" id="gal-seg-a-t">Summary</button>
-      <button class="seg-btn" role="tab" type="button" data-tab="gal-seg-b" aria-selected="false" aria-controls="gal-seg-b-p" id="gal-seg-b-t">Lifestyle</button>
-    </div>
-    <div class="prog-panel" role="tabpanel" data-tabpanel="gal-seg-a" id="gal-seg-a-p" aria-labelledby="gal-seg-a-t" tabindex="0" style="margin-block-start:var(--space-16)">
-      <p class="t-body">Selected: <code>aria-selected="true"</code> — surface fill, brand-600 label, and the only place a <code>--shadow-md</code> appears on something that is not lifting.</p>
-    </div>
-    <div class="prog-panel" role="tabpanel" data-tabpanel="gal-seg-b" id="gal-seg-b-p" aria-labelledby="gal-seg-b-t" tabindex="0" hidden style="margin-block-start:var(--space-16)">
-      <p class="t-body">The panel swap is an opacity fade over <code>--dur-base</code>, capped by the reduced-motion block. No slide, no indicator travel.</p>
-    </div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Chat bubbles and the check-in feed</h3>
-  <div class="gal-grid gal-grid--wide">
-    <div class="spec">
-      <div class="card card--roomy thread">
-        <p class="thread__day">Today</p>
-        <div class="chat-row">
-          <span class="avatar" aria-hidden="true">A</span>
-          <div><p class="chat-bubble">Anyone else walking before work this week?</p><p class="chat-meta">Aisha · 07:12</p></div>
-        </div>
-        <div class="chat-row chat-row--self">
-          <span class="avatar" aria-hidden="true">M</span>
-          <div><p class="chat-bubble">Out the door now. Two blocks is enough.</p><p class="chat-meta">You · 07:20</p></div>
-        </div>
-        <div class="checkin-item">
-          <svg class="icon icon--sm checkin-item__tick" aria-hidden="true"><use href="#i-tick"></use></svg>
-          <span class="checkin-item__body"><span class="checkin-item__text"><strong>Jonah</strong> read one page<span class="checkin-item__time">07:31</span></span></span>
-          <button class="btn btn--ghost btn--sm checkin-item__say" type="button">Say something</button>
-        </div>
-      </div>
-      <p class="spec__label"><b>.thread</b> <b>__day</b> · <b>.chat-row</b> (+<b>--self</b>) · <b>.chat-bubble</b> · <b>.chat-meta</b> · <b>.checkin-item</b> — others get surface plus a hairline, you get brand-100. <strong>Never a filled brand-500 bubble</strong>: far too loud for the paper room. A peer check-in is deliberately not a bubble at all.</p>
-    </div>
-    <div class="spec">
-      <div class="card card--roomy">
-        <p class="gal-eyebrow">Avatars, stats, rows</p>
-        <div class="u-flow" style="margin-block-end:var(--space-16)">
-          <span class="avatar" aria-hidden="true">M</span>
-          <span class="avatar avatar--lg" aria-hidden="true">A</span>
-          <span class="avatar-stack" role="img" aria-label="Five members checked in today">
-            <span class="avatar" aria-hidden="true">A</span><span class="avatar" aria-hidden="true">J</span><span class="avatar" aria-hidden="true">P</span><span class="avatar" aria-hidden="true">D</span><span class="avatar" aria-hidden="true">R</span>
-          </span>
-        </div>
-        <div class="stat-tile"><span class="stat-tile__value">4 of 5</span><span class="stat-tile__label">days with at least one check-in</span></div>
-        <div style="margin-block-start:var(--space-16)">
-          <div class="activity-row"><span class="avatar" aria-hidden="true">P</span><span class="activity-row__text"><strong>Priya</strong> hit 30 days</span></div>
-          <div class="activity-row"><span class="avatar" aria-hidden="true">D</span><span class="activity-row__text"><strong>Dan</strong> meditated</span></div>
-        </div>
-        <a class="text-link" href="#components">A quiet text link<svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow"></use></svg></a>
-      </div>
-      <p class="spec__label"><b>.avatar</b> (+<b>--lg</b>) · <b>.avatar-stack</b> · <b>.stat-tile</b> <b>__value</b> <b>__label</b> · <b>.activity-row</b> <b>__text</b> · <b>.text-link</b></p>
-    </div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Headers, the lesson tile, and streak repair</h3>
-  <div class="gal-grid gal-grid--wide">
-    <div class="spec">
-      <div class="card card--roomy">
-        <a class="page-back page-back--compact" href="#components"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-back"></use></svg><span>Back to Today</span></a>
-        <div class="page-head" style="margin-block-start:var(--space-12)">
-          <div class="page-head__text"><h4 class="t-h1" style="font-size:var(--fs-h2)">Habit Ideas</h4><p class="page-head__sub t-body-sm">Get inspired to cultivate positive habits.</p></div>
-        </div>
-        <div class="section-head" style="margin-block-start:var(--space-24)"><h5 class="t-h3">Today</h5><p class="t-body-sm t-muted">Press and hold a ring</p></div>
-        <article class="card lesson-tile">
-          <div class="lesson-tile__body"><p class="lesson-tile__kicker">Today's lesson</p><p class="t-body">Make it so small it feels almost silly.</p></div>
-          <a class="btn btn--ghost btn--sm" href="library-detail.html">Read</a>
-        </article>
-      </div>
-      <p class="spec__label"><b>.page-back</b> (+<b>--compact</b>) · <b>.page-head</b> <b>__text</b> <b>__sub</b> · <b>.section-head</b> · <b>.lesson-tile</b> <b>__body</b> <b>__kicker</b> — the back glyph is <code>#i-arrow-back</code>, a real left arrow. Never rotate <code>#i-arrow</code> 180° to fake one.</p>
-    </div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Streak repair</h3>
-  <p class="gal-note t-body-sm">Full width on purpose: the three states have to be readable side by side, which is how Progress lays it out from 600 up.</p>
-  <div class="spec">
-      <div class="card card--roomy" data-repair>
-        <div class="repair">
-          <div class="repair__row repair__row--freeze">
-            <span class="repair__mark"><svg class="icon" aria-hidden="true"><use href="#i-shield"></use></svg></span>
-            <div class="repair__body"><p class="repair__title">Freeze</p><p class="repair__text">You showed up for 42 days straight. One banked day covered Tuesday.</p>
-              <div class="repair__tokens"><span class="repair__token"></span><span class="repair__token"></span><span class="repair__token repair__token--spent"></span></div></div>
-          </div>
-          <div class="repair__row repair__row--grace">
-            <span class="repair__mark"><svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg></span>
-            <div class="repair__body"><p class="repair__title">Grace</p><p class="repair__text">Yesterday is still open until tonight. Fill it in whenever you like.</p></div>
-          </div>
-          <div class="repair__row repair__row--decay">
-            <span class="repair__mark"><svg class="icon" aria-hidden="true"><use href="#i-leaf"></use></svg></span>
-            <div class="repair__body"><p class="repair__title">Decay</p><p class="repair__text" data-repair-readout data-full="42 days" data-decayed="37 days">42 days</p>
-              <div class="repair__decay">
-                <div class="repair__track"><span class="repair__was" style="inline-size:100%"></span><span class="repair__now" data-repair-now data-full="100%" data-decayed="88%" style="inline-size:100%"></span></div>
-                <div class="repair__scale"><span>0</span><span>48</span></div>
-              </div>
-              <button class="btn btn--ghost btn--sm" type="button" data-repair-run aria-pressed="false" style="margin-block-start:var(--space-8)">Show a week away</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <p class="spec__label"><b>.repair</b> <b>--freeze</b> <b>--grace</b> <b>--decay</b> <b>__now</b> <b>__readout</b> — live: press the button. Amber is care, not alarm; <code>clay-600</code> and red appear nowhere on this component. The bar goes down <em>a little</em> and never to zero, which is the entire argument.</p>
-  </div>
-
-  <h3 class="t-h3 gal-sub">The check-in ring</h3>
-  <p class="gal-note t-body-sm">
-    <code>pathLength="100"</code> is load-bearing on all three shapes: it normalises every
-    stroke so progress is literally a percentage
-    (<code>stroke-dashoffset = 100 − percent</code>). The three specimens below are
-    frozen at the exact offsets the JS writes.
-  </p>
-  <div class="gal-well">
-    <div class="gal-row" style="gap:var(--space-32)">
-      <div class="spec" style="flex:1 1 180px;min-inline-size:0;align-items:center">
-        <span class="ring" role="img" aria-label="Ring at rest">
-          <svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/><path class="ring__check" d="M14.6 22.4l5.1 5.1 9.7-10.6" pathLength="100"/></svg>
-        </span>
-        <p class="spec__label">rest · offset 100</p>
-      </div>
-      <div class="spec" style="flex:1 1 180px;min-inline-size:0;align-items:center">
-        <span class="ring" role="img" aria-label="Ring at 55 percent of the hold">
-          <svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100" style="stroke-dashoffset:45;stroke:var(--c-sage-500)"/><path class="ring__check" d="M14.6 22.4l5.1 5.1 9.7-10.6" pathLength="100"/></svg>
-        </span>
-        <p class="spec__label">holding · 55% · mid-crossfade</p>
-      </div>
-      <div class="spec" style="flex:1 1 180px;min-inline-size:0;align-items:center">
-        <span class="ring gal-ring-checked" role="img" aria-label="Ring committed">
-          <svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/><path class="ring__check" d="M14.6 22.4l5.1 5.1 9.7-10.6" pathLength="100"/></svg>
-        </span>
-        <p class="spec__label">committed · offset 0, both shapes</p>
-      </div>
-      <div class="spec" style="flex:1 1 240px;min-inline-size:0">
-        <div style="display:flex;justify-content:flex-end">
-          <span class="ring" role="img" aria-label="Ring with the one-time hint visible">
-            <svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/><path class="ring__check" d="M14.6 22.4l5.1 5.1 9.7-10.6" pathLength="100"/></svg>
-            <span class="ring__hint" data-visible="true">Hold to check in</span>
-          </span>
-        </div>
-        <p class="spec__label">tap without hold · <b>.ring__hint</b>, once per session, plus a 2px wobble. Never an error state.</p>
-      </div>
-    </div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">The day arc</h3>
-  <div class="gal-well">
-    <div class="gal-row" style="gap:var(--space-32)">
-      <div class="spec" style="flex:1 1 180px;min-inline-size:0;align-items:center">
-        <div class="day-arc"><svg class="day-arc__svg" viewBox="0 0 72 72" aria-hidden="true" focusable="false"><path class="day-arc__track" d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100"/><path class="day-arc__fill" d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100"/></svg><span class="day-arc__count" aria-hidden="true"><strong>0</strong><span>of <span>4</span></span></span></div>
-        <p class="spec__label">empty</p>
-      </div>
-      <div class="spec" style="flex:1 1 180px;min-inline-size:0;align-items:center">
-        <div class="day-arc"><svg class="day-arc__svg" viewBox="0 0 72 72" aria-hidden="true" focusable="false"><path class="day-arc__track" d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100"/><path class="day-arc__fill" d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100" style="stroke-dashoffset:50"/></svg><span class="day-arc__count" aria-hidden="true"><strong>2</strong><span>of <span>4</span></span></span></div>
-        <p class="spec__label">2 of 4 · sage-600</p>
-      </div>
-      <div class="spec" style="flex:1 1 180px;min-inline-size:0;align-items:center">
-        <div class="day-arc is-complete"><svg class="day-arc__svg" viewBox="0 0 72 72" aria-hidden="true" focusable="false"><path class="day-arc__track" d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100"/><path class="day-arc__fill" d="M16.2 55.8A28 28 0 1 1 55.8 55.8" pathLength="100" style="stroke-dashoffset:0"/></svg><span class="day-arc__count" aria-hidden="true"><strong>4</strong><span>of <span>4</span></span></span></div>
-        <p class="spec__label"><b>.is-complete</b> · flushed gold-500</p>
-      </div>
-    </div>
-  </div>
-  <p class="gal-note t-body-sm" style="margin-block-start:var(--space-12)">
-    270°, 3px, canvas-sunken track. On the hero it inverts its track and takes
-    <code>--c-arc-on-hero</code> — it stays <em>sage</em> there on purpose, so the gold
-    flush at completion is still a change rather than something already spent. Do not
-    recolour it by hand; the same principle applies anywhere a signal colour lands on
-    the hero.
-  </p>
-
-  <h3 class="t-h3 gal-sub">The habit card — every state</h3>
-  <p class="gal-note t-body-sm">
-    72px minimum height, title in <code>h3</code>, the prompt line at 13px — the app's
-    10px text is abolished — and the ring at the right edge with a 48px hit area. The
-    first card is <strong>live</strong>: press and hold it. The rest are frozen
-    specimens carrying no <code>data-*</code> hooks, so the kit's JS never registers
-    them.
-  </p>
-  <div class="gal-grid gal-grid--wide">
-
-    <div class="spec">
-      <article class="card habit-card" data-habit="preview" data-celebration="Fist pump!">
-        <div class="habit-card__body">
-          <h4 class="habit-card__title">Floss one tooth</h4>
-          <p class="habit-card__meta">After I brush my teeth · 3 day streak</p>
-          <p class="habit-card__echo" data-echo hidden></p>
-        </div>
-        <button class="btn btn--ghost btn--sm habit-card__undo" type="button" data-undo hidden>Undo</button>
-        <button class="ring" type="button" data-checkin aria-pressed="false" aria-label="Check in: Floss one tooth. Press and hold to complete.">
-          <svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/><path class="ring__check" d="M14.6 22.4l5.1 5.1 9.7-10.6" pathLength="100"/></svg>
-          <span class="ring__hint" data-ring-hint hidden>Hold to check in</span>
-        </button>
-      </article>
-      <p class="spec__label"><b>.habit-card</b> — default, live. <code>data-habit="preview"</code> keeps a demo card out of the day count.</p>
-    </div>
-
-    <div class="spec">
-      <article class="card habit-card is-pressed">
-        <div class="habit-card__body">
-          <h4 class="habit-card__title">Walk around the block</h4>
-          <p class="habit-card__meta">After I close my laptop · 9 day streak</p>
-        </div>
-        <span class="ring" role="img" aria-label="Ring at 62 percent">
-          <svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100" style="stroke-dashoffset:38;stroke:var(--c-sage-500)"/><path class="ring__check" d="M14.6 22.4l5.1 5.1 9.7-10.6" pathLength="100"/></svg>
-        </span>
-      </article>
-      <p class="spec__label"><b>.is-pressed</b> — frozen mid-hold at <code>scale 0.97</code>. Released early it takes <b>.is-abandoning</b> and springs back on <code>--ease-spring-snap</code>: no penalty, no message, interruptible at any millisecond.</p>
-    </div>
-
-    <div class="spec">
-      <article class="card habit-card is-complete">
-        <div class="habit-card__body">
-          <h4 class="habit-card__title">Read one page</h4>
-          <p class="habit-card__meta">After I get into bed · 35 day streak</p>
-          <p class="habit-card__echo">Say out loud: that's who I am now.</p>
-        </div>
-        <button class="btn btn--ghost btn--sm habit-card__undo" type="button">Undo</button>
-        <span class="ring gal-ring-checked" role="img" aria-label="Checked in">
-          <svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/><path class="ring__check" d="M14.6 22.4l5.1 5.1 9.7-10.6" pathLength="100"/></svg>
-        </span>
-      </article>
-      <p class="spec__label"><b>.is-complete</b> + <b>.habit-card__echo</b> + <b>.habit-card__undo</b> — the user's own answer to "How will you celebrate?", verbatim, in display italic. It holds 5s beside an inline Undo, and stays while the Undo has focus. <strong>There is no snackbar in this system.</strong></p>
-    </div>
-  </div>
-
-  <h4 class="t-h3 gal-sub" style="font-size:var(--fs-h3)">The four gild tiers, and how they compose</h4>
-  <p class="gal-note t-body-sm">
-    Cumulative, cosmetic, and <strong>never lost</strong> — a gild records what you did,
-    not what you are maintaining, so it survives a streak break. The marks compose with
-    every other card state by construction: the tick is <code>::after</code>, the
-    hairline is an <em>inset</em> <code>box-shadow</code>, and the seal is a real
-    element — while <code>.is-complete</code> only sets <code>background</code> and
-    <code>border-color</code>, so it cannot clobber any of them.
-  </p>
-  <div class="gal-grid gal-grid--wide">
-    <div class="spec">
-      <article class="card habit-card habit-card--gild-7">
-        <div class="habit-card__body"><h4 class="habit-card__title">Walk around the block</h4><p class="habit-card__meta">After I close my laptop · 9 day streak</p><span class="gild-note">Day 7 — corner tick</span></div>
-        <span class="ring" role="img" aria-label="Not checked in"><svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/><path class="ring__check" d="M14.6 22.4l5.1 5.1 9.7-10.6" pathLength="100"/></svg></span>
-      </article>
-      <p class="spec__label"><b>.habit-card--gild-7</b> — a 16px gold corner tick on the top-right radius.</p>
-    </div>
-    <div class="spec">
-      <article class="card habit-card habit-card--gild-30">
-        <div class="habit-card__body"><h4 class="habit-card__title">Read one page</h4><p class="habit-card__meta">After I get into bed · 34 day streak</p><span class="gild-note">Day 30 — gold hairline</span></div>
-        <span class="ring" role="img" aria-label="Not checked in"><svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/><path class="ring__check" d="M14.6 22.4l5.1 5.1 9.7-10.6" pathLength="100"/></svg></span>
-      </article>
-      <p class="spec__label"><b>.habit-card--gild-30</b> — the tick plus a full 1px inner hairline. Inset, because <code>gold-500</code> may never be a boundary against the canvas.</p>
-    </div>
-    <div class="spec">
-      <article class="card habit-card habit-card--gild-100">
-        <div class="habit-card__body">
-          <div class="u-flow-tight"><h4 class="habit-card__title">Meditate for two minutes</h4><span class="seal" role="img" aria-label="100-day seal"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-rosette"></use></svg></span></div>
-          <p class="habit-card__meta">After I pour my morning coffee · 112 day streak</p><span class="gild-note">Day 100 — seal + gold hairline</span>
-        </div>
-        <span class="ring" role="img" aria-label="Not checked in"><svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/><path class="ring__check" d="M14.6 22.4l5.1 5.1 9.7-10.6" pathLength="100"/></svg></span>
-      </article>
-      <p class="spec__label"><b>.habit-card--gild-100</b> + <b>.seal</b> — the embossed rosette, gold-700 on gold-surface, beside the title.</p>
-    </div>
-    <div class="spec">
-      <article class="card habit-card habit-card--gild-365">
-        <div class="habit-card__body">
-          <div class="u-flow-tight"><h4 class="habit-card__title">A glass of water when I wake up</h4><span class="seal" role="img" aria-label="365-day seal, solid gold"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-rosette"></use></svg></span></div>
-          <p class="habit-card__meta">After my alarm goes off · 402 day streak</p><span class="gild-note">Day 365 — solid seal</span>
-        </div>
-        <span class="ring" role="img" aria-label="Not checked in"><svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/><path class="ring__check" d="M14.6 22.4l5.1 5.1 9.7-10.6" pathLength="100"/></svg></span>
-      </article>
-      <p class="spec__label"><b>.habit-card--gild-365</b> — the seal fills solid gold. Ink on gold-500 is 7.29:1.</p>
-    </div>
-    <div class="spec">
-      <article class="card habit-card habit-card--gild-100 is-complete">
-        <div class="habit-card__body">
-          <div class="u-flow-tight"><h4 class="habit-card__title">Meditate for two minutes</h4><span class="seal" role="img" aria-label="100-day seal"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-rosette"></use></svg></span></div>
-          <p class="habit-card__meta">After I pour my morning coffee · 113 day streak</p>
-          <p class="habit-card__echo">Fist pump!</p>
-          <span class="gild-note">Day 100, completed today — nothing cancels anything</span>
-        </div>
-        <span class="ring gal-ring-checked" role="img" aria-label="Checked in"><svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/><path class="ring__check" d="M14.6 22.4l5.1 5.1 9.7-10.6" pathLength="100"/></svg></span>
-      </article>
-      <p class="spec__label"><b>--gild-100</b> composed with <b>.is-complete</b> — the sage tone, the gold hairline, the seal on its own disc, the echo and the ring check, all at once.</p>
-    </div>
-    <div class="spec">
-      <div class="card card--roomy" style="text-align:center">
-        <span class="seal seal--lg seal--solid" aria-hidden="true" style="margin-inline:auto"><svg viewBox="0 0 24 24"><use href="#i-rosette"></use></svg></span>
-        <p class="t-body-sm t-muted" style="margin-block-start:var(--space-12)">The seal at its three sizes: 22px in a card, 40px (<code>--lg</code>) on the milestone card and Profile's shelf of earned marks.</p>
-      </div>
-      <p class="spec__label"><b>.seal</b> · <b>.seal--solid</b> · <b>.seal--lg</b> — <code>#i-rosette</code> is solid on purpose: it is an emboss, not an icon.</p>
-    </div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Calendar cells — three redundant states</h3>
-  <p class="gal-note t-body-sm">
-    Never colour alone. Each state carries a fill difference, a glyph, a lightness step
-    that survives grayscale, <em>and</em> a per-cell label. Every cell needs
-    <code>role="img"</code> and its own <code>aria-label</code>. Missed days are simply
-    empty — no red, no broken chains, anywhere in this system.
-  </p>
-  <div class="card card--roomy" style="max-inline-size:420px">
-    <div class="cal-grid">
-      <div class="cal-cell cal-cell--done" role="img" aria-label="Monday 10 August, completed"><span class="cal-cell__glyph"></span></div>
-      <div class="cal-cell cal-cell--done" role="img" aria-label="Tuesday 11 August, completed"><span class="cal-cell__glyph"></span></div>
-      <div class="cal-cell cal-cell--partial" role="img" aria-label="Wednesday 12 August, in progress"><span class="cal-cell__glyph"></span></div>
-      <div class="cal-cell" role="img" aria-label="Thursday 13 August, no check-ins"></div>
-      <div class="cal-cell" role="img" aria-label="Friday 14 August, no check-ins"></div>
-      <div class="cal-cell cal-cell--done cal-cell--milestone" role="img" aria-label="Saturday 8 August, completed, 100 day milestone"><span class="cal-cell__glyph"></span></div>
-      <div class="cal-cell cal-cell--done" role="img" aria-label="Sunday 9 August, completed"><span class="cal-cell__glyph"></span></div>
-    </div>
-    <p class="t-body-sm t-muted" style="margin-block-start:var(--space-12)">
-      <b>--done</b> sage-600 fill + white dot · <b>--partial</b> sage-300 outline + sage dot ·
-      empty canvas-sunken, no glyph · <b>--milestone</b> adds a gold corner tick.
-    </p>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Skeletons — no shimmer</h3>
-  <p class="gal-note t-body-sm">
-    Under 400ms show <strong>nothing</strong>: a skeleton that flashes for 200ms is worse
-    than a blank box. Beyond 400ms, static blocks in <code>canvas-sunken</code> at the
-    container's own radii, with one 0.7 → 1.0 pulse, 1200ms
-    <code>ease-in-out alternate</code>, <strong>in phase</strong> — independent phases
-    would read as a shimmer sweep by another name. Watch the rule fire in §8.
-  </p>
-  <div class="gal-grid gal-grid--wide">
-    <div class="spec">
-      <div class="skeleton-list">
-        <div class="skeleton-card"><div class="skeleton-card__body"><div class="skeleton skeleton--line" style="inline-size:62%"></div><div class="skeleton skeleton--line-sm" style="inline-size:84%"></div></div><div class="skeleton skeleton--ring"></div></div>
-        <div class="skeleton-card"><div class="skeleton-card__body"><div class="skeleton skeleton--line" style="inline-size:54%"></div><div class="skeleton skeleton--line-sm" style="inline-size:76%"></div></div><div class="skeleton skeleton--ring"></div></div>
-      </div>
-      <p class="spec__label"><b>.skeleton-list</b> · <b>.skeleton-card</b> <b>__body</b> — same 72px pitch, same 16px padding, same radius-16 as the real card, so nothing shifts when the content arrives.</p>
-    </div>
-    <div class="spec">
-      <div class="u-stack">
-        <div class="skeleton skeleton--hero"></div>
-        <div class="skeleton skeleton--tile"></div>
-        <div class="skeleton skeleton--line" style="inline-size:70%"></div>
-        <div class="skeleton skeleton--line-sm" style="inline-size:45%"></div>
-      </div>
-      <p class="spec__label"><b>.skeleton--hero</b> <b>--tile</b> <b>--line</b> <b>--line-sm</b> <b>--ring</b> — the panel template. Under reduced motion the pulse is <code>animation: none; opacity: 1</code>, off rather than slowed.</p>
-    </div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Empty states</h3>
-  <p class="gal-note t-body-sm">Illustration, a heading, and <strong>at most one</strong> call to action. Nine are built across the screens; two are shown here.</p>
-  <div class="gal-grid gal-grid--wide">
-    <div class="spec">
-      <div class="card">
-        <div class="empty-state">
-          <svg class="illus" viewBox="0 0 120 120" role="img" aria-label="A bare stem in a stone pot, with one sage leaf just starting">
-            <ellipse class="illus__ground" cx="60" cy="103" rx="30" ry="8"/>
-            <path class="illus__shape" d="M40 74h40l-5 26H45l-5-26z"/>
-            <path class="illus__line" d="M36 74h48"/><path class="illus__line" d="M60 74V38"/>
-            <g class="illus__drift"><path class="illus__accent" d="M60 50c12-1 20-8 21-19-12-1-21 5-21 19z"/></g>
-          </svg>
-          <p class="empty-state__title">No active habits</p>
-          <p class="empty-state__body t-body">Keep it small — you can always do more.</p>
-          <a class="btn btn--primary" href="create-habit.html">Craft your first habit</a>
-        </div>
-      </div>
-      <p class="spec__label"><b>.empty-state</b> <b>__title</b> <b>__body</b> — full size, 132px artwork.</p>
-    </div>
-    <div class="spec">
-      <div class="card">
-        <div class="empty-state empty-state--compact">
-          <svg class="illus" viewBox="0 0 120 120" role="img" aria-label="An empty tray with a leaf resting in it">
-            <ellipse class="illus__ground" cx="60" cy="94" rx="34" ry="8"/>
-            <path class="illus__line" d="M28 62h64l-8 26H36l-8-26z"/>
-            <path class="illus__accent" d="M60 62c0-14 10-22 24-21-1 13-10 21-24 21z"/>
-          </svg>
-          <p class="empty-state__title">Nothing waiting</p>
-          <p class="empty-state__body t-body-sm">You are all caught up.</p>
-        </div>
-      </div>
-      <p class="spec__label"><b>.empty-state--compact</b> — 96px artwork for a pane. <b>--inline</b> is 84px for a pane's own inbox. There is no <code>__art</code> class; the artwork is always <code>.illus</code>.</p>
-    </div>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Navigation — one component, four shapes</h3>
-  <p class="gal-note t-body">
-    <code>.app-nav</code> is marked up once and the breakpoints do the rest. Each frame
-    below is <code>home.html</code> itself, at a real viewport width, so this is the
-    component transforming rather than four drawings of it. Selected is
-    <code>brand-600</code> plus the 3px <code>gold-500</code> pill — never
-    <code>opacity: 0.5</code>, and there is no raster chrome anywhere in it.
-  </p>
-  <div class="frames">
-    <figure class="frame" style="--w:390;--h:720">
-      <div class="frame__viewport"><iframe src="home.html?frame=1" title="The navigation as a floating bottom bar at 390 pixels" loading="lazy"></iframe></div>
-      <figcaption><b>&lt; 600 · floating bottom bar</b>4 destinations + the centre FAB, radius-lg, shadow-lg. Explore and Library carry <code>.nav-li--rail</code> and are hidden here — the bar has room for four and no more.</figcaption>
-    </figure>
-    <figure class="frame" style="--w:700;--h:640">
-      <div class="frame__viewport"><iframe src="home.html?frame=1" title="The navigation as a collapsed rail at 700 pixels" loading="lazy"></iframe></div>
-      <figcaption><b>600–839 · collapsed rail</b>92px, icon over label, FAB at the top. The rail has vertical room, so Explore and Library become real destinations.</figcaption>
-    </figure>
-    <figure class="frame" style="--w:900;--h:640">
-      <div class="frame__viewport"><iframe src="home.html?frame=1" title="The navigation as an extended rail at 900 pixels" loading="lazy"></iframe></div>
-      <figcaption><b>840–1199 · extended rail</b>200px, icon beside label, extended FAB, wordmark on top. The gold pill rotates to the inline start.</figcaption>
-    </figure>
-    <figure class="frame" style="--w:1280;--h:760">
-      <div class="frame__viewport"><iframe src="home.html?frame=1" title="The navigation as a permanent drawer at 1280 pixels" loading="lazy"></iframe></div>
-      <figcaption><b>≥ 1200 · permanent drawer</b>256px with the user block pinned at the bottom, and the content becomes a three-column bento.</figcaption>
-    </figure>
-  </div>
-  <p class="t-body-sm t-muted" style="margin-block-start:var(--space-16)">
-    If your browser blocks local iframes, open <a href="home.html">home.html</a> directly
-    and resize the window — every screen is a real responsive page on its own.
-  </p>
-</section>
-
-<!-- =========================================================================
-     6. ICONS — the 41-symbol sprite, labelled
-     ====================================================================== -->
-<section class="gal-section" id="icons" aria-labelledby="h-icons">
-  <div class="section-head"><h2 id="h-icons" class="t-h2">6 · Icons</h2></div>
-  <p class="gal-note t-body">
-    One family, one style: <strong>hand-authored, outlined, fill-0, rounded terminals,
-    1.7px stroke, 24 × 24 grid, <code>currentColor</code></strong>. No Material Symbols
-    file, no Lucide, no raster, no emoji-as-UI — with zero dependencies allowed, the only
-    way to have one family is to draw it. Icons inherit <code>--c-ink-muted</code> from
-    <code>.icon</code> at rest and <code>brand-600</code> from a selected parent, with no
-    per-icon CSS. Sizes are <code>.icon</code> 24 · <code>--sm</code> 20 ·
-    <code>--lg</code> 32.
-  </p>
-  <p class="gal-note t-body">
-    <strong>41 symbols. The sprite block is canonical and byte-identical on all eleven
-    files.</strong> If you add one, add it to the block and paste the whole block to every
-    page — never fork one page's copy. This is a rule with history: two parallel builds
-    each grew their own sprite, one redrawn in a solid family, and the drift was invisible
-    until the files were diffed. The stroke attributes live on an inner <code>&lt;g&gt;</code>,
-    never on the <code>&lt;symbol&gt;</code> — <code>base.css</code> carries a global
-    <code>svg { fill: currentColor }</code> and a document rule beats a presentation
-    attribute on the cloned symbol, so <code>fill="none"</code> on the symbol makes every
-    icon fill solid.
-  </p>
-
-  <p class="gal-eyebrow">Navigation — the six destinations</p>
-  <div class="icon-grid">
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-habits"></use></svg><code>i-habits</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-progress"></use></svg><code>i-progress</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-community"></use></svg><code>i-community</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-explore"></use></svg><code>i-explore</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-library"></use></svg><code>i-library</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-person"></use></svg><code>i-person</code></div>
-  </div>
-
-  <p class="gal-eyebrow" style="margin-block-start:var(--space-24)">Actions</p>
-  <div class="icon-grid">
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-plus"></use></svg><code>i-plus</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-close"></use></svg><code>i-close</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-check"></use></svg><code>i-check</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-tick"></use></svg><code>i-tick</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-search"></use></svg><code>i-search</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-send"></use></svg><code>i-send</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-invite"></use></svg><code>i-invite</code></div>
-  </div>
-
-  <p class="gal-eyebrow" style="margin-block-start:var(--space-24)">Direction — one drawing, several names, so two screens can never diverge</p>
-  <div class="icon-grid">
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-arrow"></use></svg><code>i-arrow</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-chevron"></use></svg><code>i-chevron</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-chev-right"></use></svg><code>i-chev-right</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-chev-left"></use></svg><code>i-chev-left</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-back"></use></svg><code>i-back</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-arrow-back"></use></svg><code>i-arrow-back</code></div>
-  </div>
-  <p class="gal-note t-body-sm" style="margin-block-start:var(--space-12)">
-    <code>i-tick</code>/<code>i-check</code>, <code>i-back</code>/<code>i-arrow</code> and
-    <code>i-chevron</code>/<code>i-chev-right</code> are deliberate aliases carrying
-    identical geometry. <code>i-arrow-back</code> is a genuine left arrow and is
-    <strong>not</strong> an alias — <code>.page-back</code> used to rotate
-    <code>i-arrow</code> 180°, which is why <code>auth.html</code>'s own back button once
-    carried an inline <code>rotate: none</code> to undo it.
-  </p>
-
-  <p class="gal-eyebrow" style="margin-block-start:var(--space-24)">Objects</p>
-  <div class="icon-grid">
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-flame"></use></svg><code>i-flame</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-calendar"></use></svg><code>i-calendar</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-clock"></use></svg><code>i-clock</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-bell"></use></svg><code>i-bell</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-bulb"></use></svg><code>i-bulb</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-goal"></use></svg><code>i-goal</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-target"></use></svg><code>i-target</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-info"></use></svg><code>i-info</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-lock"></use></svg><code>i-lock</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-key"></use></svg><code>i-key</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-eye"></use></svg><code>i-eye</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-archive"></use></svg><code>i-archive</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-shield"></use></svg><code>i-shield</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-leaf"></use></svg><code>i-leaf</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-accessibility"></use></svg><code>i-accessibility</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-contrast"></use></svg><code>i-contrast</code></div>
-  </div>
-  <p class="gal-note t-body-sm" style="margin-block-start:var(--space-12)">
-    <code>i-contrast</code> carries one filled half-disc inside an outlined disc because
-    the fill <em>is</em> the meaning. It stays in the family: same 24 grid, same outer
-    stroke, and it is not one of the three solid exceptions below.
-  </p>
-
-  <p class="gal-eyebrow" style="margin-block-start:var(--space-24)">Library media types</p>
-  <div class="icon-grid">
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-doc"></use></svg><code>i-doc</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-play"></use></svg><code>i-play</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-worksheet"></use></svg><code>i-worksheet</code></div>
-  </div>
-
-  <p class="gal-eyebrow" style="margin-block-start:var(--space-24)">The three deliberately solid symbols — nothing else may be added solid</p>
-  <div class="icon-grid">
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-rosette"></use></svg><code>i-rosette</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-google"></use></svg><code>i-google</code></div>
-    <div class="icon-cell"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-apple"></use></svg><code>i-apple</code></div>
-  </div>
-  <p class="gal-note t-body-sm" style="margin-block-start:var(--space-12)">
-    <code>i-rosette</code> is the gild seal's <strong>emboss, not an icon</strong> —
-    <code>.seal</code> and <code>.seal--solid</code> colour it, and it never appears as a
-    bare glyph in chrome. <code>i-google</code> and <code>i-apple</code> are
-    <strong>third-party wordmarks</strong>: not ours to redraw as outlines, and
-    unrecognisable if we do. They are used only by <code>auth.html</code>'s social
-    buttons, which the shipping app ships with <code>text: ''</code> and therefore no
-    accessible name at all.
-  </p>
-</section>
-
-<!-- =========================================================================
-     7. ILLUSTRATION
-     ====================================================================== -->
-<section class="gal-section" id="illustration" aria-labelledby="h-illus">
-  <div class="section-head"><h2 id="h-illus" class="t-h2">7 · Illustration</h2></div>
-  <p class="gal-note t-body">
-    <strong>The two-colour rule: <code>brand-300</code> shapes with
-    <code>brand-700</code> linework, plus at most one accent element in sage or gold. If
-    an illustration cannot be drawn in two colours, it does not belong.</strong>
-    Vocabulary is abstract-botanical and geometric — leaves, stems, threads, stones,
-    craft objects. Explicitly not: 3D renders, gradient blobs, stock characters,
-    Corporate-Memphis people.
-  </p>
-  <p class="gal-note t-body">
-    The rule is enforced in CSS rather than retyped as inline fills on every path, which
-    is why every drawing below re-tones itself in Nightfall for free, with no second
-    artwork and no dark-mode SVG — <strong>switch the theme control and watch</strong>.
-    That matters because <code>--c-illus-line</code> has to <em>invert</em> in dark: in
-    Nightfall <code>brand-700</code> becomes the hero blue, so a stem drawn in it would
-    vanish into the canvas. There used to be a second way to draw one
-    (<code>.empty-state__art</code>, with the colours hard-coded inline); it could not
-    re-tone, and it is gone. <code>.illus</code> is the only way.
-  </p>
-
-  <div class="gal-grid">
-    <div class="spec">
-      <div class="gal-well" style="display:grid;place-items:center">
-        <svg class="illus" viewBox="0 0 120 120" role="img" aria-label="A stem with two leaves and a bud, resting on a stone">
-          <ellipse class="illus__ground" cx="60" cy="99" rx="34" ry="9"/>
-          <path class="illus__line" d="M60 97V42"/>
-          <path class="illus__shape" d="M60 70c-16 0-26-9-27-23 15-2 27 6 27 23z"/>
-          <g class="illus__drift"><path class="illus__shape" d="M60 57c14-1 23-9 24-22-14-1-24 6-24 22z"/><circle class="illus__accent illus__accent--gold" cx="60" cy="38" r="5.5"/></g>
-        </svg>
-      </div>
-      <p class="spec__label">Home · day complete. The one accent is <b>.illus__accent--gold</b>, because this is the reward state. Only the upper leaf and bud sit inside <b>.illus__drift</b> — the stone stays planted.</p>
-    </div>
-    <div class="spec">
-      <div class="gal-well" style="display:grid;place-items:center">
-        <svg class="illus" viewBox="0 0 120 120" role="img" aria-label="A bare stem in a stone pot, with one sage leaf just starting">
-          <ellipse class="illus__ground" cx="60" cy="103" rx="30" ry="8"/>
-          <path class="illus__shape" d="M40 74h40l-5 26H45l-5-26z"/>
-          <path class="illus__line" d="M36 74h48"/><path class="illus__line" d="M60 74V38"/>
-          <g class="illus__drift"><path class="illus__accent" d="M60 50c12-1 20-8 21-19-12-1-21 5-21 19z"/></g>
-        </svg>
-      </div>
-      <p class="spec__label">Home · no habits. Sage accent, because nothing is earned yet — gold belongs to the reward states.</p>
-    </div>
-    <div class="spec">
-      <div class="gal-well" style="display:grid;place-items:center">
-        <svg class="illus" viewBox="0 0 120 120" role="img" aria-label="A blank ruled ledger page with a single leaf marking it">
-          <ellipse class="illus__ground" cx="60" cy="104" rx="32" ry="7"/>
-          <path class="illus__shape" d="M30 20h60v76H30z"/>
-          <path class="illus__line" d="M40 40h40M40 54h40M40 68h26"/>
-          <g class="illus__drift"><path class="illus__accent" d="M86 34c11-2 17-9 18-20-11 0-19 7-18 20z"/></g>
-        </svg>
-      </div>
-      <p class="spec__label">Progress · no history yet.</p>
-    </div>
-    <div class="spec">
-      <div class="gal-well" style="display:grid;place-items:center">
-        <svg class="illus" viewBox="0 0 120 120" role="img" aria-label="Three stones stacked, with one sage leaf on top">
-          <ellipse class="illus__ground" cx="60" cy="102" rx="30" ry="7"/>
-          <path class="illus__shape" d="M32 84h56a6 6 0 0 1 0 12H32a6 6 0 0 1 0-12z"/>
-          <path class="illus__shape" d="M40 66h40a6 6 0 0 1 0 12H40a6 6 0 0 1 0-12z"/>
-          <path class="illus__shape" d="M48 48h24a6 6 0 0 1 0 12H48a6 6 0 0 1 0-12z"/>
-          <g class="illus__drift"><path class="illus__accent" d="M60 44c11-2 18-9 19-20-12-1-20 6-19 20z"/></g>
-        </svg>
-      </div>
-      <p class="spec__label">Community · no groups.</p>
-    </div>
-    <div class="spec">
-      <div class="gal-well" style="display:grid;place-items:center">
-        <svg class="illus" viewBox="0 0 120 120" role="img" aria-label="A folded paper note resting on a stone">
-          <ellipse class="illus__ground" cx="60" cy="98" rx="32" ry="8"/>
-          <g class="illus__drift"><path class="illus__shape" d="M34 44h52v44H34z"/><path class="illus__line" d="M34 44l26 20 26-20"/><circle class="illus__accent" cx="86" cy="42" r="6"/></g>
-        </svg>
-      </div>
-      <p class="spec__label">Community · no messages.</p>
-    </div>
-    <div class="spec">
-      <div class="gal-well" style="display:grid;place-items:center">
-        <svg class="illus" viewBox="0 0 120 120" role="img" aria-label="An empty shelf">
-          <ellipse class="illus__ground" cx="60" cy="98" rx="34" ry="9"/>
-          <path class="illus__line" d="M30 54h60"/>
-          <rect class="illus__shape" x="36" y="30" width="12" height="22" rx="2"/>
-          <rect class="illus__accent" x="52" y="36" width="10" height="16" rx="2"/>
-        </svg>
-      </div>
-      <p class="spec__label">Library · empty collection. No drift here at all — a shelf does not sway.</p>
-    </div>
-    <div class="spec">
-      <div class="gal-well" style="display:grid;place-items:center">
-        <svg class="illus" viewBox="0 0 120 120" role="img" aria-label="A closed door drawn in two colours">
-          <ellipse class="illus__ground" cx="60" cy="100" rx="32" ry="8"/>
-          <rect class="illus__shape" x="34" y="26" width="52" height="72" rx="6"/>
-          <circle class="illus__accent" cx="74" cy="64" r="4"/>
-        </svg>
-      </div>
-      <p class="spec__label">Profile · no blocked users.</p>
-    </div>
-    <div class="spec">
-      <div class="gal-well" style="display:grid;place-items:center">
-        <svg class="illus" viewBox="0 0 120 120" role="img" aria-label="An empty stem waiting for a leaf">
-          <ellipse class="illus__ground" cx="60" cy="98" rx="34" ry="9"/>
-          <path class="illus__line" d="M60 96V40"/>
-          <circle class="illus__line" cx="60" cy="36" r="6"/>
-        </svg>
-      </div>
-      <p class="spec__label">Explore · no results. Linework only — an illustration is allowed to spend fewer than its two colours, never more.</p>
-    </div>
-  </div>
-
-  <div class="card card--roomy" style="margin-block-start:var(--space-24)">
-    <p class="gal-eyebrow">The parts</p>
-    <p class="gal-rule"><code>.illus</code> — the root. 132px, <code>viewBox="0 0 120 120"</code>, <code>role="img"</code> plus an <code>aria-label</code>.</p>
-    <p class="gal-rule"><code>.illus__shape</code> — brand-300 fill with linework stroke. The object.</p>
-    <p class="gal-rule"><code>.illus__line</code> — linework only, no fill. Stems, threads, rules.</p>
-    <p class="gal-rule"><code>.illus__ground</code> — the stone it rests on. Flat brand-300 at 55%, no stroke; the one place a wash is allowed without linework, because it reads as a shadow rather than an object.</p>
-    <p class="gal-rule"><code>.illus__accent</code> / <code>--gold</code> — <strong>one per illustration, maximum.</strong> Filled, never a hairline.</p>
-    <p class="gal-rule"><code>.illus__drift</code> — 4s, one axis, ±4px, alternate, infinite. <strong>The only looping animation in the product</strong>, and deliberately under the WCAG 2.2.2 five-second threshold. Wrap only the growing thing; under reduced motion it stops <em>dead</em> rather than fast, or the leaf parks 4px off its drawn position.</p>
-    <p class="t-body-sm t-muted" style="margin-block-start:var(--space-16)">
-      Auth's poster and the onboarding slide art are deliberately <strong>not</strong>
-      <code>.illus</code>: they sit on the deep-blue surface, so they are drawn in
-      <code>--c-hero-ink</code> / <code>--c-hero-ink-muted</code>, where
-      <code>.illus__shape</code>'s brand-300 would be near-invisible. They still consume
-      semantic tokens and still re-tone. Do not "fix" them onto these classes.
-    </p>
-  </div>
-</section>
-
-<!-- =========================================================================
-     8. MOTION — the six named moments, live, each against its reduced variant
-     ====================================================================== -->
-<section class="gal-section" id="motion" aria-labelledby="h-motion">
-  <div class="section-head"><h2 id="h-motion" class="t-h2">8 · Motion</h2></div>
-
-  <p class="gal-note t-body">
-    Six named moments. Every one of them is replayable below, and every one is shown
-    beside its reduced-motion variant, because <strong>"reduced" means reduced, not
-    none</strong>: what goes is transform-based motion — scale, translate, spin, the
-    actual vestibular triggers — and what stays is colour and opacity, which WCAG 2.3.3
-    explicitly says are not motion animation. Durations shorten to
-    <code>--dur-micro</code>; they are never merely sped up, because movement at 20×
-    speed is still movement.
-  </p>
-  <p class="gal-note t-body">
-    <strong>How the comparison works.</strong> The reduced path is a root-level state —
-    <code>[data-motion="reduce"]</code> on <code>&lt;html&gt;</code>, which is what
-    <code>HC.reducedMotion()</code> and every CSS branch read. It cannot be scoped to
-    half a page without reimplementing the architecture, so each replay flips that
-    attribute for the length of the run and restores it afterwards, and
-    <strong>Replay both</strong> plays the two panes in sequence. Nothing below is a
-    mock-up of a reduced variant: both panes run the same real code down the two real
-    branches.
-  </p>
-  <p class="gal-note t-body-sm">
-    One honest consequence: if your OS already asks for reduced motion, the
-    <em>full-motion</em> pane also plays reduced. The
-    <code>@media (prefers-reduced-motion: reduce)</code> block in <code>base.css</code>
-    carries <code>!important</code> and the page cannot — and must not — defeat it. Use
-    the control bar's Motion toggle to force the reduced path the other way.
-  </p>
-
-  <!-- ── M1 ────────────────────────────────────────────────────────────── -->
-  <article class="card card--roomy gal-moment" data-moment="checkin" aria-labelledby="m-checkin">
-    <h3 class="t-h3" id="m-checkin">The check-in press <span class="t-body-sm t-muted">· M1 · direction §2.1 · the centrepiece</span></h3>
-    <p class="gal-moment__spec">
-      hold <b>--dur-hold 450ms</b>, fill <b>--ease-linear</b> (the sanctioned exception: the fill IS a progress bar) ·
-      card 1.0→0.97 over <b>--dur-press 120ms --ease-standard</b> ·
-      colour <b>brand-500 → sage-600</b> across the sweep ·
-      early release runs backward at <b>2×</b> on <b>--ease-spring-snap</b> ·
-      commit: checkmark <b>--dur-checkmark 200ms --ease-enter</b>, release <b>--dur-spring-bounce 350ms --ease-spring-bounce</b> (~8% overshoot, and the ring gets a real <b>--overshoot 1.08</b> pop), 6–8 flecks fly 24px over <b>--dur-particles 400ms --ease-exit</b>, tone crossfade <b>--dur-card-tone 240ms</b>, echo <b>--dur-echo-in 240ms</b> + 8px rise, Undo dwells <b>--dur-echo-dwell 5000ms</b>. Total ≤ 700ms, never blocking.
-    </p>
-    <div class="gal-ab">
-      <div class="gal-pane" data-pane="full">
-        <div class="gal-pane__head"><span class="gal-eyebrow">Full motion</span></div>
-        <article class="card habit-card" data-habit="preview" data-celebration="Fist pump!">
-          <div class="habit-card__body"><h4 class="habit-card__title">Meditate for two minutes</h4><p class="habit-card__meta">After I pour my morning coffee</p><p class="habit-card__echo" data-echo hidden></p></div>
-          <button class="btn btn--ghost btn--sm habit-card__undo" type="button" data-undo hidden>Undo</button>
-          <button class="ring" type="button" data-checkin aria-pressed="false" aria-label="Check in: Meditate for two minutes. Press and hold to complete.">
-            <svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/><path class="ring__check" d="M14.6 22.4l5.1 5.1 9.7-10.6" pathLength="100"/></svg>
-            <span class="ring__hint" data-ring-hint hidden>Hold to check in</span>
-          </button>
-        </article>
-      </div>
-      <div class="gal-pane" data-pane="reduce">
-        <div class="gal-pane__head"><span class="gal-eyebrow">Reduced motion</span></div>
-        <article class="card habit-card" data-habit="preview" data-celebration="Fist pump!">
-          <div class="habit-card__body"><h4 class="habit-card__title">Meditate for two minutes</h4><p class="habit-card__meta">After I pour my morning coffee</p><p class="habit-card__echo" data-echo hidden></p></div>
-          <button class="btn btn--ghost btn--sm habit-card__undo" type="button" data-undo hidden>Undo</button>
-          <button class="ring" type="button" data-checkin aria-pressed="false" aria-label="Check in, reduced-motion variant: Meditate for two minutes. Press and hold to complete.">
-            <svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/><path class="ring__check" d="M14.6 22.4l5.1 5.1 9.7-10.6" pathLength="100"/></svg>
-            <span class="ring__hint" data-ring-hint hidden>Hold to check in</span>
-          </button>
-        </article>
-      </div>
-    </div>
-    <div class="gal-actions">
-      <button class="btn btn--secondary btn--sm" type="button" data-play="full">Replay · full</button>
-      <button class="btn btn--secondary btn--sm" type="button" data-play="reduce">Replay · reduced</button>
-      <button class="btn btn--primary btn--sm" type="button" data-play="both">Replay both</button>
-    </div>
-    <p class="t-body-sm t-muted" style="margin-block-start:var(--space-12)">
-      Reduced keeps the ring fill — it is the only feedback that a hold is in progress,
-      and a stroke-length change is not a vestibular trigger. What goes: the card scale,
-      the spring, the flecks. The colour collapses to 120ms and the checkmark appears
-      rather than draws. Both panes are real: press and hold either one yourself, or let
-      go early and watch the fill run backwards.
-    </p>
-  </article>
-
-  <!-- ── M2 ────────────────────────────────────────────────────────────── -->
-  <article class="card card--roomy gal-moment" data-moment="streak" aria-labelledby="m-streak">
-    <h3 class="t-h3" id="m-streak">Streak increment <span class="t-body-sm t-muted">· M2 · the number going up</span></h3>
-    <p class="gal-moment__spec">
-      numeral and flame chip flush gold once over <b>900ms --ease-standard</b> · colour only, no spatial spring — a spring on colour produces a visible tint wobble, which is why the effects spring is critically damped at 1.0 ·
-      on paper the flush is <b>gold-700</b>; on the hero, where <b>gold-500</b> is 4.98:1, it is the brighter <b>gold-500</b>.
-    </p>
-    <div class="gal-ab">
-      <div class="gal-pane" data-pane="full">
-        <div class="gal-pane__head"><span class="gal-eyebrow">Full motion</span></div>
-        <div class="card"><div class="stat-tile"><span class="stat-tile__value" data-streak-numeral>112</span><span class="stat-tile__label">day streak</span></div>
-          <span class="chip chip--streak" style="margin-block-start:var(--space-12)"><svg class="icon" aria-hidden="true"><use href="#i-flame"></use></svg><span>112 days</span></span></div>
-      </div>
-      <div class="gal-pane" data-pane="reduce">
-        <div class="gal-pane__head"><span class="gal-eyebrow">Reduced motion</span></div>
-        <div class="card"><div class="stat-tile"><span class="stat-tile__value" data-streak-numeral>112</span><span class="stat-tile__label">day streak</span></div>
-          <span class="chip chip--streak" style="margin-block-start:var(--space-12)"><svg class="icon" aria-hidden="true"><use href="#i-flame"></use></svg><span>112 days</span></span></div>
-      </div>
-    </div>
-    <div class="gal-actions">
-      <button class="btn btn--secondary btn--sm" type="button" data-play="full">Replay · full</button>
-      <button class="btn btn--secondary btn--sm" type="button" data-play="reduce">Replay · reduced</button>
-      <button class="btn btn--primary btn--sm" type="button" data-play="both">Replay both</button>
-    </div>
-    <p class="t-body-sm t-muted" style="margin-block-start:var(--space-12)">
-      <strong>The two panes are identical, and that is the finding.</strong> This moment
-      needs no reduced-motion branch at all, because nothing about it moves — it is a
-      colour change, which WCAG 2.3.3 puts outside motion animation entirely. It is also
-      what every milestone after the first in a session falls back to.
-    </p>
-  </article>
-
-  <!-- ── M3 ────────────────────────────────────────────────────────────── -->
-  <article class="card card--roomy gal-moment" data-moment="milestone" aria-labelledby="m-milestone">
-    <h3 class="t-h3" id="m-milestone">Milestone <span class="t-body-sm t-muted">· M3 · direction §2.4 · days 7 / 30 / 100 / 365</span></h3>
-    <p class="gal-moment__spec">
-      scrim to <b>40% ink-strong</b> (the <b>--c-scrim</b> token IS 40%) over <b>--dur-moderate 340ms</b> ·
-      card enters on <b>--ease-spring-gentle</b> at its paired <b>--dur-spring-gentle 650ms</b> ·
-      <b>34 confetti pieces</b> (cap 40) released along the card's <b>top edge</b> in a 60° cone, and a single sweep timer guarantees the DOM is clean at <b>1100ms</b> rather than trusting the animations ·
-      numeral counts up in the display serif with <b>WONK 1</b> — the one place WONK leaves 0 ·
-      auto-dismiss <b>4000ms</b>, or tap, or Escape · focus lands on the CTA and returns to the opener.
-    </p>
-    <div class="gal-well" style="display:grid;place-items:center;padding-block:var(--space-24)">
-      <div class="modal modal--milestone" style="animation:none">
-        <span class="seal seal--lg" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-rosette"></use></svg></span>
-        <p class="modal__numeral">100</p>
-        <h4 class="t-h3">day streak</h4>
-        <p class="t-body t-muted" style="margin-block:var(--space-8) var(--space-16)">You showed up for 100 days. This one carries a seal from here on.</p>
-        <button class="btn btn--gold" type="button">Nice</button>
-      </div>
-    </div>
-    <p class="t-body-sm t-muted" style="margin-block-start:var(--space-12)">
-      A static specimen, with its entry animation stopped so the card can be read. The
-      moment itself takes the whole screen, so it cannot sit in two panes — play it
-      instead, once each way:
-    </p>
-    <div class="gal-actions">
-      <button class="btn btn--secondary btn--sm" type="button" data-play="full">Play · full motion</button>
-      <button class="btn btn--secondary btn--sm" type="button" data-play="reduce">Play · reduced motion</button>
-      <button class="btn btn--ghost btn--sm" type="button" data-demo="milestone" data-days="100">Fire it as the product would</button>
-      <button class="btn btn--ghost btn--sm" type="button" data-demo="milestone-replay" data-days="100">Clear the once-per-session latch</button>
-    </div>
-    <p class="t-body-sm t-muted" style="margin-block-start:var(--space-12)">
-      Reduced motion creates <strong>no confetti at all</strong> — not created and hidden
-      — the card crossfades on <code>hc-fade-in</code> instead of springing, and the
-      numeral renders at its final value. That CSS override is load-bearing, not
-      belt-and-braces: the entry moves with the independent <code>scale</code> and
-      <code>translate</code> properties, which the global <code>transform: none</code>
-      block does not touch. Anything in this system animating with <code>scale</code> or
-      <code>translate</code> needs the same treatment.
-    </p>
-    <p class="t-body-sm t-muted" style="margin-block-start:var(--space-8)">
-      <strong>The moment fires once per session; the mark is permanent.</strong> Press
-      "Fire it as the product would" twice: the first press is the full celebration, every
-      press after it is the quiet streak-increment treatment above. Gold owning the screen
-      for 1.6 seconds on one day and nothing on the others is the entire reward economy.
-    </p>
-  </article>
-
-  <!-- ── M4 ────────────────────────────────────────────────────────────── -->
-  <article class="card card--roomy gal-moment" data-moment="page" aria-labelledby="m-page">
-    <h3 class="t-h3" id="m-page">Page transition <span class="t-body-sm t-muted">· M4 · bottom-nav tab switch</span></h3>
-    <p class="gal-moment__spec">
-      peers, not a stack, so <b>fade-through with no X translation</b> ·
-      outgoing fades to 0 over <b>100ms --ease-exit</b> ·
-      incoming fades 0→1 with <b>scale 0.97 → 1</b> over <b>220ms --ease-enter</b>, starting at <b>100ms</b> · total <b>320ms</b>, inside <b>--dur-moderate 340ms</b> ·
-      desktop ≥840: the rail never animates, content pane fade-through only, 180ms ·
-      a stack push under 600 is shared-axis X instead: out −12% + fade 200ms, in +12% → 0 over 300ms at +60ms, total 360ms.
-    </p>
-    <div class="gal-ab">
-      <div class="gal-pane" data-pane="full">
-        <div class="gal-pane__head"><span class="gal-eyebrow">Full motion</span></div>
-        <div data-screens>
-          <div class="card gal-screen" data-screen="a"><p class="lesson-tile__kicker">Habits</p><p class="t-h3" style="margin-block-start:var(--space-4)">Today</p><p class="t-body-sm t-muted">4 habits waiting</p></div>
-          <div class="card gal-screen" data-screen="b" hidden><p class="lesson-tile__kicker">Progress</p><p class="t-h3" style="margin-block-start:var(--space-4)">The ledger</p><p class="t-body-sm t-muted">3 weeks at 4+ days</p></div>
-        </div>
-      </div>
-      <div class="gal-pane" data-pane="reduce">
-        <div class="gal-pane__head"><span class="gal-eyebrow">Reduced motion</span></div>
-        <div data-screens>
-          <div class="card gal-screen" data-screen="a"><p class="lesson-tile__kicker">Habits</p><p class="t-h3" style="margin-block-start:var(--space-4)">Today</p><p class="t-body-sm t-muted">4 habits waiting</p></div>
-          <div class="card gal-screen" data-screen="b" hidden><p class="lesson-tile__kicker">Progress</p><p class="t-h3" style="margin-block-start:var(--space-4)">The ledger</p><p class="t-body-sm t-muted">3 weeks at 4+ days</p></div>
-        </div>
-      </div>
-    </div>
-    <div class="gal-actions">
-      <button class="btn btn--secondary btn--sm" type="button" data-play="full">Replay · full</button>
-      <button class="btn btn--secondary btn--sm" type="button" data-play="reduce">Replay · reduced</button>
-      <button class="btn btn--primary btn--sm" type="button" data-play="both">Replay both</button>
-    </div>
-    <p class="t-body-sm t-muted" style="margin-block-start:var(--space-12)">
-      Reduced motion makes every page transition a <strong>120ms opacity
-      crossfade</strong> — no scale, no travel. <strong>This is the one moment on the
-      page with no product implementation:</strong> the prototype is a set of real pages
-      with no router, so what you are watching is the specification rendered, in the
-      gallery's own stylesheet, using the system's tokens. It replaces the shipping app's
-      <code>PageTransitionType.fade</code> at <code>duration: 0ms</code> on every route.
-    </p>
-  </article>
-
-  <!-- ── M5 ────────────────────────────────────────────────────────────── -->
-  <article class="card card--roomy gal-moment" data-moment="list" aria-labelledby="m-list">
-    <h3 class="t-h3" id="m-list">List load <span class="t-body-sm t-muted">· M5 · direction §4.5 · no shimmer</span></h3>
-    <p class="gal-moment__spec">
-      under <b>400ms</b> show <b>NOTHING</b> — not a skeleton, not the content ·
-      beyond 400ms, static blocks in <b>canvas-sunken</b> at the container's own radii, one <b>0.7 → 1.0</b> pulse, <b>1200ms ease-in-out alternate</b>, in phase · no shimmer sweep, ever ·
-      then each item enters <b>opacity 0→1 + 12px rise over 225ms --ease-enter</b>, <b>40ms stagger</b>, first item at 0ms, hard cap 12 items on a <b>500ms total cascade budget</b> · first mount only, never on refresh, never on scroll.
-    </p>
-    <div class="gal-ab">
-      <div class="gal-pane" data-pane="full">
-        <div class="gal-pane__head"><span class="gal-eyebrow">Full motion</span></div>
-        <div data-list>
-          <div class="skeleton-list" data-list-skel aria-hidden="true" hidden>
-            <div class="skeleton-card"><div class="skeleton-card__body"><div class="skeleton skeleton--line" style="inline-size:62%"></div><div class="skeleton skeleton--line-sm" style="inline-size:84%"></div></div><div class="skeleton skeleton--ring"></div></div>
-            <div class="skeleton-card"><div class="skeleton-card__body"><div class="skeleton skeleton--line" style="inline-size:54%"></div><div class="skeleton skeleton--line-sm" style="inline-size:76%"></div></div><div class="skeleton skeleton--ring"></div></div>
-            <div class="skeleton-card"><div class="skeleton-card__body"><div class="skeleton skeleton--line" style="inline-size:68%"></div><div class="skeleton skeleton--line-sm" style="inline-size:58%"></div></div><div class="skeleton skeleton--ring"></div></div>
-          </div>
-          <ul class="habit-list" data-list-real>
-            <li class="gal-item"><article class="card habit-card"><div class="habit-card__body"><h4 class="habit-card__title">Meditate for two minutes</h4><p class="habit-card__meta">After my morning coffee</p></div><span class="ring" role="img" aria-label="Not checked in"><svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/></svg></span></article></li>
-            <li class="gal-item"><article class="card habit-card"><div class="habit-card__body"><h4 class="habit-card__title">Read one page</h4><p class="habit-card__meta">After I get into bed</p></div><span class="ring" role="img" aria-label="Not checked in"><svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/></svg></span></article></li>
-            <li class="gal-item"><article class="card habit-card"><div class="habit-card__body"><h4 class="habit-card__title">Walk around the block</h4><p class="habit-card__meta">After I close my laptop</p></div><span class="ring" role="img" aria-label="Not checked in"><svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/></svg></span></article></li>
-          </ul>
-        </div>
-      </div>
-      <div class="gal-pane" data-pane="reduce">
-        <div class="gal-pane__head"><span class="gal-eyebrow">Reduced motion</span></div>
-        <div data-list>
-          <div class="skeleton-list" data-list-skel aria-hidden="true" hidden>
-            <div class="skeleton-card"><div class="skeleton-card__body"><div class="skeleton skeleton--line" style="inline-size:62%"></div><div class="skeleton skeleton--line-sm" style="inline-size:84%"></div></div><div class="skeleton skeleton--ring"></div></div>
-            <div class="skeleton-card"><div class="skeleton-card__body"><div class="skeleton skeleton--line" style="inline-size:54%"></div><div class="skeleton skeleton--line-sm" style="inline-size:76%"></div></div><div class="skeleton skeleton--ring"></div></div>
-            <div class="skeleton-card"><div class="skeleton-card__body"><div class="skeleton skeleton--line" style="inline-size:68%"></div><div class="skeleton skeleton--line-sm" style="inline-size:58%"></div></div><div class="skeleton skeleton--ring"></div></div>
-          </div>
-          <ul class="habit-list" data-list-real>
-            <li class="gal-item"><article class="card habit-card"><div class="habit-card__body"><h4 class="habit-card__title">Meditate for two minutes</h4><p class="habit-card__meta">After my morning coffee</p></div><span class="ring" role="img" aria-label="Not checked in"><svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/></svg></span></article></li>
-            <li class="gal-item"><article class="card habit-card"><div class="habit-card__body"><h4 class="habit-card__title">Read one page</h4><p class="habit-card__meta">After I get into bed</p></div><span class="ring" role="img" aria-label="Not checked in"><svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/></svg></span></article></li>
-            <li class="gal-item"><article class="card habit-card"><div class="habit-card__body"><h4 class="habit-card__title">Walk around the block</h4><p class="habit-card__meta">After I close my laptop</p></div><span class="ring" role="img" aria-label="Not checked in"><svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false"><circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/><circle class="ring__fill" cx="22" cy="22" r="16" pathLength="100"/></svg></span></article></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-    <div class="gal-actions">
-      <button class="btn btn--secondary btn--sm" type="button" data-play="full">Replay · full</button>
-      <button class="btn btn--secondary btn--sm" type="button" data-play="reduce">Replay · reduced</button>
-      <button class="btn btn--primary btn--sm" type="button" data-play="both">Replay both</button>
-      <button class="btn btn--ghost btn--sm" type="button" data-play="fast">Fast load, 250ms — nothing appears</button>
-    </div>
-    <p class="t-body-sm t-muted" style="margin-block-start:var(--space-12)">
-      Reduced motion holds the skeleton fully static at opacity 1 — off, not slowed — and
-      the items fade in <strong>together</strong> over 160ms with no translate and no
-      stagger. Press "Fast load" and watch the rule that matters most: nothing is shown at
-      all, because a skeleton that flashes for 200ms is worse than a blank box. The
-      skeleton card is the same 72px pitch, 16px padding and radius-16 as the real card,
-      so nothing shifts when the content lands.
-    </p>
-  </article>
-
-  <!-- ── M6 ────────────────────────────────────────────────────────────── -->
-  <article class="card card--roomy gal-moment" data-moment="empty" aria-labelledby="m-empty">
-    <h3 class="t-h3" id="m-empty">Empty state <span class="t-body-sm t-muted">· M6 · the one permitted loop</span></h3>
-    <p class="gal-moment__spec">
-      the leaf drifts <b>--dur-drift 4000ms</b>, one axis, <b>±4px</b>, <b>ease-in-out alternate infinite</b> — <b>the only looping animation in the product</b>, and under the WCAG 2.2.2 five-second threshold ·
-      heading, body and CTA fade and rise <b>8px over --dur-echo-in 240ms --ease-enter</b>, <b>60ms stagger</b> ·
-      the CTA <b>never</b> pulses or breathes: hover and press states only.
-    </p>
-    <div class="gal-ab">
-      <div class="gal-pane" data-pane="full">
-        <div class="gal-pane__head"><span class="gal-eyebrow">Full motion</span></div>
-        <div class="card">
-          <div class="empty-state">
-            <svg class="illus" viewBox="0 0 120 120" role="img" aria-label="A bare stem in a stone pot, with one sage leaf just starting">
-              <ellipse class="illus__ground" cx="60" cy="103" rx="30" ry="8"/>
-              <path class="illus__shape" d="M40 74h40l-5 26H45l-5-26z"/>
-              <path class="illus__line" d="M36 74h48"/><path class="illus__line" d="M60 74V38"/>
-              <g class="illus__drift"><path class="illus__accent" d="M60 50c12-1 20-8 21-19-12-1-21 5-21 19z"/></g>
-            </svg>
-            <p class="empty-state__title" data-rise>No active habits</p>
-            <p class="empty-state__body t-body" data-rise>Keep it small — you can always do more.</p>
-            <a class="btn btn--primary" href="create-habit.html" data-rise>Craft your first habit</a>
-          </div>
-        </div>
-      </div>
-      <div class="gal-pane" data-pane="reduce">
-        <div class="gal-pane__head"><span class="gal-eyebrow">Reduced motion</span></div>
-        <div class="card">
-          <div class="empty-state">
-            <svg class="illus" viewBox="0 0 120 120" role="img" aria-label="A bare stem in a stone pot, with one sage leaf just starting, shown without the drift">
-              <ellipse class="illus__ground" cx="60" cy="103" rx="30" ry="8"/>
-              <path class="illus__shape" d="M40 74h40l-5 26H45l-5-26z"/>
-              <path class="illus__line" d="M36 74h48"/><path class="illus__line" d="M60 74V38"/>
-              <g class="illus__drift"><path class="illus__accent" d="M60 50c12-1 20-8 21-19-12-1-21 5-21 19z"/></g>
-            </svg>
-            <p class="empty-state__title" data-rise>No active habits</p>
-            <p class="empty-state__body t-body" data-rise>Keep it small — you can always do more.</p>
-            <a class="btn btn--primary" href="create-habit.html" data-rise>Craft your first habit</a>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="gal-actions">
-      <button class="btn btn--secondary btn--sm" type="button" data-play="full">Replay · full</button>
-      <button class="btn btn--secondary btn--sm" type="button" data-play="reduce">Replay · reduced</button>
-      <button class="btn btn--primary btn--sm" type="button" data-play="both">Replay both</button>
-    </div>
-    <p class="t-body-sm t-muted" style="margin-block-start:var(--space-12)">
-      Under reduced motion the copy fades in together over 160ms with no rise, and the
-      drift stops <strong>dead</strong> — both branches of that kill live in
-      <code>components.css §P1</code> beside the animation, because the global block caps
-      duration and iteration rather than stopping it, and would leave the leaf parked 4px
-      off its drawn position. Watch the leaf freeze mid-page during a reduced replay: the
-      whole document is in the reduced state for those few seconds.
-    </p>
-  </article>
-</section>
-
-<!-- =========================================================================
-     9. THE VETO LIST — reproduced verbatim from docs/design-direction.md §6
-     ====================================================================== -->
-<section class="gal-section" id="veto" aria-labelledby="h-veto">
-  <div class="section-head"><h2 id="h-veto" class="t-h2">9 · The veto list</h2></div>
-  <p class="gal-note t-body">
-    Verbatim from <code>docs/design-direction.md</code> §6. It is not a style opinion; it
-    is the enforcement half of §1's two rules. <strong>If any of these appear, remove
-    them.</strong>
-  </p>
-  <div class="card card--roomy">
-    <ul class="t-body" style="padding-inline-start:1.2em;list-style:disc;display:grid;gap:var(--space-12)">
-      <li>Glassmorphism anywhere except (optionally) the floating mobile nav — tinted, single layer, solid fallback. No frosted cards, no glass modals.</li>
-      <li>Purple/violet anything; mesh or rainbow gradients; animated gradient backgrounds.</li>
-      <li>Neumorphism; inner-shadow "pressed plastic" controls.</li>
-      <li>Drop shadows on resting content (4.3).</li>
-      <li>Confetti on ordinary completions; any celebration that loops or repeats per session.</li>
-      <li>Scroll-triggered reveals, parallax, scroll-jacking.</li>
-      <li>Streak-guilt UI: broken-chain icons, red missed days, "Don't lose your streak!" copy. Streak language follows the brief's Smashing rule — repair, grace, and "you showed up for 42 days," never "you lost."</li>
-      <li>"AI sparkle" iconography, glow effects on light surfaces, emoji as interface elements.</li>
-      <li>Any new hex value not in §4. The palette is closed. Extensions happen in OKLCH, in the token file, or not at all.</li>
-    </ul>
-  </div>
-  <p class="gal-note t-body-sm" style="margin-block-start:var(--space-16)">
-    Three further laws that are easy to break by accident, and are checked the same way:
-    teal is retired from the UI entirely; linear easing is banned except on progress bars
-    (the check-in hold fill and the decay bar are the sanctioned exceptions); and
-    <strong>13px minimum text, no exceptions</strong> — including the scaffolding on this
-    page.
-  </p>
-</section>
-
-<!-- =========================================================================
-     10. SCREEN INDEX
-     ====================================================================== -->
-<section class="gal-section" id="screens" aria-labelledby="h-screens">
-  <div class="section-head"><h2 id="h-screens" class="t-h2">10 · Screens</h2></div>
-  <p class="gal-note t-body">
-    Ten screens, covering eleven of the shipping app's fourteen —
-    <code>auth.html</code> is three of them in one shell.
-    <code>free_trial_screen</code> is deliberately <strong>not</strong> built: it is
-    unreachable dead code and a ticket deletes it. Every screen is a real responsive page;
-    open one and resize the window. Add <code>?frame=1</code> to any URL to strip the
-    control bar.
-  </p>
-
-  <div class="screen-links">
-    <a href="home.html"><article class="card card--interactive" style="block-size:100%"><h3 class="t-h3">Home / Today</h3><p class="t-body-sm t-muted">The daily ritual. The reference screen — copy its shell, nav and sprite verbatim. Carries the check-in, the day arc, and all four gild tiers side by side.</p></article></a>
-    <a href="progress.html"><article class="card card--interactive" style="block-size:100%"><h3 class="t-h3">Progress</h3><p class="t-body-sm t-muted">The ledger. Calendar with the three redundant states, the restyled chart, per-habit dot strips, and streak repair.</p></article></a>
-    <a href="community.html"><article class="card card--interactive" style="block-size:100%"><h3 class="t-h3">Community</h3><p class="t-body-sm t-muted">Groups, threads and the check-in feed. Three real panes at 840+, which alone fixes chat on the web.</p></article></a>
-    <a href="create-habit.html"><article class="card card--interactive" style="block-size:100%"><h3 class="t-h3">Create Habit</h3><p class="t-body-sm t-muted">The workbench — the one screen where "Crafts" is literal. One Fogg question at a time, with a live preview card that assembles as you type.</p></article></a>
-    <a href="profile.html"><article class="card card--interactive" style="block-size:100%"><h3 class="t-h3">Profile</h3><p class="t-body-sm t-muted">The record. A shelf of earned marks first, plumbing last; two panes at 600+, no push navigation.</p></article></a>
-    <a href="explore.html"><article class="card card--interactive" style="block-size:100%"><h3 class="t-h3">Explore</h3><p class="t-body-sm t-muted">Habit ideas. A real destination with a rail slot — the shipping screen has no nav at all and is a dead end.</p></article></a>
-    <a href="library.html"><article class="card card--interactive" style="block-size:100%"><h3 class="t-h3">Library</h3><p class="t-body-sm t-muted">The knowledge layer: today's lesson on the hero, ordered lessons, earlier weeks as zero-JS <code>&lt;details&gt;</code>, and resources.</p></article></a>
-    <a href="library-detail.html"><article class="card card--interactive" style="block-size:100%"><h3 class="t-h3">Reading view</h3><p class="t-body-sm t-muted">The 600px column at 390, 768, 1280 <em>and</em> 1920. A wide window adds a contents list beside it, never a wider column. Ends on the "Make it a habit" bridge.</p></article></a>
-    <a href="onboarding.html"><article class="card card--interactive" style="block-size:100%"><h3 class="t-h3">Onboarding</h3><p class="t-body-sm t-muted">The welcome tour. Logged out, so no nav chrome at all. Visible Back / Next / Skip, jumpable dots and arrow keys — the shipping slides are swipe-only with an invisible page indicator.</p></article></a>
-    <a href="auth.html"><article class="card card--interactive" style="block-size:100%"><h3 class="t-h3">Auth</h3><p class="t-body-sm t-muted">Login, sign up and forgot password in one shell. Logged out, no nav chrome. <code>forgot_password</code> ships orphaned today, with nothing linking to it.</p></article></a>
-  </div>
-
-  <h3 class="t-h3 gal-sub">Mobile and desktop, side by side</h3>
-  <p class="gal-note t-body">
-    <strong>Desktop web must be a different layout, not a bigger phone.</strong> The
-    current app clamps the web experience to a 767px column, and that clamp is the
-    specific failure this redesign exists to kill — no centred phone strip with dead
-    margins at 1280. Both frames below are the same file.
-  </p>
-  <div class="frames">
-    <figure class="frame" style="--w:390;--h:800">
-      <div class="frame__viewport"><iframe src="home.html?frame=1" title="Home at 390 pixels wide" loading="lazy"></iframe></div>
-      <figcaption><b>390 × 800</b>Single column. The greeting block carries the hero weight, so there is no filled hero card; the arc sits beside the title; Explore and Library are reached in-page.</figcaption>
-    </figure>
-    <figure class="frame" style="--w:1280;--h:860">
-      <div class="frame__viewport"><iframe src="home.html?frame=1" title="Home at 1280 pixels wide" loading="lazy"></iframe></div>
-      <figcaption><b>1280 × 860</b>Permanent drawer, a three-column bento inside the 1184px content area, the arc moved onto the deep-blue hero, and a column of group check-ins that does not exist on mobile.</figcaption>
-    </figure>
-  </div>
-
-  <footer class="gal-section" style="margin-block-start:var(--space-24)">
-    <p class="t-body-sm t-muted">
-      HabitCrafts redesign prototype · UI and UX only. Fixture data is inline in the HTML;
-      there is no data layer, no fake API, no persistence, no form validation and no auth.
-      The loading state is a timer, the empty state is a toggle, and "one celebration per
-      session" is a single boolean. Zero external dependencies: no CDN, no webfont file, no
-      remote image, no build step — every file opens by double-click from
-      <code>file://</code>. Sources of truth, in order:
-      <code>docs/design-direction.md</code> → <code>docs/design-research-brief.md</code> →
-      <code>prototype/README-buildnotes.md</code> → this page.
-    </p>
-  </footer>
-</section>
-
-    </div>
-  </div>
-</main>
-
-<script src="js/prototype.js"></script>
-
-<!-- ===========================================================================
-     GALLERY-ONLY SCRIPT. Scaffolding for the reference page; not part of the
-     system and not loaded by any screen. Two jobs:
-
-       1. Paint every colour swatch from the LIVE computed token value and
-          measure its contrast with the WCAG 2.x relative-luminance formula, so
-          the theme control re-measures the whole palette without a reload.
-          Translucent tokens are composited over their stated backdrop first.
-
-       2. Drive the motion comparison rig in §8. It calls the real components
-          and the real HC API; the only thing it adds is flipping
-          <html data-motion> around a run so the full and reduced branches can
-          be watched one after the other, then putting it back.
-     ======================================================================== -->
 <script>
+/* ===========================================================================
+   THE HARNESS CONTROLLER.
+
+   Same-origin iframe, so the bar reaches straight into `contentWindow` and
+   calls the app's own public API rather than inventing a message protocol:
+   HC for theme / motion / hour (it already owns the <html> attributes and the
+   persistence), HCApp for the store. postMessage would buy nothing here and
+   would need both halves kept in sync.
+
+   Same-origin is also why this needs the local server. Over file:// the modules
+   would not load and this access would be blocked as well.
+   ======================================================================== */
 (function () {
   'use strict';
 
   var root = document.documentElement;
-  function $$(sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); }
-  function say(msg) { if (window.HC && window.HC.announce) window.HC.announce(msg); }
+  var stage = document.querySelector('[data-stage]');
+  var frame = document.querySelector('[data-frame]');
+  var hourInput = document.querySelector('[data-hour]');
+  var hourRead = document.querySelector('[data-hour-read]');
 
-  /* ========================================================================
-     1. COLOUR — resolve, composite, measure
-     ===================================================================== */
-
-  function raw(name) { return getComputedStyle(root).getPropertyValue(name).trim(); }
-
-  /* Handles #rgb, #rgba, #rrggbb, #rrggbbaa, rgb(), rgba() and `transparent`. */
-  function parse(v) {
-    if (!v || v === 'transparent' || v === 'none') return [0, 0, 0, 0];
-    if (v.charAt(0) === '#') {
-      var h = v.slice(1);
-      if (h.length === 3 || h.length === 4) {
-        h = h.split('').map(function (c) { return c + c; }).join('');
-      }
-      return [
-        parseInt(h.slice(0, 2), 16),
-        parseInt(h.slice(2, 4), 16),
-        parseInt(h.slice(4, 6), 16),
-        h.length === 8 ? parseInt(h.slice(6, 8), 16) / 255 : 1
-      ];
-    }
-    var m = v.match(/-?[\d.]+/g);
-    if (!m || m.length < 3) return [0, 0, 0, 0];
-    return [+m[0], +m[1], +m[2], m.length > 3 ? +m[3] : 1];
-  }
-
-  function over(fg, bg) {
-    if (fg[3] >= 1) return [fg[0], fg[1], fg[2], 1];
-    var a = fg[3];
-    return [
-      fg[0] * a + bg[0] * (1 - a),
-      fg[1] * a + bg[1] * (1 - a),
-      fg[2] * a + bg[2] * (1 - a),
-      1
-    ];
-  }
-
-  /* WCAG 2.x relative luminance, then the (L1+0.05)/(L2+0.05) ratio. */
-  function lum(c) {
-    var v = [c[0], c[1], c[2]].map(function (x) {
-      x /= 255;
-      return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
-    });
-    return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
-  }
-  function ratio(a, b) {
-    var la = lum(a), lb = lum(b);
-    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
-  }
-  function hex(c) {
-    return '#' + [c[0], c[1], c[2]].map(function (x) {
-      return ('0' + Math.round(x).toString(16)).slice(-2).toUpperCase();
-    }).join('');
-  }
-
-  var swatches = $$('.sw[data-token]');
-  swatches.forEach(function (sw) {
-    var name = sw.getAttribute('data-token');
-    var use = sw.getAttribute('data-use') || '';
-    sw.innerHTML =
-      '<div class="sw__chip" data-chip>Aa</div>' +
-      '<div class="sw__meta">' +
-        '<p class="sw__name">' + name + '</p>' +
-        '<p class="sw__hex" data-hex>&mdash;</p>' +
-        '<p class="sw__ratio" data-ratio>&mdash;</p>' +
-        '<p class="sw__use">' + use + '</p>' +
-      '</div>';
-  });
-
-  function paintSwatches() {
-    var canvas = parse(raw('--c-canvas'));
-    swatches.forEach(function (sw) {
-      var tokenName = sw.getAttribute('data-token');
-      var pairName = sw.getAttribute('data-pair');
-      var underName = sw.getAttribute('data-under');
-      var min = parseFloat(sw.getAttribute('data-min') || '0');
-
-      var under = underName ? over(parse(raw(underName)), canvas) : canvas;
-      var token = parse(raw(tokenName));
-      var solid = over(token, under);
-      var pair = pairName ? over(parse(raw(pairName)), solid) : solid;
-
-      var chip = sw.querySelector('[data-chip]');
-      chip.style.background = hex(solid);
-      chip.style.color = hex(pair);
-
-      sw.querySelector('[data-hex]').textContent =
-        token[3] === 0 ? 'transparent'
-        : token[3] < 1 ? hex(solid) + '  (α ' + token[3] + ' over ' + (underName || '--c-canvas') + ')'
-        : hex(solid);
-
-      var out = sw.querySelector('[data-ratio]');
-      if (!pairName) { out.textContent = '—'; sw.classList.remove('sw--warn'); return; }
-
-      var r = ratio(solid, pair);
-      var line = r.toFixed(2) + ':1 vs ' + pairName;
-      if (!min) {
-        out.textContent = line + ' · decorative, no threshold';
-        sw.classList.remove('sw--warn');
-      } else {
-        var ok = r >= min;
-        out.textContent = line + ' · ' + (ok ? 'passes ' : 'BELOW ') +
-          min.toFixed(1) + ':1 ' + (min >= 4.5 ? '(AA text)' : '(AA non-text)');
-        sw.classList.toggle('sw--warn', !ok);
-      }
-    });
-  }
-
-  paintSwatches();
-
-  /* Re-measure whenever the theme changes, from either direction: the
-     [data-theme] toggle on <html>, or the OS preference. */
-  new MutationObserver(paintSwatches).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
-  var mq = window.matchMedia('(prefers-color-scheme: dark)');
-  if (mq.addEventListener) mq.addEventListener('change', paintSwatches);
-
-
-  /* ========================================================================
-     2. THE MOTION RIG
-     One run = set <html data-motion>, call the real component, restore. The
-     attribute is set directly rather than through HC.setMotion() so a replay
-     never persists to localStorage or steals the control bar's own state.
-     ===================================================================== */
-
-  var playing = 0, saved = null;
-
-  function withMotion(mode, hold, fn) {
-    if (playing === 0) saved = root.getAttribute('data-motion');
-    playing++;
-    root.setAttribute('data-motion', mode);
-    try { fn(); } catch (e) { /* a demo must never take the page down */ }
-    window.setTimeout(function () {
-      playing--;
-      if (playing > 0) return;
-      if (saved === null) root.removeAttribute('data-motion');
-      else root.setAttribute('data-motion', saved);
-    }, hold);
-  }
-
-  function pointer(el, type, buttons) {
-    el.dispatchEvent(new PointerEvent(type, {
-      bubbles: true, cancelable: true, button: 0, buttons: buttons,
-      pointerId: 9001, pointerType: 'mouse', isPrimary: true
-    }));
-  }
-
-  var run = {
-    /* The real ring, driven through its real pointer path. */
-    checkin: function (p) {
-      var card = p.querySelector('[data-habit]');
-      var ring = p.querySelector('[data-checkin]');
-      if (!card || !ring) return;
-      if (card.classList.contains('is-complete')) {
-        var undo = p.querySelector('[data-undo]');
-        if (undo) undo.click();
-      }
-      window.setTimeout(function () {
-        pointer(ring, 'pointerdown', 1);
-        window.setTimeout(function () { pointer(ring, 'pointerup', 0); }, 560);
-      }, 300);
-    },
-
-    /* The kit's own .is-streak-flush, which is what the product's quiet
-       milestone fallback applies. Colour only — no branch needed. */
-    streak: function (p) {
-      $$('[data-streak-numeral], .chip--streak', p).forEach(function (el) {
-        el.classList.remove('is-streak-flush');
-        void el.offsetWidth;
-        el.classList.add('is-streak-flush');
-        window.setTimeout(function () { el.classList.remove('is-streak-flush'); }, 1000);
-      });
-    },
-
-    milestone: function () {
-      if (window.HC && window.HC.fireMilestone) {
-        window.HC.fireMilestone({ days: 100, replay: true });
-      }
-    },
-
-    /* M4. Out over 100ms, swap, in over 220ms — total 320ms. */
-    page: function (p) {
-      var host = p.querySelector('[data-screens]');
-      if (!host || host.__busy) return;
-      host.__busy = true;
-      var a = host.querySelector('[data-screen="a"]');
-      var b = host.querySelector('[data-screen="b"]');
-      var outEl = a.hidden ? b : a;
-      var inEl = a.hidden ? a : b;
-      outEl.classList.remove('is-entering');
-      outEl.classList.add('is-leaving');
-      window.setTimeout(function () {
-        outEl.classList.remove('is-leaving');
-        outEl.hidden = true;
-        inEl.hidden = false;
-        inEl.classList.remove('is-entering');
-        void inEl.offsetWidth;
-        inEl.classList.add('is-entering');
-        host.__busy = false;
-      }, 100);
-    },
-
-    /* M5. The 400ms no-flash rule, then the staggered entrance. Scoped to one
-       pane so the two motion branches can sit side by side; the constants and
-       every class are the kit's. */
-    list: function (p, fast) {
-      var host = p.querySelector('[data-list]');
-      if (!host || host.__busy) return;
-      host.__busy = true;
-      var skel = host.querySelector('[data-list-skel]');
-      var real = host.querySelector('[data-list-real]');
-      var ms = fast ? 250 : 1400;
-      var shown = false;
-
-      real.hidden = true;
-      host.setAttribute('aria-busy', 'true');
-      var appear = window.setTimeout(function () { skel.hidden = false; shown = true; }, 400);
-
-      window.setTimeout(function () {
-        window.clearTimeout(appear);
-        if (shown) skel.hidden = true;
-        real.hidden = false;
-        host.removeAttribute('aria-busy');
-        host.__busy = false;
-        $$('.gal-item', real).forEach(function (li, i) {
-          li.classList.remove('is-entering');
-          li.style.setProperty('--i', String(Math.min(i, 12)));
-          void li.offsetWidth;
-          li.classList.add('is-entering');
-        });
-      }, ms);
-    },
-
-    /* M6. The drift is the kit's own loop and needs no help; this replays the
-       copy's 240ms fade-and-rise at its 60ms stagger. */
-    empty: function (p) {
-      $$('[data-rise]', p).forEach(function (el, i) {
-        el.classList.remove('gal-rise');
-        el.style.setProperty('--i', String(i));
-        void el.offsetWidth;
-        el.classList.add('gal-rise');
-      });
-    }
+  /* The harness's own settings, re-applied to the app whenever it reloads. */
+  var settings = {
+    theme: 'system',
+    motion: 'auto',
+    hour: new Date().getHours(),
+    size: 'full',
   };
 
-  /* How long each moment holds the motion mode before it is handed back.
-     Milestone matches its own 4000ms auto-dismiss plus the exit. */
-  var HOLD = { checkin: 2400, streak: 1300, milestone: 4200, page: 900, list: 2600, empty: 1600 };
-  var LABEL = { checkin: 'check-in press', streak: 'streak increment', milestone: 'milestone',
-                page: 'page transition', list: 'list load', empty: 'empty state' };
-
-  function pane(art, which) { return art.querySelector('[data-pane="' + which + '"]') || art; }
-
-  function play(art, name, mode, hold) {
-    withMotion(mode, hold, function () { run[name](pane(art, mode)); });
-    say((mode === 'reduce' ? 'Reduced motion: ' : 'Full motion: ') + LABEL[name] + '.');
+  function press(selector, attr, value) {
+    document.querySelectorAll(selector).forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute(attr) === value));
+    });
   }
 
-  $$('[data-moment]').forEach(function (art) {
-    var name = art.getAttribute('data-moment');
-    var hold = HOLD[name] || 1500;
+  /** The app's window, or null while it is still loading. */
+  function app() {
+    try { return frame.contentWindow; } catch (e) { return null; }
+  }
 
-    $$('[data-play]', art).forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        if (playing > 0) return;               /* one moment at a time */
-        var mode = btn.getAttribute('data-play');
+  /* --- Viewport ----------------------------------------------------------
+     Only the WIDTH changes. The iframe is never reloaded, so the app keeps its
+     route and its state while you step 390 → 768 → 1280 and watch the nav
+     change shape underneath it. */
+  function setSize(size) {
+    settings.size = size;
+    stage.setAttribute('data-size', size);
+    frame.style.inlineSize = size === 'full' ? '100%' : size + 'px';
+    press('[data-size]', 'data-size', size);
+  }
 
-        if (mode === 'fast') {
-          withMotion('full', 1200, function () {
-            run.list(pane(art, 'full'), true);
-            run.list(pane(art, 'reduce'), true);
-          });
-          say('Fast load, 250 milliseconds. Under the 400 millisecond rule nothing is shown at all.');
-          return;
-        }
-        if (mode === 'both') {
-          play(art, name, 'full', hold);
-          window.setTimeout(function () { play(art, name, 'reduce', hold); }, hold + 60);
-          return;
-        }
-        play(art, name, mode, hold);
-      });
-    });
+  /* --- Theme / motion / hour ---------------------------------------------
+     Applied to the app AND to the harness itself: a white toolbar strapped to
+     a dark app is unreadable, and the bar has to be legible to be used. */
+  function apply() {
+    var w = app();
+    if (settings.theme === 'system') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', settings.theme);
+
+    if (!w || !w.HC) return;
+    w.HC.setTheme(settings.theme);
+    w.HC.setMotion(settings.motion);
+    w.HC.setHour(settings.hour);
+  }
+
+  function setTheme(mode) {
+    settings.theme = mode;
+    press('[data-theme-set]', 'data-theme-set', mode);
+    apply();
+  }
+
+  function setMotion(mode) {
+    settings.motion = mode;
+    press('[data-motion-set]', 'data-motion-set', mode);
+    apply();
+  }
+
+  function setHour(h) {
+    settings.hour = Math.max(0, Math.min(23, parseInt(h, 10) || 0));
+    hourInput.value = settings.hour;
+    hourRead.textContent = (settings.hour < 10 ? '0' : '') + settings.hour + ':00';
+    apply();
+  }
+
+  /* --- Wiring ------------------------------------------------------------ */
+  document.querySelectorAll('[data-size]').forEach(function (b) {
+    if (b.tagName !== 'BUTTON') return;
+    b.addEventListener('click', function () { setSize(b.getAttribute('data-size')); });
   });
+  document.querySelectorAll('[data-theme-set]').forEach(function (b) {
+    b.addEventListener('click', function () { setTheme(b.getAttribute('data-theme-set')); });
+  });
+  document.querySelectorAll('[data-motion-set]').forEach(function (b) {
+    b.addEventListener('click', function () { setMotion(b.getAttribute('data-motion-set')); });
+  });
+  hourInput.addEventListener('input', function () { setHour(hourInput.value); });
+
+  /* Reset data: back to the fixtures, same route, no reload — so you can watch
+     the habits you just completed come back un-checked. */
+  document.querySelector('[data-reset]').addEventListener('click', function () {
+    var w = app();
+    if (w && w.HCApp) w.HCApp.reset();
+    else if (w) w.location.reload();
+  });
+
+  /* The app is reloadable from inside the frame (a hard refresh, a bad hash).
+     Re-apply on every load or the theme silently reverts. */
+  frame.addEventListener('load', apply);
+
+  setSize('full');
+  setHour(settings.hour);
+
+  /* Build stamp. build.json only exists on a deployed site (the workflow writes
+     it), so a 404 here means you are on a local server — which is the truth we
+     want to show, not an error. Cache-busted so the stamp itself can never be
+     the stale thing reporting staleness. */
+  (function stamp() {
+    var el = document.querySelector('[data-build]');
+    if (!el) return;
+    fetch('build.json?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (b) {
+        if (!b) return;
+        var when = new Date(b.time);
+        el.textContent = b.sha + ' · ' + when.toISOString().slice(0, 16).replace('T', ' ') + 'Z';
+        el.title = 'Deployed ' + when.toLocaleString() + ' from ' + b.ref;
+      })
+      .catch(function () { /* local: the default "local" text already says so */ });
+  })();
 })();
 </script>
 </body>
