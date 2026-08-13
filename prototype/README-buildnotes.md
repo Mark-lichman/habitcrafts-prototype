@@ -344,3 +344,271 @@ for all the efforts you've been putting in."*
 Streak language is repair and grace: *"You showed up for 42 days"* — **never**
 *"You lost your 42-day streak."* No broken chains, no red missed days, no
 confirmshaming. Missed days are simply empty.
+
+---
+
+## 8. Primitives build — icons, illustration, milestone, gilding, skeleton, repair
+
+Appended by the primitives build. Everything here is **additive**: one appended
+section in `css/components.css` (`P1`–`P6`), one appended IIFE in
+`js/prototype.js`, one role token in `tokens.css`, and edits to `home.html`,
+`progress.html`, `community.html`. Nothing above those append markers was
+edited or reordered.
+
+### 8.1 The icon sprite
+
+One family, one style: **hand-authored, outlined, fill-0, rounded terminals,
+1.7px stroke, 24 × 24 grid, `currentColor`.** No Material Symbols file, no
+Lucide, no raster, no emoji-as-UI — the direction says "or Lucide if bundling is
+easier, but pick one and use it exclusively", and with zero dependencies allowed
+the only way to have one family is to draw it. Icons inherit `--c-ink-muted`
+from `.icon` at rest and `brand-600` from their selected parent.
+
+**The block is canonical and byte-identical on all five screens.** If you add an
+icon, add it to the block and paste the whole block to every page. Do not fork
+one page's copy — that is exactly the drift this replaced.
+
+`i-habits` `i-progress` `i-community` `i-library` `i-person` ·
+`i-plus` `i-close` `i-check` `i-tick` `i-search` `i-send` `i-invite` ·
+`i-arrow` `i-chevron` `i-chev-right` `i-chev-left` `i-back` ·
+`i-flame` `i-calendar` `i-clock` `i-bell` `i-bulb` `i-goal` `i-target`
+`i-info` `i-lock` `i-key` `i-eye` `i-archive` `i-shield` `i-leaf`
+`i-accessibility` `i-contrast` · `i-rosette`
+
+Notes: `i-tick`/`i-check` and `i-back`/`i-arrow` and `i-chevron`/`i-chev-right`
+are deliberate aliases carrying identical geometry, so two screens naming the
+same glyph differently can never diverge. **`i-rosette` is the one solid
+symbol** — it is the gild seal's emboss, not an icon, and `.seal` /
+`.seal--solid` colour it. **`i-contrast`** carries one filled half-disc because
+the fill *is* the meaning.
+
+Implementation detail worth keeping: the stroke attributes live on an inner
+`<g>`, never on the `<symbol>`. `base.css` has a global `svg { fill: currentColor }`,
+and a document CSS rule beats a presentation attribute on the cloned symbol
+element itself — put `fill="none"` on the `<symbol>` and every icon fills solid.
+
+### 8.2 Illustration system
+
+| Class | What |
+|---|---|
+| `.illus` | The artwork root. 132px, `viewBox="0 0 120 120"`, `role="img"` + `aria-label`. |
+| `.illus__shape` | brand-300 fill + linework stroke. The object. |
+| `.illus__line` | Linework only, no fill. Stems, threads, rules. |
+| `.illus__ground` | The stone/shadow it rests on — flat brand-300 at 55%, no stroke. |
+| `.illus__accent` | **One per illustration, maximum.** Sage by default. |
+| `.illus__accent--gold` | The accent in gold, for reward states. Filled, never a hairline. |
+| `.illus__drift` | Wrap the leaf in this `<g>`. 4s, one axis, ±4px, `alternate`, infinite. |
+| `.empty-state--compact` | 96px art, tighter padding — for panes rather than pages. |
+
+The two-colour rule is enforced in CSS rather than retyped as inline fills, so
+every illustration re-tones itself in Nightfall with no second artwork.
+
+**`--c-illus-line` is a new role token** (`tokens.css`, all three mappings).
+Light = `brand-700`, as the direction specifies. Dark = the brand tint: the
+direction's pairing names *the light canvas*, and in Nightfall `brand-700`
+becomes the hero blue and a stem drawn in it disappears into the canvas. The
+dark answer lives in the semantic mapping, per §2, not in a component file.
+
+`.illus__drift` is **the only looping animation in the product.** It has
+explicit `animation: none` kills in both reduced-motion branches — the global
+`base.css` block would otherwise leave the leaf parked 4px off its drawn
+position, because it caps duration and iteration rather than stopping it.
+
+Empty states built: Home *(no habits)*, Home *(day complete)*, Progress *(no
+history yet)*, Community *(no groups)*. Each is illustration + heading + **one**
+CTA.
+
+### 8.3 New `data-*` hooks
+
+| Attribute | On | Effect |
+|---|---|---|
+| `data-demo="milestone"` `data-days="100"` | button | Fires the moment. **First press per session = the full celebration; every press after it = the quiet streak-increment treatment.** The control demonstrates the rule rather than dodging it. |
+| `data-demo="milestone-replay"` | button | Clears the once-per-session latch so a reviewer can watch the full thing again. |
+| `data-demo="load"` | button | Simulates a 1400ms load — the skeleton appears at 400ms. |
+| `data-demo="load-fast"` | button | Simulates a 250ms load — **nothing is shown at all.** That is the rule, made visible. |
+| `data-demo="empty"` | button (`aria-pressed`) | Swaps the screen for its empty state. |
+| `data-skeleton="list\|panel"` | the content container | Marks what the skeleton stands in for and which template to paint. |
+| `data-empty-demo` | the empty state | Shown while the Empty toggle is on. |
+| `data-empty-demo-hide` | populated content | Hidden while the Empty toggle is on. |
+| `data-repair` | the repair card | Scopes the decay demo. |
+| `data-repair-run` | button (`aria-pressed`) | Runs the decay demonstration. |
+| `data-repair-now` | `.repair__now` | Carries `data-full` / `data-decayed` widths. |
+| `data-repair-readout` | `<p>` | Carries `data-full` / `data-decayed` copy. |
+
+Written by JS, not authored: `[data-milestone]` on the milestone scrim,
+`[data-ms-count]`, `[data-ms-dismiss]`, `[data-skeleton-paint]` on the injected
+skeleton, `.confetti-piece`, `.is-streak-flush`.
+
+`HC.fireMilestone({ days, replay })` is **reassigned** by the appended section
+rather than edited in place, and the `[data-demo^="milestone"]` buttons are
+intercepted in the **capture phase** so the core's stub never runs. Delete the
+appended section and the prototype falls back to the original with nothing
+broken.
+
+### 8.4 Milestone, gilding, skeleton, repair — the rules as built
+
+**Milestone.** Scrim 40% (the `--c-scrim` token *is* 40%) · card enters on
+`--ease-spring-gentle` at its paired 650ms · **34 confetti pieces** (cap 40)
+released along the card's *top edge* in a 60° cone, and a single sweep timer
+guarantees the DOM is clean at **1100ms** rather than trusting the animations ·
+numeral counts up in the display serif with `WONK 1` · auto-dismiss at
+**4000ms**, or tap, or Escape · focus lands on the CTA and returns to the
+opener. **Reduced motion: no confetti is created at all, the card crossfades
+(`hc-fade-in`), the numeral renders at its final value.** That CSS override is
+load-bearing, not belt-and-braces: the entry animation moves with the
+independent `scale`/`translate` properties, which the global `transform: none`
+block does not touch. Anything in this system animating with `scale` or
+`translate` needs the same treatment.
+
+**Gilding.** All four tiers sit side by side on Home (365 · 100 · 30 · 7 ·
+none), each labelled with a `.gild-note` — prototype scaffolding, delete for
+Flutter. The marks compose with every other card state by construction: the
+tick is `::after`, the hairline is an *inset* `box-shadow`, and the seal is a
+real element — while `.is-complete` only sets `background` and `border-color`,
+so it cannot clobber any of them. Verified: a day-100 habit completed today
+shows the sage tone, the gold hairline, the seal and the ring check at once.
+
+**Skeleton.** Under 400ms **nothing** — not a skeleton, not the content.
+Beyond 400ms, static blocks in `canvas-sunken` at the container's own radii
+(`.skeleton-card` is 72px pitch / 16px padding / radius-16, identical to the
+real card) with one 0.7 → 1.0 pulse, 1200ms `ease-in-out alternate`, in phase.
+No shimmer. Reduced motion: `animation: none`, `opacity: 1`.
+
+**Streak repair.** `.repair` with three rows — `--freeze` (sage, shield),
+`--grace` (amber; amber is care, not alarm — no clay, no red anywhere on this
+component) and `--decay` (the bar goes *down a little* and never to zero).
+Copy is "You showed up for 42 days straight." Zero broken-chain icons, zero red
+missed days.
+
+### 8.5 Prototype scope, stated
+
+Fixture data is inline in the HTML. There is no data layer, no fake API and no
+persistence added by this build; the loading state is a timer on a button, the
+empty state is a toggle, and "one celebration per session" is a single boolean.
+A real build owns all three properly, plus the parts deliberately not built
+here: load failure and retry, a genuine focus trap for a multi-control modal,
+freeze-day accrual, and the actual decay curve.
+
+*(Pre-existing, not added here: the core does persist theme/motion in
+`localStorage`. It will carry across pages during review.)*
+
+---
+
+## 8. The remaining screens — Explore · Library · Library detail · Onboarding · Auth
+*Appended by the remaining-screens build. Nothing above this heading was edited.*
+
+Five more files, so every screen in the 14-screen app now has a design
+reference: `explore.html` · `library.html` · `library-detail.html` ·
+`onboarding.html` · `auth.html`. `free_trial_screen` is deliberately **not**
+built — it is unreachable dead code and ticket #60 deletes it.
+
+These are prototype-grade by intent: fixture data is hardcoded in the markup,
+interactions are scripted to demonstrate the design, and there is **no data
+layer, no persistence, no form validation and no auth**. A real build needs all
+of that; this build says so rather than faking it.
+
+### Nav — two rail-only destinations
+`.nav-li--rail` on an `<li>` hides it below 600 and shows it from 600 up.
+Explore and Library are marked up that way and inserted **after Community**, so
+the bottom bar keeps exactly the four destinations plus the FAB, and the
+rail/drawer gains two more. The four core `<li>`s are still home.html's markup
+verbatim.
+
+**This supersedes the "documented deviation" in §3.** Library is now built, so
+it takes a real slot; Profile stays in the list as well as in the drawer user
+block, because the prototype has no top-right header button. **The five
+original screens still ship the four-item list** — paste the two
+`<li class="nav-li--rail">` blocks from `explore.html` into them to reconcile.
+
+Below 600, Explore and Library carry a `.page-back.page-back--compact` link to
+Home, since nothing in the bottom bar reads as current on those two screens.
+
+### New component classes (components.css §E)
+| Class | What |
+|---|---|
+| `.page-head` `__text` `__sub` · `.page-back` (`--compact`) | Screen header + back/breadcrumb line |
+| `.browse-layout` · `.browse-rail` `__title` | Filter rail 240px at 840+ / content |
+| `.cat-list` · `.cat-btn` `__count` · `.subcat-row` · `.subcat-btn` | One `<ul>`: pill scroller <840, vertical rail 840+ |
+| `.idea-grid` · `.idea-card` `__title` `__prompt` `__foot` `__cue` · `.is-taken` | Explore habit ideas |
+| `.idea-preview__lead` `__section` `__label` `__actions` · `.modal--wide` | The idea dialog |
+| `.lib-hero` `__body` `__side` `__kicker` `__title` `__actions` · `.week-meter` `__bar` `__fill` `__label` | Library hero (today's lesson) |
+| `.lesson-list` · `.lesson-row` `__num` `__body` `__title` `__meta` `__chev` + `.is-read` `.is-current` | Ordered lessons |
+| `.week-fold` (`<details>`) `__meta` `__chev` `__body` | Earlier weeks, zero JS |
+| `.res-grid` · `.res-card` `__type` `__foot` | Resources |
+| `.read-layout` · `.read-toc` `__title` `__list` `__link` · `.article` `__meta` `__title` `__standfirst` `__body` `__quote` · `.read-bridge` · `.read-nav` | Reading view |
+| `.ob-page` `.ob-top` `.ob-brand` `.ob-card` `.ob-stage` `.ob-slide` `__art` `__text` `__title` `__body` · `.ob-foot` · `.ob-dots` `.ob-dot` | Onboarding |
+| `.auth` `__poster` `__brand` `__line` `__sub` `__art` `__panel` `__form` `__title` `__intro` `__fields` `__row` `__actions` `__switch` `__legal` · `.field--reveal` `.pw-toggle` · `.check` | Auth |
+| `.hero .btn--secondary` / `.hero .btn--ghost` | Buttons that survive the deep-blue surface — `.hero a` beats `.btn--*` on specificity, so a paper button on the hero was white-on-white |
+
+`.article` is capped at `--layout-read-max` (600px) at **every** width — 390,
+768, 1280 and 1920 all measure 600. A wide window adds the sticky contents list
+beside the column, never a wider column. The third grid track is `1fr` exactly
+so the reading column never loses when space is tight.
+
+### New JS hooks (prototype.js, final append-only block)
+`[data-cat-list]` + `[data-cat]` (rail; a real ARIA tablist with arrows, Home
+and End) · `[data-idea-grid]` with per-item `data-cats` / `data-sub` ·
+`[data-sub]` chips · `[data-idea-heading]` `[data-idea-count]`
+`[data-idea-empty]` `[data-idea-search]` · `[data-modal-open="idea"]` carrying
+`data-behavior` `data-prompt` `data-celebration` `data-why` `data-taken`, which
+fill the `[data-idea-field]` slots — the fill runs in the **capture** phase and
+then the kit's existing `[data-modal-open]` opener does the opening, Escape and
+focus restore · `[data-ob-stage]` `[data-ob-slide]` `[data-ob-go]`
+`[data-ob-prev]` `[data-ob-next]` `[data-ob-done]` · `[data-auth-view]`
+`[data-auth-go]` `[data-auth-form]` `[data-auth-sent]` `[data-pw-toggle]`.
+
+### Copy: what came from the app, and what was rewritten
+Verbatim: *"Habit Ideas"* · *"Get inspired to cultivate positive habits."* ·
+*"Search"* · *"{n} habits"* · *"Library"* · *"Lessons"* · *"Resources"* ·
+*"Make it a habit"* (the app's own string, currently inside `if (false)`) ·
+*"What is a habit and how does it work?"* and its body · *"The importance of
+partnerships."* · *"Let's start by creating your first habit."* · *"Get
+Started"* · *"Login"* · *"Sign Up"* · *"Email"* · *"Password"* · *"Confirm
+Password"* · *"Name"* · *"Sign up with"* · *"Login with Google"* · *"Login with
+Apple"* · *"Forgot Password"* · *"Email Address"* · *"Enter your email..."* ·
+*"Send Reset Link"*.
+
+Rewritten because the original is broken, not because it was disliked:
+1. **Onboarding slide 2 body.** The shipping copy says partnerships foster
+   *"emotional detachment"* — the opposite of the screen's point — in 30 words
+   of jargon. Rewritten in product voice.
+2. **Forgot-password body.** It promises *"a verification code"* while its own
+   button says *"Send Reset Link"* and the backend sends a link. The button was
+   right, so the body now matches it.
+3. **The Explore category expander's lorem ipsum** is not reproduced.
+4. **"Habit Craft"** (spaced) and the `'Login\n'` / `'Sign Up\n'` trailing
+   newlines from `initial_page` are not reproduced; the wordmark is HabitCrafts.
+5. **No `$99.00/year` and no `0.00 / month`** anywhere — that copy lives only in
+   the dead free-trial screen, which is not built.
+
+Category, subcategory, lesson and resource names are **invented fixtures**: the
+app has no seed file and every one of those strings is Firestore content. The
+*shape* is real — each habit idea carries the four fields the `habits`
+collection actually stores (`behavior` · `prompt` · `celebration` · `why`).
+
+### Defects the redesign fixes on these screens
+- Onboarding's page indicator (`dotColor == activeDotColor == #D9D9D9`): the
+  active dot is now `brand-600` and 24px, inactive `--c-border` and 8px — a
+  colour step **and** a width step, plus `aria-current`.
+- Onboarding slides 1 and 2 are swipe-only with no affordance: every step now
+  has visible Back / Next / Skip controls, jumpable dots, and arrow keys.
+- Login has no "Forgot password?" and no "Sign up"; signup has no "Log in" and
+  no terms gate despite `eulaAccepted` existing in app state. All present here.
+- `forgot_password` is orphaned — nothing links to it — and uses a completely
+  different visual language. It is now one of three views in one shell.
+- Signup's social buttons ship with `text: ''`, so they have no accessible
+  name. Labelled here.
+- `library_detail_page` is the only white-background page in the app and has no
+  bridge into habit creation; it keeps the parchment canvas here and ends on
+  the "Make it a habit" hero.
+- `explore_habits_page` has no bottom nav — a dead end. It is a real
+  destination with a rail slot and a compact back link.
+
+### Verified
+Real Chrome via CDP at 390 / 768 / 1280, plus 1920 for the reading cap, in
+light and dark, with motion auto and reduced. Category filtering, subcategory
+chips, search and its empty state, the idea dialog (open, fill, Escape,
+already-yours variant), the Library tabs and week folds, onboarding paging by
+button, dot and arrow key, and the auth view switch, reveal toggle and reset
+confirmation were all exercised. Zero console errors on any page; the five
+existing screens are unchanged and still pass their own checks.

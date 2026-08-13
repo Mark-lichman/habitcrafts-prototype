@@ -15,23 +15,71 @@
 <body>
 
 <!-- ===========================================================================
-     ICON SPRITE — copied from home.html and extended with the two chevrons the
-     calendar's month stepper needs. One family, one style, inline SVG on a 24px
-     grid, currentColor. Zero raster icons, zero emoji-as-UI. [D §6]
+     ICON SPRITE — ONE FAMILY, ONE STYLE.  [D §6 "Iconography"]
+     Hand-authored, outlined, fill-0, rounded terminals, 1.7px stroke on a
+     24 × 24 grid, `currentColor` — so an icon is ink-muted at rest (the .icon
+     base rule) and brand-600 when its parent is selected, with no per-icon CSS.
+
+     THIS BLOCK IS CANONICAL AND IDENTICAL ON EVERY SCREEN. If you add an icon,
+     add it here and paste the whole block to every page — never fork one page's
+     copy. Zero raster, zero emoji-as-UI, zero mixed sharp/rounded/filled
+     variants.
+
+     The stroke attributes live on the inner <g>, NOT on the <symbol>: base.css
+     carries a global `svg { fill: currentColor }`, and a document CSS rule wins
+     over a presentation attribute on the cloned <symbol> element itself. On a
+     <g> nothing in the cascade targets it, so the outline holds everywhere.
+
+     ONE DELIBERATE EXCEPTION: #i-rosette is solid. It is not an icon — it is
+     the gild seal's emboss, and .seal / .seal--solid colour it. [D §2.4]
      ======================================================================== -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
-    <symbol id="i-habits" viewBox="0 0 24 24"><path d="M7 2v2H5.5A2.5 2.5 0 0 0 3 6.5v12A2.5 2.5 0 0 0 5.5 21h13a2.5 2.5 0 0 0 2.5-2.5v-12A2.5 2.5 0 0 0 18.5 4H17V2h-2v2H9V2H7zm12 8v8.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V10h14z"/></symbol>
-    <symbol id="i-progress" viewBox="0 0 24 24"><path d="M4 12h3v8H4v-8zm6.5-8h3v16h-3V4zM17 15h3v5h-3v-5z"/></symbol>
-    <symbol id="i-community" viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm7.5 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20.2A6.7 6.7 0 0 1 9 14a6.7 6.7 0 0 1 7 6.2V21H2v-.8zm15.6-5.1A5.4 5.4 0 0 1 22 20.4V21h-4.2v-.8a8.2 8.2 0 0 0-1.5-4.7c.4-.2.8-.3 1.3-.4z"/></symbol>
-    <symbol id="i-library" viewBox="0 0 24 24"><path d="M6 2h13a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2H6zm0 2a.5.5 0 0 0-.5.5V17H18V4H6zm-.5 15v.5a.5.5 0 0 0 .5.5H18v-1H5.5z"/></symbol>
-    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></symbol>
-    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12.6 2c.3 3 2 3.9 3.4 5.6A7.7 7.7 0 0 1 18 12.6a6 6 0 1 1-12 0c0-2 .8-3.7 1.9-5.1.1 1.6 1 2.7 2.1 2.7 1.2 0 2.1-1.1 2.1-3C12.1 5.4 12.4 3.6 12.6 2z"/></symbol>
-    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M13 5l7 7-7 7-1.4-1.4 4.6-4.6H4v-2h12.2l-4.6-4.6L13 5z"/></symbol>
-    <symbol id="i-person" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4.1 0-7.4 2.3-7.4 5.2V21h14.8v-1.8c0-2.9-3.3-5.2-7.4-5.2z"/></symbol>
-    <symbol id="i-rosette" viewBox="0 0 24 24"><path d="M12 2l2.2 3.1 3.7-.9.4 3.8 3.4 1.7-2.3 3 2.3 3-3.4 1.7-.4 3.8-3.7-.9L12 24l-2.2-3.1-3.7.9-.4-3.8L2.3 16l2.3-3-2.3-3 3.4-1.7.4-3.8 3.7.9L12 2zm0 5.5A4.5 4.5 0 1 0 12 16.5 4.5 4.5 0 0 0 12 7.5z"/></symbol>
-    <symbol id="i-chev-left" viewBox="0 0 24 24"><path d="M15.4 6.4L14 5l-7 7 7 7 1.4-1.4L9.8 12l5.6-5.6z"/></symbol>
-    <symbol id="i-chev-right" viewBox="0 0 24 24"><path d="M8.6 6.4L10 5l7 7-7 7-1.4-1.4L14.2 12 8.6 6.4z"/></symbol>
+    <!-- ── Navigation ─────────────────────────────────────────────────────── -->
+    <symbol id="i-habits" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="5" width="17.6" height="15.8" rx="3"/><path d="M3.2 10h17.6M8 3v4M16 3v4M9 15.4l2 2 4-4.6"/></g></symbol>
+    <symbol id="i-progress" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5h17M6.5 20.5v-6M12 20.5V5.5M17.5 20.5v-9"/></g></symbol>
+    <symbol id="i-community" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="8.8" r="3.6"/><path d="M3.4 19.6a6.1 6.1 0 0 1 12.2 0M16.4 6.4a3.2 3.2 0 0 1 0 6.3M18 14.6a5.3 5.3 0 0 1 2.9 4.6"/></g></symbol>
+    <symbol id="i-library" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.6C10.4 5.1 8.4 4.5 5 4.5v13c3.4 0 5.4.6 7 2 1.6-1.4 3.6-2 7-2v-13c-3.4 0-5.4.6-7 2z"/><path d="M12 6.6v12.9"/></g></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.8"/><path d="M4.9 20a7.1 7.1 0 0 1 14.2 0"/></g></symbol>
+
+    <!-- ── Actions ────────────────────────────────────────────────────────── -->
+    <symbol id="i-plus" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></g></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 6.2l11.6 11.6M17.8 6.2L6.2 17.8"/></g></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.6l4.6 4.6L19 6.8"/></g></symbol>
+    <symbol id="i-tick" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.6l4.6 4.6L19 6.8"/></g></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.6" cy="10.6" r="6.1"/><path d="M15.1 15.1l4.4 4.4"/></g></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 3.8L3.6 10.6a.5.5 0 0 0 0 .9l6.5 2.4 2.4 6.5a.5.5 0 0 0 .9 0l6.8-16.6z"/><path d="M20.2 3.8l-10.1 10.1"/></g></symbol>
+    <symbol id="i-invite" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.4" cy="8.4" r="3.6"/><path d="M3.2 19.6a6.2 6.2 0 0 1 12.4 0M18.5 8.2v6M15.5 11.2h6"/></g></symbol>
+
+    <!-- ── Direction. One drawing, four names — same geometry, no drift. ──── -->
+    <symbol id="i-arrow" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h14M13 6.5l5.5 5.5L13 17.5"/></g></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5L16 12l-6.5 6.5"/></g></symbol>
+    <symbol id="i-chev-right" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5L16 12l-6.5 6.5"/></g></symbol>
+    <symbol id="i-chev-left" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5L8 12l6.5 6.5"/></g></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h14M13 6.5l5.5 5.5L13 17.5"/></g></symbol>
+
+    <!-- ── Objects ────────────────────────────────────────────────────────── -->
+    <symbol id="i-flame" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.4 2.6c.4 2.6 1.9 3.6 3.1 5.1A6.9 6.9 0 0 1 17 12.7a5 5 0 1 1-10 0c0-1.8.7-3.3 1.8-4.5.1 1.4.9 2.4 1.8 2.4 1 0 1.8-1.1 1.8-2.7 0-1.7.3-3.3.6-5.3z"/></g></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="5" width="17.6" height="15.8" rx="3"/><path d="M3.2 10h17.6M8 3v4M16 3v4"/></g></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 6.9v5.4l3.4 2"/></g></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16.2V11a6 6 0 1 0-12 0v5.2L4.6 18.6h14.8L18 16.2z"/><path d="M9.9 21a2.4 2.4 0 0 0 4.2 0"/></g></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8.9 17.4a6 6 0 1 1 6.2 0v1.7H8.9v-1.7z"/><path d="M10.2 21.6h3.6"/></g></symbol>
+    <symbol id="i-goal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21.5V3.5"/><path d="M6 4.6h11.4l-2.3 3.7 2.3 3.7H6"/></g></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="3.5"/></g></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.2v5.2M12 7.7v.4"/></g></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.6" y="10" width="14.8" height="10.4" rx="2.6"/><path d="M8 10V7.6a4 4 0 0 1 8 0V10"/></g></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.2" cy="14.4" r="4.2"/><path d="M11.2 11.4L20 2.6M17.4 5.2l2 2M15.2 7.4l2 2"/></g></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 12S6.2 6.6 12 6.6 21.4 12 21.4 12 17.8 17.4 12 17.4 2.6 12 2.6 12z"/><circle cx="12" cy="12" r="3"/></g></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="4.4" width="17.2" height="4.6" rx="1.6"/><path d="M5.4 9v9.4a2.2 2.2 0 0 0 2.2 2.2h8.8a2.2 2.2 0 0 0 2.2-2.2V9"/><path d="M10 13h4"/></g></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8l7 2.6v5.7c0 4.2-2.8 7.7-7 9.3-4.2-1.6-7-5.1-7-9.3V5.4l7-2.6z"/></g></symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 3.8C10 3.8 4.4 8 4.4 14.4A5.6 5.6 0 0 0 10 20c6.4 0 10-5.6 10-16.2z"/><path d="M15.4 8.4L6.4 17.4"/></g></symbol>
+    <symbol id="i-accessibility" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.4" r="1.9"/><path d="M4.6 8.2c4.8 1.6 10 1.6 14.8 0M12 8.6v5.2M12 13.8l-3.2 6.6M12 13.8l3.2 6.6"/></g></symbol>
+    <!-- Contrast is the one glyph whose meaning IS a fill: half the disc is
+         solid. It stays inside the family — same 24 grid, same outer stroke. -->
+    <symbol id="i-contrast" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></g></symbol>
+
+    <!-- ── The gild seal. Solid on purpose — an emboss, not an icon. [D §2.4] -->
+    <symbol id="i-rosette" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 2l2.2 3.1 3.7-.9.4 3.8 3.4 1.7-2.3 3 2.3 3-3.4 1.7-.4 3.8-3.7-.9L12 24l-2.2-3.1-3.7.9-.4-3.8L2.3 16l2.3-3-2.3-3 3.4-1.7.4-3.8 3.7.9L12 2zm0 5.5A4.5 4.5 0 1 0 12 16.5 4.5 4.5 0 0 0 12 7.5z"/></symbol>
   </defs>
 </svg>
 
@@ -56,6 +104,19 @@
     <button class="devbar__btn" type="button" data-motion-btn="reduce" aria-pressed="false">Reduce</button>
   </div>
   <button class="devbar__btn" type="button" data-demo="reset">Reset day</button>
+
+  <!-- Added by the primitives build: the milestone (first press full, later
+       presses quiet), the 400ms skeleton threshold in both directions, and the
+       empty state. -->
+  <div class="devbar__group" role="group" aria-label="Moments">
+    <button class="devbar__btn" type="button" data-demo="milestone" data-days="100">Milestone</button>
+    <button class="devbar__btn" type="button" data-demo="milestone-replay" data-days="100">Replay</button>
+  </div>
+  <div class="devbar__group" role="group" aria-label="Loading">
+    <button class="devbar__btn" type="button" data-demo="load">Load</button>
+    <button class="devbar__btn" type="button" data-demo="load-fast">Load (fast)</button>
+  </div>
+  <button class="devbar__btn" type="button" data-demo="empty" aria-pressed="false">Empty</button>
 </div>
 
 <div class="app-shell">
@@ -137,7 +198,30 @@
     <div class="prog-panel" id="panel-summary" role="tabpanel"
          aria-labelledby="tab-summary" data-tabpanel="summary" tabindex="0">
 
-      <div class="grid12">
+      <!-- NO HISTORY YET. [M6] Illustration + heading + one CTA. Shown by the
+           devbar's Empty control; in the product it is what a first-week
+           account sees instead of eight weeks of ledger. The copy does not
+           apologise and does not ask for anything — you cannot have a record
+           of days you have not lived yet. -->
+      <div class="empty-state" data-empty-demo hidden>
+        <svg class="illus" viewBox="0 0 120 120" role="img"
+             aria-label="A blank ruled ledger page with a single leaf marking it">
+          <ellipse class="illus__ground" cx="60" cy="104" rx="32" ry="7"/>
+          <path class="illus__shape" d="M30 20h60v76H30z"/>
+          <path class="illus__line" d="M40 40h40M40 54h40M40 68h26"/>
+          <g class="illus__drift">
+            <path class="illus__accent" d="M86 34c11-2 17-9 18-20-11 0-19 7-18 20z"/>
+          </g>
+        </svg>
+        <p class="empty-state__title">Nothing to show yet</p>
+        <p class="empty-state__body t-body">
+          This page fills itself in as you go. Check something off and the first
+          line appears today.
+        </p>
+        <a class="btn btn--primary" href="home.html">Go to today's habits</a>
+      </div>
+
+      <div class="grid12" data-skeleton="panel" data-empty-demo-hide>
 
         <!-- ─────────────────────────────────────────────────────────────────
              THE ONE DEEP-BLUE SURFACE ON THIS SCREEN. [D §3, §5.1]
@@ -196,6 +280,96 @@
             <div class="stat-tile">
               <span class="stat-tile__value">1,208</span>
               <span class="stat-tile__label">check-ins since you started in March 2024</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ─────────────────────────────────────────────────────────────────
+             STREAK REPAIR — freeze, grace, decay.            [D §3.2] [D §6]
+             The veto list bans broken-chain icons, red missed days and
+             "don't lose your streak" copy, so this is what stands in their
+             place: three real mechanics, stated in the past tense, in the
+             product's own voice.
+
+             Note the tenses. The freeze row says what you DID ("you showed up
+             for 42 days straight"), the grace row offers an action without a
+             countdown you can fail, and the decay row is the argument itself —
+             the number goes down a little, and it never goes to zero. There is
+             no red, no chain, no strike-through and no exclamation mark
+             anywhere in this component.
+             ────────────────────────────────────────────────────────────── -->
+        <section class="card card--roomy prog-item--repair" aria-labelledby="repair-h" data-repair>
+          <div class="section-head">
+            <h2 id="repair-h" class="t-label t-muted">When you miss a day</h2>
+            <p class="t-body-sm t-muted">You showed up for 42 days straight. That is the part that counts.</p>
+          </div>
+
+          <div class="repair" style="margin-block-start:var(--space-16)">
+
+            <!-- FREEZE — a day you had banked and spent. Past tense, sage. -->
+            <div class="repair__row repair__row--freeze">
+              <span class="repair__mark" aria-hidden="true">
+                <svg class="icon" aria-hidden="true"><use href="#i-shield"></use></svg>
+              </span>
+              <div class="repair__body">
+                <p class="repair__title">A freeze covered Tuesday</p>
+                <p class="repair__text">
+                  You had two banked. One held your streak while you were away, and
+                  you keep the other.
+                </p>
+                <p class="repair__tokens" role="img" aria-label="One freeze day left of two">
+                  <span class="repair__token"></span>
+                  <span class="repair__token repair__token--spent"></span>
+                </p>
+              </div>
+            </div>
+
+            <!-- GRACE — the window in which yesterday can still be filled in.
+                 Amber is care, not alarm. No countdown, no timer, no red. -->
+            <div class="repair__row repair__row--grace">
+              <span class="repair__mark" aria-hidden="true">
+                <svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg>
+              </span>
+              <div class="repair__body">
+                <p class="repair__title">Yesterday is still open</p>
+                <p class="repair__text">
+                  You have until tonight to mark Monday if you did it and forgot to say so.
+                </p>
+                <p style="margin-block-start:var(--space-8)">
+                  <button class="btn btn--secondary btn--sm" type="button">Mark Monday done</button>
+                </p>
+              </div>
+            </div>
+
+            <!-- DECAY — the streak eases down rather than resetting. The demo
+                 button moves the bar so the mechanic is visible, not described. -->
+            <div class="repair__row repair__row--decay">
+              <span class="repair__mark" aria-hidden="true">
+                <svg class="icon" aria-hidden="true"><use href="#i-leaf"></use></svg>
+              </span>
+              <div class="repair__body">
+                <p class="repair__title">A gap softens a streak, it does not end it</p>
+                <p class="repair__text" data-repair-readout
+                   data-full="You showed up for 42 days straight."
+                   data-decayed="You showed up for 42 days straight. After a week away it reads 35 — the days you did are still yours.">
+                  You showed up for 42 days straight.
+                </p>
+
+                <div class="repair__decay">
+                  <div class="repair__track" role="img"
+                       aria-label="Streak length: 42 days, easing to 35 after a week away">
+                    <span class="repair__was" style="inline-size:100%"></span>
+                    <span class="repair__now" data-repair-now
+                          data-full="100%" data-decayed="83%" style="inline-size:100%"></span>
+                  </div>
+                  <p class="repair__scale"><span>0</span><span>42 days</span></p>
+                </div>
+
+                <p style="margin-block-start:var(--space-12)">
+                  <button class="btn btn--ghost btn--sm" type="button"
+                          data-repair-run aria-pressed="false">Show a week away</button>
+                </p>
+              </div>
             </div>
           </div>
         </section>

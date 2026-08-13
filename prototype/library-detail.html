@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Celebrate in the first three seconds · HabitCrafts</title>
+<meta name="description" content="HabitCrafts redesign prototype — a Library lesson. The reading column caps at 600px at every width.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="../assets/images/favicon.png">
+<!-- Order matters: tokens → base → components. -->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+<!-- ICON SPRITE — home.html's block, extended. [D §6] -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-habits" viewBox="0 0 24 24"><path d="M7 2v2H5.5A2.5 2.5 0 0 0 3 6.5v12A2.5 2.5 0 0 0 5.5 21h13a2.5 2.5 0 0 0 2.5-2.5v-12A2.5 2.5 0 0 0 18.5 4H17V2h-2v2H9V2H7zm12 8v8.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V10h14z"/></symbol>
+    <symbol id="i-progress" viewBox="0 0 24 24"><path d="M4 12h3v8H4v-8zm6.5-8h3v16h-3V4zM17 15h3v5h-3v-5z"/></symbol>
+    <symbol id="i-community" viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm7.5 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20.2A6.7 6.7 0 0 1 9 14a6.7 6.7 0 0 1 7 6.2V21H2v-.8zm15.6-5.1A5.4 5.4 0 0 1 22 20.4V21h-4.2v-.8a8.2 8.2 0 0 0-1.5-4.7c.4-.2.8-.3 1.3-.4z"/></symbol>
+    <symbol id="i-library" viewBox="0 0 24 24"><path d="M6 2h13a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2H6zm0 2a.5.5 0 0 0-.5.5V17H18V4H6zm-.5 15v.5a.5.5 0 0 0 .5.5H18v-1H5.5z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12.6 2c.3 3 2 3.9 3.4 5.6A7.7 7.7 0 0 1 18 12.6a6 6 0 1 1-12 0c0-2 .8-3.7 1.9-5.1.1 1.6 1 2.7 2.1 2.7 1.2 0 2.1-1.1 2.1-3C12.1 5.4 12.4 3.6 12.6 2z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M13 5l7 7-7 7-1.4-1.4 4.6-4.6H4v-2h12.2l-4.6-4.6L13 5z"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4.1 0-7.4 2.3-7.4 5.2V21h14.8v-1.8c0-2.9-3.3-5.2-7.4-5.2z"/></symbol>
+    <symbol id="i-rosette" viewBox="0 0 24 24"><path d="M12 2l2.2 3.1 3.7-.9.4 3.8 3.4 1.7-2.3 3 2.3 3-3.4 1.7-.4 3.8-3.7-.9L12 24l-2.2-3.1-3.7.9-.4-3.8L2.3 16l2.3-3-2.3-3 3.4-1.7.4-3.8 3.7.9L12 2zm0 5.5A4.5 4.5 0 1 0 12 16.5 4.5 4.5 0 0 0 12 7.5z"/></symbol>
+    <symbol id="i-explore" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm4.6 3.4l-2.4 6.2-6.2 2.4 2.4-6.2 6.2-2.4zM12 10.8a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M9.6 17.2L4.4 12l-1.5 1.4 6.7 6.7L21.1 8.6 19.6 7.2 9.6 17.2z"/></symbol>
+  </defs>
+</svg>
+
+<a class="skip-link" href="#main">Skip to the lesson</a>
+
+<!-- PROTOTYPE CONTROLS — the block from home.html, verbatim. -->
+<div class="devbar" role="group" aria-label="Prototype controls">
+  <div class="devbar__group" role="group" aria-label="Theme">
+    <button class="devbar__btn" type="button" data-theme-btn="system" aria-pressed="true">Auto</button>
+    <button class="devbar__btn" type="button" data-theme-btn="light" aria-pressed="false">Light</button>
+    <button class="devbar__btn" type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+  </div>
+  <div class="devbar__group">
+    <label for="hour" class="visually-hidden">Simulated hour of day</label>
+    <input id="hour" type="range" min="0" max="23" step="1" data-hour-input>
+    <output class="devbar__reading" data-hour-readout>—</output>
+  </div>
+  <div class="devbar__group" role="group" aria-label="Motion">
+    <button class="devbar__btn" type="button" data-motion-btn="auto" aria-pressed="true">Motion: auto</button>
+    <button class="devbar__btn" type="button" data-motion-btn="reduce" aria-pressed="false">Reduce</button>
+  </div>
+  <button class="devbar__btn" type="button" data-demo="reset">Reset day</button>
+</div>
+
+<div class="app-shell">
+
+  <!-- NAVIGATION — home.html's block; Explore and Library appended as
+       rail-only destinations. See components.css §E1.
+       The shipping library_detail_page has no nav at all — it is a close-button
+       dead end — and it is the only page in the app with a white background.
+       Both are fixed here: the reading view keeps the shell and the parchment
+       canvas, because the ground inversion has to be total. [D §5.1] -->
+  <nav class="app-nav" aria-label="Primary">
+    <a class="app-nav__brand" href="index.html">
+      <img src="../assets/images/Habit_Craft_Logo_File-09.png" alt="">
+      <span>HabitCrafts</span>
+    </a>
+
+    <a class="nav-fab" href="create-habit.html">
+      <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+      <span class="nav-fab__label">New habit</span>
+      <span class="visually-hidden">Craft a new habit</span>
+    </a>
+
+    <ul class="app-nav__list">
+      <li><a class="nav-item" href="home.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-habits"></use></svg>
+        <span class="nav-item__label">Habits</span>
+      </a></li>
+      <li><a class="nav-item" href="progress.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-progress"></use></svg>
+        <span class="nav-item__label">Progress</span>
+      </a></li>
+      <li><a class="nav-item" href="community.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-community"></use></svg>
+        <span class="nav-item__label">Community</span>
+      </a></li>
+      <li class="nav-li--rail"><a class="nav-item" href="explore.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-explore"></use></svg>
+        <span class="nav-item__label">Explore</span>
+      </a></li>
+      <li class="nav-li--rail"><a class="nav-item" href="library.html" aria-current="page">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-library"></use></svg>
+        <span class="nav-item__label">Library</span>
+      </a></li>
+      <li><a class="nav-item" href="profile.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-person"></use></svg>
+        <span class="nav-item__label">Profile</span>
+      </a></li>
+    </ul>
+
+    <a class="app-nav__user" href="profile.html">
+      <span class="avatar" aria-hidden="true">M</span>
+      <span>
+        <span class="t-label" style="display:block">Mark</span>
+        <span class="t-body-sm t-muted">Member since 2024</span>
+      </span>
+    </a>
+  </nav>
+
+  <!-- =========================================================================
+       THE READING VIEW.
+       `.page` is the usual 1184px content area, but the ARTICLE inside it is
+       capped at --layout-read-max (600px) at EVERY width — 390, 768, 1280,
+       1920. This is the one screen in the system where a narrow measure is
+       correct [B §6.1], so widening the window adds a contents list beside the
+       column, never a wider column.
+
+       The shipping detail page puts the HTML body in a container forced to
+       MediaQuery.height * 1.0 inside a scroll view, which clips long articles
+       and leaves a void under short ones, and titles the page from
+       `article.page_title` while the list that linked here used `article.title`
+       — so the same lesson can carry two different names. Here there is one
+       title, and the column grows with its content.
+       ====================================================================== -->
+  <main id="main" class="page">
+
+    <a class="page-back" href="library.html">
+      <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow"></use></svg>
+      Library
+    </a>
+
+    <div class="read-layout">
+
+      <!-- Contents. ≥1200 only — below that the article is short enough to
+           scroll and a TOC would be furniture. -->
+      <nav class="read-toc" aria-labelledby="toc-h">
+        <h2 id="toc-h" class="read-toc__title t-label">In this lesson</h2>
+        <ul class="read-toc__list">
+          <li><a class="read-toc__link" href="#s-window">Why the window is short</a></li>
+          <li><a class="read-toc__link" href="#s-counts">What counts as a celebration</a></li>
+          <li><a class="read-toc__link" href="#s-yours">Finding one that is yours</a></li>
+          <li><a class="read-toc__link" href="#s-silly">When it feels silly</a></li>
+        </ul>
+        <a class="btn btn--secondary btn--sm" href="create-habit.html"
+           style="margin-block-start:var(--space-24)">Make it a habit</a>
+      </nav>
+
+      <article class="article">
+        <p class="article__meta t-body-sm">
+          <span>Week 5 · Making it easy</span>
+          <span aria-hidden="true">·</span>
+          <span>Lesson 4 of 5</span>
+          <span aria-hidden="true">·</span>
+          <span>4 min read</span>
+        </p>
+
+        <h1 class="article__title t-h1">Celebrate in the first three seconds</h1>
+
+        <p class="article__standfirst">
+          The repetition is not what makes a habit stick. The feeling is — and
+          the feeling has a very short window.
+        </p>
+
+        <div class="article__body">
+          <p>
+            You already know the part where you do the thing. Two push-ups, one
+            page, three breaths. That part is easy once it is small enough. The
+            part almost everyone skips is what happens immediately afterwards,
+            and that is the part your brain is actually keeping score of.
+          </p>
+
+          <h2 id="s-window">Why the window is short</h2>
+          <p>
+            A behaviour gets wired in by the emotion attached to it, not by how
+            long you have been doing it. That emotion has to arrive while the
+            behaviour is still happening or just as it ends. Three seconds later
+            and you have moved on; your brain has nothing to attach.
+          </p>
+          <p>
+            This is why people can floss for a month and still not have a
+            flossing habit. They did the behaviour thirty times and felt nothing
+            thirty times. Repetition without feeling is just admin.
+          </p>
+
+          <blockquote class="article__quote">
+            The habit is not what you did. It's how you felt about having done it.
+          </blockquote>
+
+          <h2 id="s-counts">What counts as a celebration</h2>
+          <p>
+            Anything that gives you a genuine flicker of "good". It does not
+            have to be visible to anyone else and it should take no time at all.
+            People who have made this work use things like:
+          </p>
+          <ul>
+            <li>Saying a word out loud — <em>yes</em>, <em>done</em>, <em>good</em>.</li>
+            <li>A fist pump, a nod, a small physical gesture.</li>
+            <li>Picturing someone specific being pleased with you.</li>
+            <li>One deliberate breath, taken as a full stop.</li>
+          </ul>
+          <p>
+            What does not count: a reward you have to go and get, anything that
+            takes more than a few seconds, and anything you have to remember to
+            do later. If it needs a plan, it will not survive a bad week.
+          </p>
+
+          <h2 id="s-yours">Finding one that is yours</h2>
+          <p>
+            Borrowed celebrations feel like a script. Yours will feel slightly
+            embarrassing, which is the sign it is real. Try three or four over
+            the next few days and notice which one produces an actual flicker
+            rather than a performance of one.
+          </p>
+          <p>
+            When you find it, write it down in the habit itself — HabitCrafts
+            asks <em>"How will you celebrate?"</em> for exactly this reason, and
+            it says your own words back to you every time you check in.
+          </p>
+
+          <h2 id="s-silly">When it feels silly</h2>
+          <p>
+            It will, for about a week. That is not a reason to stop; the
+            self-consciousness fades much faster than the wiring does. If it
+            helps, do it where nobody can see you. The habit does not care
+            whether there was an audience.
+          </p>
+          <p>
+            And on the day you miss: nothing was lost. You showed up for
+            forty-two days. Tomorrow the same three seconds are still available.
+          </p>
+        </div>
+
+        <!-- =================================================================
+             THE BRIDGE. This screen's ONE --c-hero-fill surface, and the thing
+             the shipping app never turned on: "Make it a habit" exists in the
+             codebase exactly once, inside `if (false)`, so the knowledge layer
+             currently terminates here with no way into the habit layer.
+             ============================================================== -->
+        <section class="hero read-bridge" aria-labelledby="bridge-h">
+          <h2 id="bridge-h" class="read-bridge__title">Make it a habit</h2>
+          <p class="read-bridge__body t-body">
+            Reading it is not the habit. Give it a prompt, keep it small, and
+            decide now how you'll celebrate — it takes about a minute.
+          </p>
+          <div class="read-bridge__actions">
+            <a class="btn btn--secondary" href="create-habit.html">Craft it now</a>
+            <a class="btn btn--ghost" href="explore.html">Need inspiration?</a>
+          </div>
+        </section>
+
+        <nav class="read-nav" aria-label="Lesson navigation">
+          <a class="card card--interactive" href="library-detail.html">
+            <span class="read-nav__label t-body-sm">Previous</span>
+            <span class="read-nav__title t-body">Design the space, not the willpower</span>
+          </a>
+          <a class="card card--interactive read-nav__next" href="library-detail.html">
+            <span class="read-nav__label t-body-sm">Next</span>
+            <span class="read-nav__title t-body">What to do on the day you miss</span>
+          </a>
+        </nav>
+      </article>
+
+      <!-- The third grid track at ≥1200 is deliberately empty: it keeps the
+           220 | 600 pair optically centred in the content area instead of
+           pinning it to the rail. Nothing floats in it. -->
+      <div aria-hidden="true"></div>
+    </div>
+  </main>
+</div>
+
+<script src="js/prototype.js"></script>
+</body>
+</html>

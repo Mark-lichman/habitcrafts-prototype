@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Welcome · HabitCrafts</title>
+<meta name="description" content="HabitCrafts redesign prototype — onboarding. Three slides, a page indicator you can actually read, and no swipe-only steps.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="../assets/images/favicon.png">
+<!-- Order matters: tokens → base → components. -->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+<!-- ICON SPRITE — the two glyphs this screen needs, same family. [D §6] -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M13 5l7 7-7 7-1.4-1.4 4.6-4.6H4v-2h12.2l-4.6-4.6L13 5z"/></symbol>
+    <symbol id="i-arrow-back" viewBox="0 0 24 24"><path d="M11 5L4 12l7 7 1.4-1.4L7.8 13H20v-2H7.8l4.6-4.6L11 5z"/></symbol>
+  </defs>
+</svg>
+
+<a class="skip-link" href="#main">Skip to the welcome tour</a>
+
+<!-- PROTOTYPE CONTROLS — the block from home.html. The hour slider is kept so
+     the reviewer can confirm nothing on a logged-out screen reacts to it. -->
+<div class="devbar" role="group" aria-label="Prototype controls">
+  <div class="devbar__group" role="group" aria-label="Theme">
+    <button class="devbar__btn" type="button" data-theme-btn="system" aria-pressed="true">Auto</button>
+    <button class="devbar__btn" type="button" data-theme-btn="light" aria-pressed="false">Light</button>
+    <button class="devbar__btn" type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+  </div>
+  <div class="devbar__group">
+    <label for="hour" class="visually-hidden">Simulated hour of day</label>
+    <input id="hour" type="range" min="0" max="23" step="1" data-hour-input>
+    <output class="devbar__reading" data-hour-readout>—</output>
+  </div>
+  <div class="devbar__group" role="group" aria-label="Motion">
+    <button class="devbar__btn" type="button" data-motion-btn="auto" aria-pressed="true">Motion: auto</button>
+    <button class="devbar__btn" type="button" data-motion-btn="reduce" aria-pressed="false">Reduce</button>
+  </div>
+</div>
+
+<!-- ===========================================================================
+     ONBOARDING. Logged-out: no rail, no bottom bar, no FAB. Nothing to
+     navigate to yet, so there is no navigation. [B §6.3]
+
+     Four things the shipping flow gets wrong, all fixed here:
+
+     1. The page indicator sets dotColor and activeDotColor to the SAME value
+        (#D9D9D9, onboarding_widget.dart:428-429), so "you are here" is invisible.
+        Here the active dot is --c-brand-600 and 24px wide, inactive dots are
+        --c-border and 8px — a colour step AND a width step, so it survives
+        grayscale — plus aria-current on the control itself.
+     2. Slides 1 and 2 are swipe-only. There is no Next, no Back, no Skip, and
+        nothing on screen says to swipe. Every step here has a visible,
+        keyboard-operable control; the arrow keys work too.
+     3. Slide 3 drops the illustration and switches to bodyMedium at 20px, so
+        it does not read as a headline. Here all three slides share a rhythm.
+     4. The background is the theme `primary` mid-blue. Gone: this is the same
+        parchment canvas as every other screen. [D §5.1]
+     ======================================================================== -->
+<main id="main" class="ob-page">
+
+  <div class="ob-top">
+    <span class="ob-brand">
+      <img src="../assets/images/Habit_Craft_Logo_File-09.png" alt="">
+      <span>HabitCrafts</span>
+    </span>
+    <a class="text-link" href="home.html">Skip</a>
+  </div>
+
+  <div class="ob-card">
+    <div class="ob-stage" data-ob-stage>
+
+      <!-- ── SLIDE 1. Headline and body are the shipping copy, verbatim. ── -->
+      <section class="ob-slide" data-ob-slide="1" aria-labelledby="ob1-h">
+        <div class="ob-slide__art">
+          <!-- Flat two-colour: brand-300 shapes, brand-700 linework, one gold
+               accent. No 3D, no gradient blobs, no stock characters. [D §6] -->
+          <svg viewBox="0 0 300 240" role="img"
+               aria-label="A small stone with a single leaf growing from it">
+            <ellipse cx="150" cy="206" rx="96" ry="16" fill="var(--c-brand-300)" opacity=".45"/>
+            <path d="M104 206c0-26 21-46 46-46s46 20 46 46z" fill="var(--c-brand-300)"
+                  stroke="var(--c-brand-700)" stroke-width="3"/>
+            <path d="M150 160V96" stroke="var(--c-brand-700)" stroke-width="3" stroke-linecap="round"/>
+            <path d="M150 132c-28 0-45-16-47-40 26-4 47 11 47 40z" fill="var(--c-brand-300)"
+                  stroke="var(--c-brand-700)" stroke-width="3"/>
+            <path d="M150 112c25-2 40-16 42-38-25-2-42 10-42 38z" fill="var(--c-sage-500)"
+                  stroke="var(--c-brand-700)" stroke-width="3"/>
+            <circle cx="150" cy="88" r="7" fill="var(--c-gold-500)"/>
+          </svg>
+        </div>
+        <div class="ob-slide__text">
+          <h1 id="ob1-h" class="ob-slide__title">What is a habit and how does it work?</h1>
+          <p class="ob-slide__body t-body-lg">
+            Build habits for consistent, incremental progress, as small daily
+            actions prove more effective than sporadic big changes.
+          </p>
+        </div>
+      </section>
+
+      <!-- ── SLIDE 2. Headline verbatim. The body is REWRITTEN: the shipping
+              copy reads "…fostering emotional detachment and providing a
+              crucial neutral perspective for experimenting with new habits",
+              which says the opposite of what the screen means and is the
+              heaviest sentence in the product. See the note in the reply. ── -->
+      <section class="ob-slide" data-ob-slide="2" aria-labelledby="ob2-h" hidden>
+        <div class="ob-slide__art">
+          <svg viewBox="0 0 300 240" role="img"
+               aria-label="Two stones side by side, joined by a woven thread">
+            <ellipse cx="150" cy="206" rx="106" ry="16" fill="var(--c-brand-300)" opacity=".45"/>
+            <path d="M62 206c0-24 18-42 40-42s40 18 40 42z" fill="var(--c-brand-300)"
+                  stroke="var(--c-brand-700)" stroke-width="3"/>
+            <path d="M160 206c0-30 22-52 50-52s50 22 50 52z" fill="var(--c-brand-300)"
+                  stroke="var(--c-brand-700)" stroke-width="3"/>
+            <path d="M92 158c14-34 44-52 78-40" fill="none" stroke="var(--c-brand-700)"
+                  stroke-width="3" stroke-linecap="round"/>
+            <path d="M104 128c22-16 46-18 72-6" fill="none" stroke="var(--c-sage-500)"
+                  stroke-width="3" stroke-linecap="round"/>
+            <circle cx="92" cy="158" r="7" fill="var(--c-gold-500)"/>
+            <circle cx="196" cy="122" r="7" fill="var(--c-gold-500)"/>
+          </svg>
+        </div>
+        <div class="ob-slide__text">
+          <h1 id="ob2-h" class="ob-slide__title">The importance of partnerships.</h1>
+          <p class="ob-slide__body t-body-lg">
+            Habits hold better when someone else can see them. A partner gives
+            you a place to belong, someone who notices when you show up, and an
+            honest read on how it's actually going.
+          </p>
+        </div>
+      </section>
+
+      <!-- ── SLIDE 3. Text verbatim; given the illustration and the headline
+              weight the shipping slide drops. ── -->
+      <section class="ob-slide" data-ob-slide="3" aria-labelledby="ob3-h" hidden>
+        <div class="ob-slide__art">
+          <svg viewBox="0 0 300 240" role="img"
+               aria-label="A single card on a shelf with a gold mark in the corner">
+            <ellipse cx="150" cy="206" rx="96" ry="16" fill="var(--c-brand-300)" opacity=".45"/>
+            <rect x="72" y="70" width="156" height="112" rx="14" fill="var(--c-brand-300)"
+                  stroke="var(--c-brand-700)" stroke-width="3"/>
+            <path d="M96 106h84M96 128h60" stroke="var(--c-brand-700)" stroke-width="3"
+                  stroke-linecap="round"/>
+            <circle cx="196" cy="146" r="18" fill="none" stroke="var(--c-sage-500)" stroke-width="3"/>
+            <path d="M188 146l6 6 12-13" fill="none" stroke="var(--c-sage-500)" stroke-width="3"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M228 84v-6a8 8 0 0 0-8-8h-6z" fill="var(--c-gold-500)"/>
+          </svg>
+        </div>
+        <div class="ob-slide__text">
+          <h1 id="ob3-h" class="ob-slide__title">Let's start by creating your first habit.</h1>
+          <p class="ob-slide__body t-body-lg">
+            Keep it small, you can always do more. One behaviour, one prompt,
+            one way to celebrate — about a minute's work.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <!-- =====================================================================
+         FOOTER CONTROLS. Back · dots · Next, and on the last slide the Next
+         button is replaced by the real CTA. The dots are buttons: you can jump
+         between slides, which the shipping PageView cannot do at all.
+         ================================================================== -->
+    <div class="ob-foot">
+      <button class="btn btn--ghost" type="button" data-ob-prev hidden>
+        <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-back"></use></svg>
+        Back
+      </button>
+
+      <ul class="ob-dots" data-ob-dots aria-label="Slide">
+        <li><button class="ob-dot" type="button" data-ob-go="1" aria-current="true">
+          <span class="visually-hidden">Slide 1 of 3</span></button></li>
+        <li><button class="ob-dot" type="button" data-ob-go="2" aria-current="false">
+          <span class="visually-hidden">Slide 2 of 3</span></button></li>
+        <li><button class="ob-dot" type="button" data-ob-go="3" aria-current="false">
+          <span class="visually-hidden">Slide 3 of 3</span></button></li>
+      </ul>
+
+      <button class="btn btn--primary" type="button" data-ob-next>
+        Next
+        <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow"></use></svg>
+      </button>
+
+      <a class="btn btn--primary" href="create-habit.html" data-ob-done hidden>Get Started</a>
+    </div>
+  </div>
+</main>
+
+<script src="js/prototype.js"></script>
+</body>
+</html>

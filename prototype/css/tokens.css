@@ -205,6 +205,18 @@
   --c-done-border:     var(--l-sage-300);
   --c-done-ink:        var(--l-sage-700);
 
+  /* Illustration linework. Added by the primitives build.
+     The direction specifies "brand-300 shapes with brand-700 linework ON THE
+     LIGHT CANVAS" — it names a light-mode pairing, and in Nightfall that pair
+     collapses: brand-700 becomes the hero blue and a stem drawn in it vanishes
+     into the canvas. Rather than a second artwork or a dark block in a
+     component file, the dark answer lives here, where the architecture says it
+     belongs: in Nightfall the linework INVERTS to the brand tint, exactly as
+     ink does everywhere else in the theme.
+       light: brand-700 on brand-300 shapes ✅   dark: brand tint, 8.44:1 on
+       canvas and still separated from the brand-300 fill it outlines. */
+  --c-illus-line:      var(--l-brand-700);
+
   --c-scrim:           rgba(22, 35, 47, 0.4); /* modal scrim = 40% ink-strong   */
 
 
@@ -474,6 +486,9 @@
     --c-done-border:     #33463A;
     --c-done-ink:        var(--d-sage);
 
+    /* Linework inverts in Nightfall — see the note in the light mapping. */
+    --c-illus-line:      var(--d-brand);
+
     --c-scrim:           rgba(4, 8, 12, 0.55);
 
     /* No shadows in dark. Elevation is tone + border only. [D §4.3] */
@@ -550,6 +565,9 @@
   --c-done-surface:    var(--d-sage-surface);
   --c-done-border:     #33463A;
   --c-done-ink:        var(--d-sage);
+
+  /* Linework inverts in Nightfall — see the note in the light mapping. */
+  --c-illus-line:      var(--d-brand);
 
   --c-scrim:           rgba(4, 8, 12, 0.55);
 

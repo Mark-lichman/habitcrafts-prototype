@@ -2912,3 +2912,1289 @@ body:has(.devbar) .page { padding-block-end: 128px; }
 
 /* The chevron glyph, shared by the pane nav, the folds and the goal rows. */
 .icon--chevron { inline-size: 18px; block-size: 18px; flex: none; color: var(--c-ink-muted); }
+
+
+/* ############################################################################
+   ############################################################################
+   APPENDED SECTION — PRIMITIVES BUILD
+   Illustration system · empty states · milestone celebration · the four gild
+   tiers · skeleton loading · streak repair.
+
+   APPEND-ONLY. Nothing above this line is edited or reordered. Everything
+   below is self-contained and consumes only --c-* / --space-* / --dur-* /
+   --ease-* tokens; no literal hex, no new palette value.
+   ############################################################################
+   ######################################################################### */
+
+
+/* ############################################################################
+   P1. ILLUSTRATION SYSTEM                                 [D §6 Illustration]
+   Used by: every empty state, on every screen.
+
+   The rule the docs state is a TWO-COLOUR rule, so it is enforced here in CSS
+   rather than retyped as inline fills on every path: an illustration is
+   brand-300 shapes with brand-700 linework, plus AT MOST ONE accent element in
+   sage or gold. Because the colours come from the semantic layer, every piece
+   of art re-tones itself in Nightfall for free — brand-300 and brand-700 both
+   remap — with no second artwork and no dark-mode SVG.
+
+   Vocabulary is abstract-botanical / geometric: leaves, stems, threads,
+   stones, craft objects. Explicitly NOT: 3D renders, gradient blobs, stock
+   characters, Corporate-Memphis people. The test in the doc is the test here —
+   if it cannot be drawn in two colours it does not belong.
+
+   Markup shape:
+     <svg class="illus" viewBox="0 0 120 120" role="img" aria-label="...">
+       <ellipse class="illus__ground" />        the stone/shadow it rests on
+       <path    class="illus__shape"  />        brand-300 fill + brand-700 line
+       <path    class="illus__line"   />        linework only, no fill
+       <g class="illus__drift"><path class="illus__accent" /></g>
+     </svg>
+   ######################################################################### */
+
+.illus { inline-size: 132px; block-size: 132px; overflow: visible; }
+
+/* Shapes and linework. Stroke widths are chosen so a 120-unit artwork drawn at
+   132px reads at the same optical weight as the 1.7px icon family. */
+.illus__shape {
+  fill: var(--c-brand-300);
+  stroke: var(--c-illus-line);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.illus__line {
+  fill: none;
+  stroke: var(--c-illus-line);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* The ground: the one place a flat brand-300 wash is allowed without linework,
+   because it reads as a shadow rather than an object. */
+.illus__ground { fill: var(--c-brand-300); stroke: none; opacity: 0.55; }
+
+/* THE ACCENT — one per illustration, maximum. Sage by default; --gold for the
+   art that belongs to a reward moment. Both are filled shapes: gold-500 is
+   1.52:1 on canvas and may never be a hairline. [D §6] */
+.illus__accent {
+  fill: var(--c-sage-500);
+  stroke: var(--c-illus-line);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.illus__accent--gold { fill: var(--c-gold-500); stroke: none; }
+
+/* THE ONE PERMITTED LOOP IN THE ENTIRE SYSTEM. [D §6 Motion discipline]
+   4s, ONE axis, plus-or-minus 4px, applied to a <g> around the leaf — not to
+   the whole drawing, so the stone stays planted and only the growing thing
+   moves. Uses the `translate` property, not `transform`, so it cannot fight
+   the card springs or the FLIP reorder, which use `scale` and `translate` on
+   separate elements. 4s is deliberately under the WCAG 2.2.2 five-second
+   threshold. */
+@keyframes hc-illus-drift {
+  from { translate: 0 -4px; }
+  to   { translate: 0 4px; }
+}
+.illus__drift {
+  animation: hc-illus-drift var(--dur-drift) ease-in-out infinite alternate;
+}
+
+/* Reduced motion: it stops DEAD, not fast. The global base.css block caps
+   animation-duration and iteration-count, which would leave the leaf parked
+   4px off its drawn position — so both branches are killed explicitly here
+   and the translate is zeroed. Built, not promised. */
+@media (prefers-reduced-motion: reduce) {
+  .illus__drift { animation: none !important; translate: none !important; }
+}
+:root[data-motion="reduce"] .illus__drift {
+  animation: none !important;
+  translate: none !important;
+}
+
+/* The kit's own art class gets the same treatment, so the pre-existing
+   .empty-state__art--drift illustrations and the new .illus ones behave
+   identically under the motion toggle. */
+:root[data-motion="reduce"] .empty-state__art {
+  animation: none !important;
+  translate: none !important;
+}
+
+/* Empty-state polish: the CTA never pulses or breathes — it is a still button
+   under a moving leaf, which is the whole point of the one-loop rule. */
+.empty-state .illus { margin-block-end: var(--space-4); }
+.empty-state--compact { padding-block: var(--space-24); }
+.empty-state--compact .illus { inline-size: 96px; block-size: 96px; }
+
+
+/* ############################################################################
+   P2. GILD TIERS, COMPOSED                                            [D §2.4]
+   Used by: Home (all four tiers side by side), Progress (rows + fulfilled).
+
+   The four marks already exist above (section 8, GILDING). What is added here
+   is the part that was stubbed: the marks must COMPOSE WITH EVERY OTHER CARD
+   STATE — a day-100 habit completed today shows the seal AND the sage
+   completed tone AND the ring check, all at once, none cancelling another.
+
+   How that is guaranteed:
+     - the tick is ::after                 nothing else on the card uses it
+     - the hairline is an inset box-shadow .is-complete sets background and
+       border-color only, so it cannot clobber the shadow
+     - the seal is a real element beside the title, never a background
+   The rules below only re-tone the marks so they stay legible ON the sage
+   completed surface, and add the 365 tier's solid seal.
+   ######################################################################### */
+
+/* Day 365: the seal fills solid. The card also keeps the tick and the
+   hairline — the tiers are cumulative, which is why the ladder reads as a
+   ladder rather than four unrelated badges. */
+.habit-card--gild-365 .seal {
+  background: var(--c-gold-500);
+  color: var(--c-ink);           /* ink on gold-500 = 7.29:1 */
+}
+
+/* Completed + gilded. The gold hairline sits INSIDE the card, so on the sage
+   surface it still reads as an inset rule rather than a boundary against the
+   canvas — the constraint that made it an inset shadow in the first place.
+   Nothing is removed on completion: a gild is a record, not a status. */
+.habit-card.is-complete.habit-card--gild-30,
+.habit-card.is-complete.habit-card--gild-100,
+.habit-card.is-complete.habit-card--gild-365 {
+  box-shadow: inset 0 0 0 1px var(--c-gold-500);
+}
+/* The seal keeps its own disc on the sage card so it never sinks into the
+   completed tone. */
+.habit-card.is-complete .seal { background: var(--c-gold-surface); }
+.habit-card.is-complete .seal--solid,
+.habit-card.is-complete.habit-card--gild-365 .seal {
+  background: var(--c-gold-500);
+  color: var(--c-ink);
+}
+
+/* The comparison strip on Home. Four cards, four tiers, one glance. The label
+   under each is prototype scaffolding for review, not product chrome — it is
+   marked .gild-note so it is trivial to delete for the Flutter build. */
+.gild-note {
+  display: block;
+  margin-block-start: var(--space-4);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-caption);
+  letter-spacing: var(--ls-caption);
+  color: var(--c-ink-subtle);
+}
+
+
+/* ############################################################################
+   P3. MILESTONE CELEBRATION                                           [D §2.4]
+   Used by: HC.fireMilestone() — see the appended JS section.
+
+   Gold owns the screen for 1.6 seconds, once per session. The confetti pieces
+   are created by JS and positioned along the card's TOP EDGE; everything about
+   how they look lives here so the JS carries geometry only.
+   ######################################################################### */
+
+.confetti-piece {
+  position: absolute;
+  inset-block-start: 0;
+  inline-size: 5px;
+  block-size: 9px;
+  border-radius: 1px;
+  pointer-events: none;
+}
+/* Four fills, all legal on the modal's white stock. No new colour is invented
+   for the celebration — it reuses the reward palette the system already
+   spends elsewhere. */
+.confetti-piece--gold  { background: var(--c-gold-500); }
+.confetti-piece--gold2 { background: var(--c-gold-300); }
+.confetti-piece--sage  { background: var(--c-sage-500); }
+.confetti-piece--brand { background: var(--c-brand-300); }
+
+/* The card enters on spring-gentle (0.8/200 spatial-slow) at its paired 650ms
+   duration — the token pairing, not a hand-picked number. */
+@keyframes hc-milestone-in {
+  from { opacity: 0; scale: 0.92; translate: 0 16px; }
+  to   { opacity: 1; scale: 1;    translate: 0 0; }
+}
+.modal--milestone {
+  animation: hc-milestone-in var(--dur-spring-gentle) var(--ease-spring-gentle) both;
+}
+.modal--milestone .seal--lg { margin-inline: auto; }
+.modal--milestone .modal__numeral { margin-block-start: var(--space-12); }
+
+/* REDUCED MOTION: card and numeral CROSSFADE in. No spring, no confetti (the
+   JS branch never creates the pieces), no scale, no travel.
+   This override is necessary and not redundant: base.css kills `transform`,
+   but this animation moves with the independent `scale` and `translate`
+   properties, which that block does not touch. */
+@media (prefers-reduced-motion: reduce) {
+  .modal--milestone {
+    animation: hc-fade-in var(--dur-base) var(--ease-standard) both !important;
+  }
+}
+:root[data-motion="reduce"] .modal--milestone {
+  animation: hc-fade-in var(--dur-base) var(--ease-standard) both !important;
+}
+
+/* THE QUIETER FALLBACK. Second and later milestones in a session never get the
+   card. They get this: the streak numeral and its flame chip flush gold once,
+   over 900ms, on ease-standard — a COLOUR transition, never a spatial spring,
+   because a spring on colour produces a visible tint wobble. WCAG 2.3.3 puts
+   colour-only change outside "motion animation", so this treatment is
+   identical under reduced motion and needs no second branch.
+   [D §6: no celebration that loops or repeats per session] */
+@keyframes hc-streak-flush {
+  0%   { color: inherit; }
+  35%  { color: var(--c-gold-500); }
+  100% { color: inherit; }
+}
+@keyframes hc-streak-flush-ink {
+  0%   { color: inherit; }
+  35%  { color: var(--c-gold-700); }
+  100% { color: inherit; }
+}
+/* On the hero the numeral is white and gold-500 on brand-700 is 4.98:1, so the
+   bright flush is legal there. Anywhere on paper the flush uses gold-700 —
+   never gold-500, which is 1.52:1 on canvas. */
+.is-streak-flush { animation: hc-streak-flush-ink 900ms var(--ease-standard) both; }
+.hero .is-streak-flush { animation-name: hc-streak-flush; }
+
+
+/* ############################################################################
+   P4. SKELETON LOADING — the no-shimmer rule, completed              [D §4.5]
+   Used by: Home's habit list and Progress's summary, via the devbar Load
+   controls.
+
+   The law: under 400ms show NOTHING — a skeleton that flashes for 200ms is
+   worse than a blank box, because the eye registers a change it cannot read.
+   Beyond 400ms: static blocks in canvas-sunken at the CORRECT radii (a
+   skeleton whose corners do not match the card it stands in reads as a bug),
+   with ONE gentle opacity pulse, 0.7 to 1.0, 1200ms ease-in-out alternating.
+   No shimmer sweep anywhere — that is the idiom this system rejects.
+   ######################################################################### */
+
+/* The kit's .skeleton (above) supplies fill, radius and the pulse. These are
+   the shapes the loading state is assembled from. */
+.skeleton--line    { block-size: 12px; border-radius: var(--radius-full); }
+.skeleton--line-sm { block-size: 10px; border-radius: var(--radius-full); }
+.skeleton--ring    { inline-size: 44px; block-size: 44px; border-radius: var(--radius-full); flex: none; }
+.skeleton--tile    { block-size: 96px; border-radius: var(--radius-md); }
+.skeleton--hero    { block-size: 208px; border-radius: var(--radius-md); }
+
+/* A skeleton habit card: same 72px pitch, same 16px padding, same radius-16 as
+   the real card, so nothing shifts when the content arrives. */
+.skeleton-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  min-block-size: 72px;
+  padding: var(--space-16);
+  background: var(--c-surface);
+  border: var(--stroke-hairline) solid var(--c-border);
+  border-radius: var(--radius-md);
+}
+.skeleton-card__body {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+/* The list mirrors .habit-list exactly, including the md+ auto-fill grid, so
+   the skeleton occupies the same footprint as the content it stands in for. */
+.skeleton-list { display: flex; flex-direction: column; gap: var(--layout-card-gap); }
+@media (min-width: 600px) {
+  .skeleton-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    gap: var(--layout-card-gap);
+  }
+}
+
+/* Every block breathes in phase, on purpose. Independent phases would read as
+   a shimmer sweep by another name. */
+
+/* REDUCED MOTION: fully static at full opacity. Not slowed, not one-shot —
+   off. base.css alone would leave it parked at whichever keyframe its capped
+   120ms run happened to end on. */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none !important; opacity: 1 !important; }
+}
+:root[data-motion="reduce"] .skeleton { animation: none !important; opacity: 1 !important; }
+
+
+/* ############################################################################
+   P5. STREAK REPAIR — freeze, grace, decay                    [D §3.2] [D §6]
+   Used by: progress.html.
+
+   The veto list bans broken-chain icons, red missed days and "don't lose your
+   streak" copy. What replaces them is three real mechanics, shown as three
+   states of one component:
+
+     FREEZE  a day you had banked and spent. Sage, a shield, past tense.
+     GRACE   the window in which yesterday can still be filled in. Amber —
+             amber is care, not alarm. clay-600 appears nowhere on this
+             component, and neither does any red.
+     DECAY   the streak eases down instead of resetting to zero. The bar is the
+             only place the number moves, and it moves down a LITTLE, which is
+             the entire argument.
+
+   Copy law, enforced by example: "You showed up for 42 days straight."
+   NEVER "You lost your 42-day streak."
+   ######################################################################### */
+
+.repair { display: flex; flex-direction: column; gap: var(--space-16); }
+
+.repair__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-12);
+  padding: var(--space-12);
+  border-radius: var(--radius-sm);
+  background: var(--c-canvas-sunken);
+}
+.repair__row--freeze { background: var(--c-sage-100); }
+.repair__row--grace  { background: var(--c-amber-surface); }
+.repair__row--decay  { background: var(--c-surface-tinted); }
+
+/* The state glyph: a disc with an outlined icon inside — the gild seal's
+   affordance, in the repair palette. Colour is never the only carrier; each
+   row also names its own state in its heading. */
+.repair__mark {
+  flex: none;
+  inline-size: 32px;
+  block-size: 32px;
+  border-radius: var(--radius-full);
+  display: inline-grid;
+  place-items: center;
+  background: var(--c-surface);
+  border: var(--stroke-hairline) solid var(--c-border);
+}
+.repair__mark .icon { inline-size: 18px; block-size: 18px; color: currentColor; }
+.repair__row--freeze .repair__mark { color: var(--c-sage-700); border-color: var(--c-done-border); }
+.repair__row--grace  .repair__mark { color: var(--c-amber-750); border-color: var(--c-amber-750); }
+.repair__row--decay  .repair__mark { color: var(--c-brand-600); border-color: var(--c-brand-200); }
+
+.repair__body { flex: 1 1 auto; min-inline-size: 0; }
+.repair__title {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-label);
+  color: var(--c-ink-strong);
+}
+.repair__text {
+  margin-block-start: 2px;
+  font-size: var(--fs-body-sm);
+  line-height: calc(var(--lh-body-sm) / var(--fs-body-sm));
+  color: var(--c-ink-muted);
+}
+.repair__row--grace .repair__text { color: var(--c-amber-750); }
+.repair__row--freeze .repair__text { color: var(--c-sage-700); }
+
+/* Banked freeze days, as objects you can count. Spent ones are outlined, not
+   struck through — nothing on this screen is ever crossed out. */
+.repair__tokens { display: flex; gap: var(--space-8); margin-block-start: var(--space-8); }
+.repair__token {
+  inline-size: 20px;
+  block-size: 20px;
+  border-radius: var(--radius-full);
+  background: var(--c-sage-300);
+  border: var(--stroke-hairline) solid var(--c-sage-600);
+}
+.repair__token--spent { background: transparent; border-style: dashed; }
+
+/* THE DECAY BAR. Two measures on one track: where the streak stands now, and
+   the ghost of where it stood. The gap between them is small ON PURPOSE — a
+   week away costs a few days, not everything. The fill uses --ease-linear, the
+   sanctioned linear exception alongside the ring, because a progress measure
+   that eases is lying about its own rate. */
+.repair__decay { margin-block-start: var(--space-12); }
+.repair__track {
+  position: relative;
+  block-size: 8px;
+  border-radius: var(--radius-full);
+  background: var(--c-canvas-sunken);
+  overflow: hidden;
+}
+.repair__was,
+.repair__now {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  border-radius: var(--radius-full);
+}
+.repair__was { background: var(--c-brand-200); }
+.repair__now {
+  background: var(--c-brand-500);
+  transition: inline-size var(--dur-base) var(--ease-linear);
+}
+.repair__scale {
+  display: flex;
+  justify-content: space-between;
+  margin-block-start: var(--space-4);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-caption);
+  letter-spacing: var(--ls-caption);
+  color: var(--c-ink-muted);
+}
+
+/* Progress grid placement — full width on a phone and at every breakpoint
+   above it, because the three states must be readable side by side. */
+.prog-item--repair { grid-column: span 4; }
+@media (min-width: 600px) {
+  .prog-item--repair { grid-column: span 12; }
+  .repair { flex-direction: row; }
+  .repair > .repair__row { flex: 1 1 0; }
+}
+
+
+/* ############################################################################
+   ############################################################################
+   E. THE REMAINING SCREENS — Explore · Library · Library detail ·
+      Onboarding · Auth
+   APPEND-ONLY SECTION. Nothing above this line is edited or reordered.
+   Added by the "remaining screens" build so every screen in the 14-screen app
+   has a design reference. Semantic --c-* tokens only; no new literal hex; no
+   new breakpoints (600 / 840 / 1200 exactly, as everywhere else).
+
+   Everything here is prototype-grade by intent: the data is hardcoded fixture
+   markup in the pages, and the behaviour is scripted to demonstrate the design
+   (see the matching append-only block in js/prototype.js). There is no data
+   layer, no persistence and no validation — a real build needs all three, and
+   this is the note that says so.
+   ############################################################################
+   ######################################################################### */
+
+
+/* ============================================================================
+   E1. NAV — the two rail-only destinations
+   Used by: explore.html, library.html (and, once reconciled, every screen).
+   [B §6.2] gives the ≥1200 drawer four groups — Habits · Progress · Community ·
+   Library — and [B §6.3] Home says "Explore leaves the tab bar and becomes a
+   rail destination". Both are true only above the bottom bar: at <600 there is
+   room for four destinations plus the FAB and no more, so Explore and Library
+   are hidden there and reached in-page (Home's "Find a new habit" link, the
+   Library's own lesson tile). From 600 up the rail has vertical room and they
+   appear as real destinations.
+
+   The four core <li>s are still home.html's markup verbatim; these two are
+   appended after them. Nothing about the existing four changes.
+   ========================================================================= */
+
+.app-nav__list > li.nav-li--rail { display: none; }
+
+@media (min-width: 600px) {
+  .app-nav__list > li.nav-li--rail { display: flex; }
+}
+
+
+/* ============================================================================
+   E2. PAGE HEAD — the shared screen header
+   Used by: explore.html, library.html, library-detail.html.
+   Community rolled its own `.community-head`; this is the same idea without
+   the segmented control baked in, so a screen can put anything beside the
+   title. h1 stays Fraunces via `.t-h1` [D §4.2].
+   ========================================================================= */
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-16);
+  margin-block: var(--space-24) var(--space-24);
+}
+.page-head__text { min-inline-size: 0; }
+.page-head__sub { color: var(--c-ink-muted); margin-block-start: var(--space-4); }
+
+/* The back / breadcrumb line above a detail title. */
+.page-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: var(--target-min);
+  color: var(--c-brand-600);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-label);
+  text-decoration: none;
+}
+.page-back:hover { text-decoration: underline; }
+.page-back .icon { color: currentColor; rotate: 180deg; }
+
+/* Explore and Library are rail-only destinations, so below 600 they are not in
+   the bottom bar and nothing in it reads as current. That would leave the
+   screen with no way back on a phone — the exact dead end explore_habits_page
+   ships as today — so at that width, and only there, they carry a back link. */
+.page-back--compact { display: inline-flex; }
+@media (min-width: 600px) { .page-back--compact { display: none; } }
+
+
+/* ============================================================================
+   E3. FILTER RAIL — one element, two shapes
+   Used by: explore.html (categories), library.html (collections).
+   [B §6.3] Library "lg: 3-column grid + a left category filter rail (240px),
+   replacing the search-only affordance."
+
+   Below 840 the same <ul> is a horizontally scrollable pill row; at 840+ it is
+   a vertical 240px rail. ONE piece of markup, no duplicated content, no
+   `display:none` copy of the same controls — which is the difference between a
+   responsive layout and two layouts stapled together.
+   ========================================================================= */
+
+.browse-layout { display: grid; gap: var(--space-24); align-items: start; }
+
+@media (min-width: 840px) {
+  .browse-layout { grid-template-columns: 240px minmax(0, 1fr); gap: var(--space-32); }
+}
+
+.browse-rail { min-inline-size: 0; }
+@media (min-width: 840px) {
+  .browse-rail { position: sticky; inset-block-start: var(--space-24); }
+}
+
+.browse-rail__title {
+  display: none;
+  color: var(--c-ink-muted);
+  margin-block-end: var(--space-8);
+}
+@media (min-width: 840px) { .browse-rail__title { display: block; } }
+
+.cat-list {
+  display: flex;
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-4);
+  list-style: none;
+  overflow-x: auto;
+  /* The pill row is a scroller on a phone; keep the scrollbar out of the ink. */
+  scrollbar-width: thin;
+}
+.cat-list > li { flex: none; }
+
+.cat-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: var(--target-min);
+  padding-inline: var(--space-16);
+  border-radius: var(--radius-full);
+  border: var(--stroke-hairline) solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-ink);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-label);
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background-color var(--dur-micro) var(--ease-standard),
+              color var(--dur-micro) var(--ease-standard),
+              border-color var(--dur-micro) var(--ease-standard);
+}
+.cat-btn .icon { color: inherit; }
+.cat-btn__count { color: var(--c-ink-subtle); font-weight: var(--fw-body); }
+
+@media (hover: hover) and (pointer: fine) {
+  .cat-btn:hover { border-color: var(--c-brand-500); color: var(--c-brand-600); }
+}
+
+/* Selected state is never colour alone: fill + border + weight all move, and
+   the control carries aria-selected for the a11y tree. [D §6] */
+.cat-btn[aria-selected="true"] {
+  background: var(--c-surface-tinted);
+  border-color: var(--c-brand-200);
+  color: var(--c-brand-600);
+}
+.cat-btn[aria-selected="true"] .cat-btn__count { color: var(--c-brand-600); }
+
+@media (min-width: 840px) {
+  .cat-list {
+    flex-direction: column;
+    gap: var(--space-4);
+    overflow: visible;
+    padding: 0;
+  }
+  .cat-list > li { flex: 1 1 auto; display: flex; }
+  .cat-btn {
+    flex: 1 1 auto;
+    justify-content: flex-start;
+    border-color: transparent;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    padding-inline: var(--space-12);
+  }
+  .cat-btn .cat-btn__count { margin-inline-start: auto; }
+  .cat-btn[aria-selected="true"] { border-color: var(--c-brand-200); }
+}
+
+/* The subcategory line under the category row. Quieter than the categories —
+   it is a refinement, not a second navigation. */
+.subcat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin: 0 0 var(--space-16);
+  padding: 0;
+  list-style: none;
+}
+.subcat-btn {
+  min-height: 40px;                    /* inside a 48px row, per the chip rule */
+  padding-inline: var(--space-12);
+  border-radius: var(--radius-full);
+  border: var(--stroke-hairline) solid var(--c-border);
+  background: transparent;
+  color: var(--c-ink-muted);
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-label);
+}
+.subcat-btn[aria-pressed="true"] {
+  background: var(--c-brand-100);
+  border-color: var(--c-brand-200);
+  color: var(--c-brand-600);
+}
+
+
+/* ============================================================================
+   E4. IDEA GRID + IDEA CARD — Explore Habits
+   Used by: explore.html. Replaces `explore_habits_page` ("Habit Ideas").
+   Column count falls out of the available width rather than being branched per
+   breakpoint — [B §6.1] "prefer maxCrossAxisExtent so column count falls out of
+   available width". 260px is the narrowest column that still fits the title at
+   --fs-h3 over two lines without hyphenation.
+   ========================================================================= */
+
+.idea-grid {
+  display: grid;
+  gap: var(--layout-card-gap);
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.idea-grid > li { display: flex; min-inline-size: 0; }
+
+.idea-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  inline-size: 100%;
+  text-align: start;
+  padding: var(--space-16);
+}
+.idea-card__title { color: var(--c-ink-strong); }
+.idea-card__prompt { color: var(--c-ink-muted); }
+.idea-card__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin-block-start: auto;
+  padding-block-start: var(--space-12);
+}
+.idea-card__cue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  color: var(--c-ink-subtle);
+  font-size: var(--fs-body-sm);
+}
+.idea-card__cue .icon { color: currentColor; }
+
+/* "Already yours" — an idea you have already made a habit. A tick plus a tone
+   change plus a label; three redundant signals, never colour alone. */
+.idea-card.is-taken { background: var(--c-done-surface); border-color: var(--c-done-border); }
+.idea-card.is-taken .idea-card__title { color: var(--c-done-ink); }
+
+/* The preview dialog's inner layout. Reuses `.modal`; adds nothing floating. */
+.idea-preview__lead { color: var(--c-ink-muted); }
+.idea-preview__section + .idea-preview__section { margin-block-start: var(--space-16); }
+.idea-preview__label {
+  display: block;
+  color: var(--c-ink-muted);
+  margin-block-end: var(--space-4);
+}
+.idea-preview__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin-block-start: var(--space-24);
+}
+@media (min-width: 600px) {
+  .modal--wide { max-inline-size: 640px; }
+}
+
+
+/* ============================================================================
+   E4b. BUTTONS ON THE HERO
+   `.hero a { color: var(--c-hero-ink) }` (components.css §4) beats
+   `.btn--secondary`'s own colour on specificity, so a paper button dropped on
+   the deep-blue surface would be white-on-white. Two small role rules fix it
+   without touching anything above: the paper button inverts (white fill,
+   brand-700 label — 7.56:1 light, and --c-brand-700 resolves to the dark hero
+   tint in Nightfall, 9.8:1 on white), and the ghost button stays hero ink.
+   Gold is NOT used here: a hero CTA is not on the rationed list. [D §6]
+   ========================================================================= */
+
+.hero .btn--secondary {
+  background: var(--c-hero-ink);
+  color: var(--c-brand-700);
+  border-color: transparent;
+}
+@media (hover: hover) and (pointer: fine) {
+  .hero .btn--secondary:hover { background: var(--c-hero-ink-muted); }
+  /* Same white-at-alpha device components.css already uses for the hero's
+     day-arc track and switch track. Not a new palette value. */
+  .hero .btn--ghost:hover { background: rgba(255, 255, 255, 0.12); }
+}
+
+
+/* ============================================================================
+   E5. LIBRARY — the knowledge layer
+   Used by: library.html.
+   Home's migration cut the whole "Daily Lesson / Lessons Week N / View All
+   Lessons" stack from the primary scroll [D §3.1] and handed it here, so the
+   Library has to carry it: today's lesson is this screen's ONE hero surface,
+   the week is a real strip, and the back catalogue is browsable rather than an
+   endless list behind a search box.
+   ========================================================================= */
+
+/* --- The hero: today's lesson. The one --c-hero-fill surface on this screen. */
+.lib-hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+@media (min-width: 840px) {
+  .lib-hero { flex-direction: row; align-items: center; gap: var(--space-32); }
+  .lib-hero__body { flex: 1 1 auto; min-inline-size: 0; }
+  .lib-hero__side { flex: 0 0 200px; }
+}
+.lib-hero__kicker {
+  color: var(--c-hero-ink-muted);
+  text-transform: uppercase;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-label);
+  letter-spacing: 0.06em;
+}
+.lib-hero__title {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fvs-h1);
+  font-size: var(--fs-h2);
+  line-height: calc(var(--lh-h2) / var(--fs-h2));
+  color: var(--c-hero-ink);
+  margin-block: var(--space-8) var(--space-8);
+}
+@media (min-width: 840px) {
+  .lib-hero__title { font-size: var(--fs-h1); line-height: calc(var(--lh-h1) / var(--fs-h1)); }
+}
+.lib-hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-8); margin-block-start: var(--space-16); }
+
+/* Week progress on the hero. A track + fill bar, not a second day-arc — the
+   arc means "today" everywhere else in this system and must keep meaning it. */
+.week-meter { display: block; }
+.week-meter__bar {
+  block-size: 6px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.22);
+  overflow: hidden;
+  margin-block: var(--space-8);
+}
+.week-meter__fill {
+  display: block;
+  block-size: 100%;
+  border-radius: var(--radius-full);
+  background: var(--c-arc-on-hero);   /* sage on the hero, per the arc rule */
+  /* Progress bars are the ONE sanctioned use of linear easing. */
+  transition: inline-size var(--dur-base) var(--ease-linear);
+}
+.week-meter__label { color: var(--c-hero-ink-muted); font-size: var(--fs-body-sm); }
+
+/* --- The lesson list. A numbered week, not a card grid: lessons are ordered
+       and the order is the point. Read state is a tick + a tone step. --- */
+.lesson-list { display: flex; flex-direction: column; gap: var(--space-8); margin: 0; padding: 0; list-style: none; }
+
+.lesson-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  min-block-size: 72px;
+  inline-size: 100%;
+  padding: var(--space-12) var(--space-16);
+  text-align: start;
+  text-decoration: none;
+  color: inherit;
+}
+.lesson-row__num {
+  flex: none;
+  inline-size: 40px;
+  block-size: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  border: var(--stroke-hairline) solid var(--c-border);
+  background: var(--c-canvas-sunken);
+  color: var(--c-ink-muted);
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-label);
+  font-variant-numeric: tabular-nums;
+}
+.lesson-row__body { flex: 1 1 auto; min-inline-size: 0; }
+.lesson-row__title { color: var(--c-ink-strong); }
+.lesson-row__meta { color: var(--c-ink-muted); margin-block-start: 2px; }
+.lesson-row__chev { flex: none; color: var(--c-ink-subtle); }
+
+.lesson-row.is-read .lesson-row__num {
+  background: var(--c-sage-100);
+  border-color: var(--c-done-border);
+  color: var(--c-done-ink);
+}
+.lesson-row.is-read .lesson-row__title { color: var(--c-done-ink); }
+.lesson-row.is-current { border-color: var(--c-brand-500); }
+.lesson-row.is-current .lesson-row__num {
+  background: var(--c-brand-600);
+  border-color: var(--c-brand-600);
+  color: var(--c-on-brand);
+}
+
+/* --- Earlier weeks: a fold per week. <details> so it works with zero JS. --- */
+.week-fold + .week-fold { margin-block-start: var(--space-12); }
+.week-fold > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  min-height: var(--target-min);
+  padding: var(--space-12) var(--space-16);
+  cursor: pointer;
+  list-style: none;
+  border-radius: var(--radius-md);
+  font-weight: var(--fw-label);
+  color: var(--c-ink-strong);
+}
+.week-fold > summary::-webkit-details-marker { display: none; }
+.week-fold > summary:hover { background: var(--c-surface-tinted); }
+.week-fold__meta { margin-inline-start: auto; color: var(--c-ink-muted); font-weight: var(--fw-body); font-size: var(--fs-body-sm); }
+.week-fold__chev { color: var(--c-ink-muted); rotate: 90deg; transition: rotate var(--dur-base) var(--ease-standard); }
+.week-fold[open] .week-fold__chev { rotate: -90deg; }
+.week-fold__body { padding: 0 var(--space-8) var(--space-8); }
+
+/* --- Resources tab: a card grid, one card per resource, type named in text. */
+.res-grid {
+  display: grid;
+  gap: var(--layout-card-gap);
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.res-grid > li { display: flex; min-inline-size: 0; }
+.res-card { display: flex; flex-direction: column; gap: var(--space-8); inline-size: 100%; }
+.res-card__type {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  color: var(--c-ink-muted);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.res-card__type .icon { color: currentColor; }
+.res-card__foot { margin-block-start: auto; padding-block-start: var(--space-12); }
+
+
+/* ============================================================================
+   E6. READING VIEW — library-detail.html
+   [B §6.1] "Reading column 600px for Library articles" — and this is the ONE
+   screen in the system where a narrow measure is correct, so the cap holds at
+   1280 and at 1920. What changes on a wide window is what sits BESIDE the
+   column (a sticky contents list), never the column's own width.
+
+   The shipping `library_detail_page` is also the only page in the app with a
+   white background; here it is the same parchment canvas as everywhere else —
+   the ground inversion has to be total [D §5.1].
+   ========================================================================= */
+
+.read-layout { display: grid; gap: var(--space-24); align-items: start; }
+
+@media (min-width: 1200px) {
+  .read-layout {
+    /* contents | article | slack.
+       The third track is `1fr` and NOT a fixed width: with three fixed tracks
+       the reading column is the one that loses when the window is narrow, and
+       the whole point of this screen is that it never does. The fr track
+       absorbs everything so the middle always reaches its 600px growth limit. */
+    grid-template-columns: 220px minmax(0, var(--layout-read-max)) minmax(0, 1fr);
+    gap: var(--space-48);
+  }
+}
+
+.read-toc { display: none; }
+@media (min-width: 1200px) {
+  .read-toc {
+    display: block;
+    position: sticky;
+    inset-block-start: var(--space-24);
+  }
+}
+.read-toc__title { color: var(--c-ink-muted); margin-block-end: var(--space-8); }
+.read-toc__list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.read-toc__link {
+  display: block;
+  padding: var(--space-8) var(--space-12);
+  border-inline-start: 2px solid var(--c-border);
+  color: var(--c-ink-muted);
+  font-size: var(--fs-body-sm);
+  text-decoration: none;
+}
+.read-toc__link:hover { color: var(--c-brand-600); border-inline-start-color: var(--c-brand-500); }
+
+/* The article column itself. Capped at --layout-read-max at EVERY width. */
+.article { max-inline-size: var(--layout-read-max); }
+.article__meta { color: var(--c-ink-muted); display: flex; flex-wrap: wrap; gap: var(--space-8); align-items: center; }
+.article__title { margin-block: var(--space-8) var(--space-16); }
+.article__standfirst {
+  font-size: var(--fs-body-lg);
+  line-height: calc(var(--lh-body-lg) / var(--fs-body-lg));
+  color: var(--c-ink-muted);
+  margin-block-end: var(--space-24);
+}
+.article__body > * + * { margin-block-start: var(--space-16); }
+.article__body p {
+  font-size: var(--fs-body-lg);
+  line-height: calc(var(--lh-body-lg) / var(--fs-body-lg));
+}
+.article__body h2 {
+  font-size: var(--fs-h3);
+  line-height: calc(var(--lh-h3) / var(--fs-h3));
+  letter-spacing: var(--ls-h3);
+  color: var(--c-ink-strong);
+  margin-block-start: var(--space-32);
+  /* scroll-margin so the TOC anchors do not land under nothing. */
+  scroll-margin-block-start: var(--space-24);
+}
+.article__body ul { margin: 0; padding-inline-start: var(--space-24); list-style: disc; }
+.article__body li + li { margin-block-start: var(--space-8); }
+.article__body li { font-size: var(--fs-body-lg); line-height: calc(var(--lh-body-lg) / var(--fs-body-lg)); }
+
+/* A pull quote, as paper: a rule and a serif line. No tinted box, no glass. */
+.article__quote {
+  margin-block: var(--space-24);
+  padding-inline-start: var(--space-24);
+  border-inline-start: 3px solid var(--c-brand-200);
+  font-family: var(--font-display);
+  font-variation-settings: var(--fvs-h1);
+  font-size: var(--fs-h3);
+  line-height: calc(var(--lh-h3) / var(--fs-h3));
+  color: var(--c-ink-strong);
+}
+
+/* The bridge back into habit creation. This screen's one hero surface. */
+.read-bridge { margin-block-start: var(--space-32); }
+.read-bridge__title {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fvs-h1);
+  font-size: var(--fs-h3);
+  line-height: calc(var(--lh-h3) / var(--fs-h3));
+  color: var(--c-hero-ink);
+}
+.read-bridge__body { color: var(--c-hero-ink-muted); margin-block: var(--space-8) var(--space-16); }
+.read-bridge__actions { display: flex; flex-wrap: wrap; gap: var(--space-8); }
+
+/* Prev / next lesson, as two paper cards. */
+.read-nav { display: grid; gap: var(--layout-card-gap); margin-block-start: var(--space-24); }
+@media (min-width: 600px) { .read-nav { grid-template-columns: 1fr 1fr; } }
+.read-nav__label { color: var(--c-ink-muted); display: block; margin-block-end: var(--space-4); }
+.read-nav__title { color: var(--c-ink-strong); }
+.read-nav a { text-decoration: none; }
+.read-nav__next { text-align: end; }
+
+
+/* ============================================================================
+   E7. ONBOARDING
+   Used by: onboarding.html. Logged-out: no rail, no bottom bar, no FAB.
+   [B §6.3] xs full-bleed slides · md+ a centred 560px card on the canvas ·
+   lg+ illustration and copy side by side.
+
+   The page indicator in the shipping app sets dotColor == activeDotColor, so
+   the "you are here" signal is invisible (audit defect 1). Fixed here: the
+   active dot is --c-brand-600 and 24px wide, inactive dots are --c-border and
+   8px — a colour step AND a width step, so it survives grayscale, plus
+   aria-current on the active control for anyone not looking at either.
+   ========================================================================= */
+
+.ob-page {
+  min-block-size: 100vh;
+  min-block-size: 100svh;
+  display: flex;
+  flex-direction: column;
+  /* The generous bottom padding is PROTOTYPE SCAFFOLDING, not product: this is
+     the only screen whose content is pinned to the viewport rather than
+     scrolling, so the fixed devbar would otherwise sit on top of the Back /
+     dots / Next row. Open any page with ?frame=1 to strip the devbar and see
+     the real spacing. */
+  padding: var(--space-16) var(--layout-gutter)
+           calc(var(--space-64) + var(--space-32));
+}
+
+.ob-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  min-block-size: var(--target-min);
+}
+.ob-brand { display: flex; align-items: center; gap: var(--space-8); text-decoration: none; color: inherit; }
+.ob-brand img { inline-size: 28px; block-size: 28px; border-radius: var(--radius-xs); }
+.ob-brand span {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fvs-h1);
+  font-size: var(--fs-h3);
+  color: var(--c-ink-strong);
+}
+
+.ob-card {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  inline-size: 100%;
+  margin-inline: auto;
+  padding-block: var(--space-24);
+}
+@media (min-width: 600px) {
+  .ob-card {
+    max-inline-size: 560px;
+    flex: 0 1 auto;
+    margin-block: auto;
+    padding: var(--space-32);
+    background: var(--c-surface);
+    border: var(--stroke-hairline) solid var(--c-border);
+    border-radius: var(--radius-lg);
+  }
+}
+@media (min-width: 840px) { .ob-card { max-inline-size: 880px; } }
+
+/* The slide stage. Only one slide is in the DOM flow at a time — the others
+   are `hidden`, so they are out of the a11y tree and out of the tab order. */
+.ob-stage { position: relative; }
+
+.ob-slide { display: flex; flex-direction: column; align-items: center; gap: var(--space-24); text-align: center; }
+@media (min-width: 840px) {
+  .ob-slide { flex-direction: row; text-align: start; gap: var(--space-48); }
+  .ob-slide__art { flex: 0 0 300px; }
+  .ob-slide__text { flex: 1 1 auto; min-inline-size: 0; }
+}
+
+.ob-slide__art { inline-size: 100%; max-inline-size: 300px; }
+.ob-slide__art svg { inline-size: 100%; block-size: auto; }
+
+.ob-slide__title {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fvs-h1);
+  font-size: var(--fs-h1);
+  line-height: calc(var(--lh-h1) / var(--fs-h1));
+  letter-spacing: var(--ls-h1);
+  color: var(--c-ink-strong);
+}
+.ob-slide__body {
+  color: var(--c-ink-muted);
+  margin-block-start: var(--space-12);
+  max-inline-size: 42ch;
+}
+
+/* Slides arrive with an 8px rise + fade. Transform-based on purpose so the
+   global reduced-motion block in base.css neutralises it; the explicit branch
+   below makes that a promise kept rather than an accident of cascade. */
+.ob-slide.is-entering { animation: hc-ob-slide-in var(--dur-base) var(--ease-enter) both; }
+@keyframes hc-ob-slide-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ob-slide.is-entering { animation: hc-ob-fade-in var(--dur-micro) var(--ease-standard) both; }
+}
+:root[data-motion="reduce"] .ob-slide.is-entering {
+  animation: hc-ob-fade-in var(--dur-micro) var(--ease-standard) both;
+}
+@keyframes hc-ob-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* Three tracks, not a flex row: the dots must stay optically centred whether
+   or not the Back button is in the DOM, and on slide 1 it is not. */
+.ob-foot {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-16);
+  margin-block-start: var(--space-32);
+}
+.ob-foot > :first-child { justify-self: start; }
+.ob-foot > :last-child  { justify-self: end; }
+.ob-foot [data-ob-prev] { grid-column: 1; justify-self: start; }
+.ob-foot [data-ob-dots] { grid-column: 2; }
+.ob-foot [data-ob-next],
+.ob-foot [data-ob-done] { grid-column: 3; justify-self: end; }
+
+.ob-dots { display: flex; align-items: center; gap: var(--space-8); margin: 0; padding: 0; list-style: none; }
+.ob-dots > li { display: flex; }
+
+/* 48px hit area around an 8px dot — the target is legal even though the mark
+   is small. [B §6.4] */
+.ob-dot {
+  display: grid;
+  place-items: center;
+  inline-size: var(--space-24);
+  block-size: var(--target-min);
+  padding: 0;
+}
+.ob-dot::before {
+  content: "";
+  display: block;
+  block-size: 8px;
+  inline-size: 8px;
+  border-radius: var(--radius-full);
+  background: var(--c-border);
+  transition: inline-size var(--dur-base) var(--ease-standard),
+              background-color var(--dur-micro) var(--ease-standard);
+}
+.ob-dot[aria-current="true"] { inline-size: 40px; }
+.ob-dot[aria-current="true"]::before { inline-size: 24px; background: var(--c-brand-600); }
+
+
+/* ============================================================================
+   E8. AUTH — login / signup / forgot password in one file
+   Used by: auth.html. Logged-out: no nav chrome at all.
+   One shell, three views swapped by [data-auth-view]; the visual language of a
+   logged-out screen is settled once here.
+
+   <840 : a short brand banner over the form — still ONE hero element.
+   ≥840 : that same element becomes a full-height poster panel beside the form.
+   It is the same node at both widths, not two copies of a lockup.
+   ========================================================================= */
+
+.auth {
+  min-block-size: 100vh;
+  min-block-size: 100svh;
+  display: grid;
+  align-items: stretch;
+}
+@media (min-width: 840px) { .auth { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+@media (min-width: 1200px) { .auth { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); } }
+
+/* The poster. This screen's one --c-hero-fill surface; the grain comes from
+   `.hero`, which this element also carries. */
+.auth__poster {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--space-16);
+  border-radius: 0;
+  padding: var(--space-24) var(--layout-gutter);
+  min-block-size: 200px;
+}
+@media (min-width: 840px) {
+  .auth__poster { padding: var(--space-48); min-block-size: auto; }
+}
+
+.auth__brand { display: flex; align-items: center; gap: var(--space-12); }
+.auth__brand img { inline-size: 36px; block-size: 36px; border-radius: var(--radius-xs); }
+.auth__brand span {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fvs-h1);
+  font-size: var(--fs-h2);
+  color: var(--c-hero-ink);
+}
+.auth__line {
+  font-family: var(--font-display);
+  font-variation-settings: var(--fvs-h1);
+  font-size: var(--fs-h2);
+  line-height: calc(var(--lh-h2) / var(--fs-h2));
+  color: var(--c-hero-ink);
+  max-inline-size: 20ch;
+}
+@media (min-width: 1200px) {
+  .auth__line { font-size: var(--fs-h1); line-height: calc(var(--lh-h1) / var(--fs-h1)); }
+}
+.auth__sub { color: var(--c-hero-ink-muted); max-inline-size: 34ch; }
+.auth__art { display: none; }
+@media (min-width: 840px) {
+  .auth__art { display: block; margin-block-end: auto; max-inline-size: 220px; }
+  .auth__art svg { inline-size: 100%; block-size: auto; }
+}
+
+.auth__panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-32) var(--layout-gutter) var(--space-48);
+}
+@media (min-width: 840px) { .auth__panel { padding: var(--space-48); } }
+
+.auth__form { inline-size: 100%; max-inline-size: 420px; margin-inline: auto; }
+@media (min-width: 1200px) { .auth__form { margin-inline: 0; max-inline-size: 440px; } }
+
+.auth__title { margin-block-end: var(--space-8); }
+.auth__intro { color: var(--c-ink-muted); margin-block-end: var(--space-24); }
+.auth__fields { display: flex; flex-direction: column; gap: var(--space-16); }
+.auth__row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-16); flex-wrap: wrap; }
+.auth__actions { margin-block-start: var(--space-24); display: flex; flex-direction: column; gap: var(--space-12); }
+.auth__switch { margin-block-start: var(--space-24); color: var(--c-ink-muted); }
+/* The switch link sits mid-sentence, so it takes the sentence's size rather
+   than `.text-link`'s 13px label size. */
+.auth__switch .text-link { font-size: inherit; }
+
+/* A password field with a reveal control. The button sits inside the field's
+   own box so the 1.5px control boundary stays a single unbroken shape. */
+.field--reveal { position: relative; }
+.field--reveal .input { padding-inline-end: 88px; }
+.pw-toggle {
+  position: absolute;
+  inset-inline-end: var(--space-8);
+  inset-block-end: 4px;
+  min-height: 40px;
+  padding-inline: var(--space-12);
+  border-radius: var(--radius-xs);
+  color: var(--c-brand-600);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-label);
+}
+.pw-toggle:hover { background: var(--c-surface-tinted); }
+
+/* The legal line. 13px like everything else — there is no fine print tier. */
+.auth__legal { color: var(--c-ink-subtle); margin-block-start: var(--space-24); max-inline-size: 44ch; }
+
+/* A checkbox that is a real <input>, sized to the system. */
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-12);
+  min-height: var(--target-min);
+  cursor: pointer;
+}
+.check input {
+  inline-size: 20px;
+  block-size: 20px;
+  margin-block-start: 2px;
+  accent-color: var(--c-brand-600);
+  flex: none;
+}
+
+
+/* ############################################################################
+   P6. DEVBAR FOOTPRINT — a scaffolding fix, not a design change
+   The primitives build adds five review controls (Milestone, Replay, Load,
+   Load (fast), Empty). At 390 the bar wrapped to five rows and covered the
+   screen it exists to inspect. Below 600 it now stays a SINGLE row and scrolls
+   horizontally instead of wrapping, so the page under it is still reviewable.
+   Prototype-only chrome; deletes with the .devbar markup. Add ?frame=1 to any
+   URL to remove it entirely.
+   ######################################################################### */
+
+@media (max-width: 599px) {
+  .devbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    justify-content: flex-start;
+    scrollbar-width: none;
+  }
+  .devbar::-webkit-scrollbar { display: none; }
+  .devbar__group { flex: none; }
+  .devbar__btn { white-space: nowrap; }
+}

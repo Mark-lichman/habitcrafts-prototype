@@ -1703,3 +1703,778 @@
     boot();
   }
 })();
+
+
+/* ============================================================================
+   ============================================================================
+   PRIMITIVES BUILD — milestone (full spec), skeleton loading, empty-state and
+   streak-repair demo controls.                                    [D §2.4, §4.5]
+
+   APPEND-ONLY SECTION. Nothing above this line is edited, reordered or
+   removed. Self-contained IIFE; keys off data-* attributes only, never class
+   names; re-entrant, so HC.init() on injected markup is safe.
+
+   It takes over ONE public method — HC.fireMilestone — by reassignment rather
+   than by editing the core, and it intercepts the [data-demo="milestone"]
+   buttons in the CAPTURE phase so the core's own (stubbed) handler never runs.
+   Both are additive: delete this section and the prototype falls back to the
+   original behaviour with nothing broken.
+
+   PROTOTYPE SCOPE, STATED PLAINLY: everything here is scripted to demonstrate
+   the design. There is no data layer, no persistence and no state machine —
+   fixture numbers live in the HTML, the loading state is triggered by hand,
+   and "one celebration per session" is a single boolean. A real build would
+   own all three properly.
+   ========================================================================= */
+
+(function () {
+  'use strict';
+
+  function $(sel, ctx) { return (ctx || document).querySelector(sel); }
+  function $$(sel, ctx) {
+    return Array.prototype.slice.call((ctx || document).querySelectorAll(sel));
+  }
+  function reduced() {
+    return !!(window.HC && window.HC.reducedMotion && window.HC.reducedMotion());
+  }
+  function say(msg) { if (window.HC && window.HC.announce) window.HC.announce(msg); }
+  function cssMs(name, fallback) {
+    var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    var n = parseFloat(v);
+    if (!n) return fallback;
+    return /ms$/.test(v) ? n : n * 1000;
+  }
+
+
+  /* ==========================================================================
+     1. THE MILESTONE MOMENT, TO SPEC                                  [D §2.4]
+
+     Sequence, in the exact numbers the ticket names:
+       scrim   fades to 40% ink-strong (the --c-scrim token IS 40%)
+       card    enters on --ease-spring-gentle at its paired 650ms (CSS)
+       confetti 34 pieces (cap is 40) released along the card's TOP EDGE in a
+               60 degree cone (+/-30 from straight down); every piece is gone by
+               1100ms, guaranteed by a single sweep timer, not by trusting the
+               animations to finish
+       numeral counts up in the display serif with WONK 1 — the one place in
+               the system WONK is allowed to leave 0
+       exit    auto-dismiss at 4000ms, or on tap/Escape, whichever is first
+
+     ONE FULL CELEBRATION PER SESSION, MAXIMUM. The second and later milestones
+     get the quiet streak-increment treatment instead: the streak numeral
+     flushes gold once and the live region says the number. That ratio — gold
+     owning the screen for 1.6s on one day, and nothing on the others — is the
+     whole reward economy. [D §6]
+
+     REDUCED MOTION: no confetti is created at all (not created-then-hidden),
+     the card crossfades instead of springing (CSS branch), and the numeral is
+     rendered at its final value immediately.
+     ====================================================================== */
+
+  var CONFETTI_MAX = 40;
+  var CONFETTI_N = 34;
+  var CONFETTI_CLEAR = 1100;   /* ms — every piece is removed by here */
+  var MILESTONE_DWELL = 4000;  /* ms — auto-dismiss */
+
+  var celebrated = false;      /* the once-per-session latch */
+
+  function fireMilestone(opts) {
+    opts = opts || {};
+    var days = parseInt(opts.days, 10) || 7;
+
+    /* Second and later milestones: the quieter treatment, never the card. */
+    if (celebrated && !opts.replay) { quietIncrement(days); return; }
+    celebrated = true;
+
+    var opener = document.activeElement;
+    var soft = reduced();
+
+    var scrim = document.createElement('div');
+    scrim.className = 'scrim';
+    scrim.setAttribute('data-milestone', '');
+    scrim.innerHTML =
+      '<div class="modal modal--milestone" role="alertdialog" aria-modal="true"' +
+           ' aria-labelledby="hc-ms-title" aria-describedby="hc-ms-body">' +
+        '<span class="seal seal--lg' + (days >= 365 ? ' seal--solid' : '') + '" aria-hidden="true">' +
+          '<svg viewBox="0 0 24 24"><use href="#i-rosette"></use></svg>' +
+        '</span>' +
+        '<p class="modal__numeral" data-ms-count>' + (soft ? days : 0) + '</p>' +
+        '<h2 class="t-h3" id="hc-ms-title">day streak</h2>' +
+        '<p class="t-body t-muted" id="hc-ms-body" style="margin-block:8px 16px">' +
+          'You showed up for ' + days + ' days. ' + markCopy(days) + '</p>' +
+        '<button class="btn btn--gold" type="button" data-ms-dismiss>Nice</button>' +
+      '</div>';
+    document.body.appendChild(scrim);
+
+    var card = $('.modal', scrim);
+
+    if (!soft) {
+      confetti(card);
+      countUp($('[data-ms-count]', card), days);
+    }
+
+    var timer = window.setTimeout(close, MILESTONE_DWELL);
+
+    function close() {
+      window.clearTimeout(timer);
+      document.removeEventListener('keydown', onKey, true);
+      scrim.remove();
+      /* Focus goes back where it came from — a celebration must not strand the
+         keyboard user at the top of the document. */
+      if (opener && document.contains(opener) && opener.focus) opener.focus();
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') { close(); return; }
+      /* A minimal trap: the card has exactly one focusable, so Tab simply
+         stays on it rather than walking the page behind the scrim. */
+      if (e.key === 'Tab') { e.preventDefault(); }
+    }
+    scrim.addEventListener('click', function (e) {
+      if (e.target === scrim || (e.target.closest && e.target.closest('[data-ms-dismiss]'))) close();
+    });
+    document.addEventListener('keydown', onKey, true);
+
+    var cta = $('[data-ms-dismiss]', card);
+    if (cta) cta.focus();
+    say(days + ' day streak. You showed up for ' + days + ' days.');
+  }
+
+  /* The mark each tier earns, in the product's own voice. */
+  function markCopy(days) {
+    if (days >= 365) return 'Your seal is solid gold now.';
+    if (days >= 100) return 'This one carries a seal from here on.';
+    if (days >= 30)  return 'A gold rule around the card, permanently.';
+    return 'A corner tick, and it stays.';
+  }
+
+  /* ≤40 pieces, released along the TOP EDGE, 60 degree cone, cleared by 1100ms.
+     No loop, no repeat, nothing left in the DOM afterwards. */
+  function confetti(host) {
+    var tones = ['gold', 'gold2', 'sage', 'brand'];
+    var n = Math.min(CONFETTI_N, CONFETTI_MAX);
+    var pieces = [];
+
+    for (var i = 0; i < n; i++) {
+      var p = document.createElement('i');
+      p.className = 'confetti-piece confetti-piece--' + tones[i % tones.length];
+      /* Spread across the card's top edge rather than firing from one point:
+         the brief's cone is a direction, not an origin. */
+      p.style.insetInlineStart = (2 + (i / n) * 96 + (Math.random() * 4 - 2)).toFixed(1) + '%';
+      host.appendChild(p);
+      pieces.push(p);
+
+      /* 60 degree cone: +/-30 degrees either side of straight down. */
+      var angle = (Math.random() * 60 - 30) * Math.PI / 180;
+      var dist = 120 + Math.random() * 150;
+      p.animate([
+        { translate: '0 0', rotate: '0deg', opacity: 1, offset: 0 },
+        { opacity: 1, offset: 0.7 },
+        { translate: (Math.sin(angle) * dist).toFixed(0) + 'px ' +
+                     (Math.cos(angle) * dist).toFixed(0) + 'px',
+          rotate: (Math.random() * 540 - 270).toFixed(0) + 'deg',
+          opacity: 0, offset: 1 }
+      ], {
+        duration: 820,
+        delay: Math.random() * 160,        /* 820 + 160 = 980 < 1100 */
+        easing: 'cubic-bezier(0.3,0,0.8,0.15)',
+        fill: 'forwards'
+      });
+    }
+
+    /* One sweep, one timer. Whatever the animations did, the DOM is clean at
+       1100ms — which is what "all cleared by 1100ms" has to mean. */
+    window.setTimeout(function () {
+      pieces.forEach(function (el) { if (el.parentNode) el.remove(); });
+    }, CONFETTI_CLEAR);
+  }
+
+  /* The numeral counts up in the display serif. Tabular figures are already on
+     .modal__numeral, so the digits do not jitter as they climb. */
+  function countUp(el, to) {
+    if (!el) return;
+    var start = performance.now();
+    var dur = 700;
+    (function step(now) {
+      var t = Math.min(1, (now - start) / dur);
+      /* ease-out so the last digits settle rather than slam. */
+      var eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = String(Math.round(to * eased));
+      if (t < 1) window.requestAnimationFrame(step);
+      else el.textContent = String(to);
+    })(start);
+  }
+
+  /* THE QUIET FALLBACK — the streak-increment treatment. A single gold colour
+     flush on the streak numeral and its flame chip, plus the live region. No
+     scrim, no card, no particles. Colour-only, so it is identical under
+     reduced motion (WCAG 2.3.3 puts colour change outside motion animation). */
+  function quietIncrement(days) {
+    var targets = $$('.hero__numeral, [data-streak-numeral], .chip--streak');
+    targets.forEach(function (el) {
+      el.classList.remove('is-streak-flush');
+      /* reflow so a repeat press replays the flush */
+      void el.offsetWidth;
+      el.classList.add('is-streak-flush');
+      window.setTimeout(function () { el.classList.remove('is-streak-flush'); }, 1000);
+    });
+    say(days + ' day streak.');
+  }
+
+
+  /* ==========================================================================
+     2. SKELETON LOADING — the 400ms rule, made real                   [D §4.5]
+
+     Under 400ms: NOTHING is shown. The container is emptied of its own paint
+     and no skeleton is inserted, so a fast load is a blank beat rather than a
+     flash of grey boxes.
+     Beyond 400ms: static blocks at the container's own radii, one 1200ms
+     opacity pulse (CSS), no shimmer.
+
+     Prototype scope: the "load" is a timer on a devbar button. There is no
+     fetch, no cache and no error path — a real build owns all three.
+
+     Markup contract:
+       <div data-skeleton="list|panel"> ...real content... </div>
+       <button data-demo="load">      slow  (1400ms) — skeleton appears
+       <button data-demo="load-fast"> fast  (250ms)  — nothing appears
+     ====================================================================== */
+
+  var SKELETON_DELAY = 400;
+
+  function skeletonFor(kind) {
+    var host = document.createElement('div');
+    host.setAttribute('aria-hidden', 'true');   /* the live region does the talking */
+    host.setAttribute('data-skeleton-paint', '');
+
+    if (kind === 'panel') {
+      host.className = 'u-stack';
+      host.innerHTML =
+        '<div class="skeleton skeleton--hero"></div>' +
+        '<div class="skeleton skeleton--tile"></div>' +
+        '<div class="skeleton skeleton--tile"></div>';
+      return host;
+    }
+    host.className = 'skeleton-list';
+    var row =
+      '<div class="skeleton-card">' +
+        '<div class="skeleton-card__body">' +
+          '<div class="skeleton skeleton--line" style="inline-size:62%"></div>' +
+          '<div class="skeleton skeleton--line-sm" style="inline-size:84%"></div>' +
+        '</div>' +
+        '<div class="skeleton skeleton--ring"></div>' +
+      '</div>';
+    host.innerHTML = row + row + row + row;
+    return host;
+  }
+
+  function runLoad(ms) {
+    $$('[data-skeleton]').forEach(function (container) {
+      if (container.__hcLoading) return;
+      container.__hcLoading = true;
+
+      var paint = skeletonFor(container.getAttribute('data-skeleton'));
+      var shown = false;
+      container.setAttribute('aria-busy', 'true');
+      container.style.display = 'none';
+
+      var appear = window.setTimeout(function () {
+        container.parentNode.insertBefore(paint, container);
+        shown = true;
+      }, SKELETON_DELAY);
+
+      window.setTimeout(function () {
+        window.clearTimeout(appear);
+        if (shown && paint.parentNode) paint.remove();
+        container.style.display = '';
+        container.removeAttribute('aria-busy');
+        container.__hcLoading = false;
+      }, ms);
+    });
+    say(ms < SKELETON_DELAY ? 'Loading.' : 'Loading your habits.');
+  }
+
+
+  /* ==========================================================================
+     3. EMPTY-STATE DEMO TOGGLE                                          [M6]
+     Swaps a screen between its populated state and its empty state so both can
+     be reviewed without emptying any data. Purely a review control.
+
+       [data-empty-demo]        shown when the toggle is on
+       [data-empty-demo-hide]   hidden when the toggle is on
+     ====================================================================== */
+
+  function toggleEmpty(btn) {
+    var on = btn.getAttribute('aria-pressed') !== 'true';
+    btn.setAttribute('aria-pressed', String(on));
+    $$('[data-empty-demo]').forEach(function (el) { el.hidden = !on; });
+    $$('[data-empty-demo-hide]').forEach(function (el) { el.hidden = on; });
+    say(on ? 'Empty state shown.' : 'Habits restored.');
+  }
+
+
+  /* ==========================================================================
+     4. STREAK DECAY — the scripted demonstration                      [D §3.2]
+     Moves the decay bar from "kept" to "after a week away" and back, so the
+     point of the mechanic (it goes DOWN A LITTLE, it does not reset) is
+     visible rather than described. Two numbers, both in the HTML.
+     ====================================================================== */
+
+  function initRepair(ctx) {
+    $$('[data-repair-run]', ctx).forEach(function (btn) {
+      if (btn.__hcBound) return;
+      btn.__hcBound = true;
+      btn.addEventListener('click', function () {
+        var wrap = btn.closest('[data-repair]');
+        if (!wrap) return;
+        var bar = $('[data-repair-now]', wrap);
+        var out = $('[data-repair-readout]', wrap);
+        var decayed = btn.getAttribute('aria-pressed') === 'true';
+        var next = decayed ? bar.getAttribute('data-full') : bar.getAttribute('data-decayed');
+        var label = decayed ? out.getAttribute('data-full') : out.getAttribute('data-decayed');
+        bar.style.inlineSize = next;
+        out.textContent = label;
+        btn.setAttribute('aria-pressed', String(!decayed));
+        btn.textContent = decayed ? 'Show a week away' : 'Show it recovered';
+        say(label);
+      });
+    });
+  }
+
+
+  /* ==========================================================================
+     5. WIRING
+     The milestone buttons are intercepted in the CAPTURE phase so this
+     implementation runs instead of the core's, without editing the core.
+     ====================================================================== */
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('[data-demo]');
+    if (!btn) return;
+    var kind = btn.getAttribute('data-demo');
+
+    if (kind === 'milestone' || kind === 'milestone-replay') {
+      e.stopPropagation();                 /* the core handler never sees it */
+      fireMilestone({
+        days: parseInt(btn.getAttribute('data-days'), 10) || 7,
+        replay: kind === 'milestone-replay'
+      });
+      return;
+    }
+    if (kind === 'load')      { e.stopPropagation(); runLoad(1400); return; }
+    if (kind === 'load-fast') { e.stopPropagation(); runLoad(250);  return; }
+    if (kind === 'empty')     { e.stopPropagation(); toggleEmpty(btn); return; }
+  }, true);
+
+  function boot(root) {
+    initRepair(root || document);
+    /* Take over the public method. Anything calling HC.fireMilestone() — the
+       gallery, a screen, a console — gets this implementation. */
+    if (window.HC) window.HC.fireMilestone = fireMilestone;
+  }
+
+  /* Chain onto HC.init so injected markup is wired the same way as the kit's,
+     exactly as the Progress and Community sections above do. */
+  function chain() {
+    if (window.HC && typeof window.HC.init === 'function' && !window.HC.__hcPrimChained) {
+      var coreInit = window.HC.init;
+      window.HC.__hcPrimChained = true;
+      window.HC.init = function (el) { coreInit(el); initRepair(el || document); };
+    }
+    boot(document);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', chain);
+  } else {
+    chain();
+  }
+})();
+
+
+/* ============================================================================
+   REMAINING SCREENS — Explore · Library · Library detail · Onboarding · Auth
+   APPEND-ONLY SECTION. Nothing above this line is edited or reordered.
+   Self-contained IIFE in the same house style as the blocks above it: keys off
+   data-* attributes only, never class names, guards every handler so it is
+   re-entrant, and chains onto HC.init so injected markup is wired the same way
+   as the kit's.
+
+   SCOPE, DELIBERATELY SMALL. This is prototype behaviour, not an application.
+   Everything below is scripted to demonstrate a design decision:
+     - there is no data layer, no persistence, no storage of any kind;
+     - there is NO form validation and no auth — the auth forms show the
+       fields, the states and the layout, and submitting walks the happy path;
+     - filtering is a hardcoded tree in the markup, matched on a data attribute;
+     - a real build needs validation, error states, empty/loading states per
+       query, and a router. None of that is here, on purpose.
+
+   DOM CONTRACT
+     [data-cat-list] / [data-cat]        category rail (role=tablist) + its tabs
+     [data-idea-grid] / [data-cats]      the filtered grid + each item's keys
+     [data-sub]                          subcategory toggle (aria-pressed)
+     [data-idea-heading] [data-idea-count] [data-idea-empty]
+     [data-idea-search]                  free-text filter over the grid
+     [data-modal-open="idea"] + data-behavior/prompt/celebration/why/taken
+                                         an idea card; fills the shared dialog
+     [data-idea-field="…"]               a slot in that dialog
+     [data-ob-stage] [data-ob-slide]     onboarding stage + slides
+     [data-ob-go] [data-ob-prev] [data-ob-next] [data-ob-done]
+     [data-auth-view] [data-auth-go]     auth view + the controls that switch it
+     [data-auth-form] [data-auth-sent] [data-pw-toggle]
+   ========================================================================= */
+
+(function () {
+  'use strict';
+
+  var $$ = function (sel, ctx) {
+    return Array.prototype.slice.call((ctx || document).querySelectorAll(sel));
+  };
+  var $ = function (sel, ctx) { return (ctx || document).querySelector(sel); };
+
+  var reduced = function () {
+    return window.HC && window.HC.reducedMotion ? window.HC.reducedMotion() : false;
+  };
+  var say = function (m) { if (window.HC && window.HC.announce) window.HC.announce(m); };
+
+  /* Bind once per element per purpose. Same guard shape the blocks above use. */
+  function bind(el, key, evt, fn, opts) {
+    var flag = '__hcX' + key;
+    if (el[flag]) return;
+    el[flag] = true;
+    el.addEventListener(evt, fn, opts);
+  }
+
+
+  /* ==========================================================================
+     1. BROWSE — the category rail + the grid it filters
+     Used by: explore.html (habit ideas), library.html (resources).
+     One implementation because both screens are the same object: a list of
+     categories on the left, a grid of things on the right. The rail is a real
+     WAI-ARIA tablist — roving tabindex, arrows, Home and End — because at 840+
+     it looks and behaves exactly like one.
+     ====================================================================== */
+
+  function initBrowse(scope) {
+    if (scope.__hcBrowse) return;
+    scope.__hcBrowse = true;
+
+    var list  = $('[data-cat-list]', scope);
+    var grid  = $('[data-idea-grid]', scope);
+    if (!list || !grid) return;
+
+    var tabs    = $$('[data-cat]', list);
+    var items   = $$(':scope > li', grid);
+    var subs    = $$('[data-sub]', scope);
+    var heading = $('[data-idea-heading]', scope);
+    var count   = $('[data-idea-count]', scope);
+    var empty   = $('[data-idea-empty]', scope);
+    /* The search box sits in the page header, outside the browse layout. */
+    var search  = $('[data-idea-search]');
+
+    var state = { cat: 'all', subs: [], q: '' };
+
+    function matches(li) {
+      var el = li.firstElementChild || li;
+      var cats = (el.getAttribute('data-cats') || '').split(/\s+/);
+      var sub  = (el.getAttribute('data-sub') || '').split(/\s+/);
+
+      if (state.cat !== 'all' && cats.indexOf(state.cat) === -1) return false;
+
+      /* Subcategories are AND-ed: each chip you press narrows further. */
+      for (var i = 0; i < state.subs.length; i++) {
+        if (sub.indexOf(state.subs[i]) === -1) return false;
+      }
+
+      if (state.q) {
+        if (li.textContent.toLowerCase().indexOf(state.q) === -1) return false;
+      }
+      return true;
+    }
+
+    function apply(announce) {
+      var shown = 0;
+      items.forEach(function (li) {
+        var on = matches(li);
+        li.hidden = !on;
+        if (on) shown++;
+      });
+      if (count) count.textContent = String(shown);
+      if (empty) empty.hidden = shown !== 0;
+      if (announce) say(shown + (shown === 1 ? ' result' : ' results'));
+    }
+
+    function selectCat(tab, focus) {
+      tabs.forEach(function (t) {
+        var on = t === tab;
+        t.setAttribute('aria-selected', String(on));
+        t.tabIndex = on ? 0 : -1;
+        if (on && focus) t.focus();
+      });
+      state.cat = tab.getAttribute('data-cat');
+      if (heading) heading.textContent = (tab.textContent || '').trim().replace(/\s+\d+$/, '');
+      apply(true);
+    }
+
+    tabs.forEach(function (tab) {
+      bind(tab, 'Cat', 'click', function () { selectCat(tab); });
+      bind(tab, 'CatKey', 'keydown', function (e) {
+        var i = tabs.indexOf(tab), next = null;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = tabs[(i + 1) % tabs.length];
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = tabs[(i - 1 + tabs.length) % tabs.length];
+        else if (e.key === 'Home') next = tabs[0];
+        else if (e.key === 'End') next = tabs[tabs.length - 1];
+        if (!next) return;
+        e.preventDefault();
+        selectCat(next, true);
+      });
+    });
+
+    subs.forEach(function (btn) {
+      bind(btn, 'Sub', 'click', function () {
+        var key = btn.getAttribute('data-sub');
+        var on  = btn.getAttribute('aria-pressed') === 'true';
+        btn.setAttribute('aria-pressed', String(!on));
+        state.subs = on
+          ? state.subs.filter(function (k) { return k !== key; })
+          : state.subs.concat([key]);
+        apply(true);
+      });
+    });
+
+    if (search) {
+      bind(search, 'Search', 'input', function () {
+        state.q = search.value.trim().toLowerCase();
+        apply(false);
+      });
+    }
+  }
+
+
+  /* ==========================================================================
+     2. THE HABIT-IDEA PREVIEW DIALOG
+     In the shipping app tapping an idea jumps straight into Create Habit with
+     six prefill query parameters and no chance to look first. Here the card
+     opens a dialog that shows the whole idea — behaviour, prompt, celebration,
+     why — and the habit card you would be getting.
+
+     The dialog's open/close/Escape/focus-restore is the kit's existing
+     [data-modal-open] opener; all this does is fill the slots first. The
+     listener is registered in the CAPTURE phase so it runs before that opener,
+     which binds in the bubble phase.
+     ====================================================================== */
+
+  function initIdeaPreview(ctx) {
+    var modal = $('[data-modal="idea"]', ctx) || $('[data-modal="idea"]');
+    if (!modal || modal.__hcIdea) return;
+    modal.__hcIdea = true;
+
+    document.addEventListener('click', function (e) {
+      var card = e.target.closest && e.target.closest('[data-modal-open="idea"]');
+      if (!card) return;
+
+      var data = {
+        behavior:    card.getAttribute('data-behavior') || '',
+        prompt:      card.getAttribute('data-prompt') || '',
+        celebration: card.getAttribute('data-celebration') || '',
+        why:         card.getAttribute('data-why') || ''
+      };
+      var taken = card.getAttribute('data-taken') === 'true';
+
+      $$('[data-idea-field]', modal).forEach(function (slot) {
+        var key = slot.getAttribute('data-idea-field');
+        if (key === 'prompt-meta') {
+          slot.textContent = data.prompt + (taken ? ' · 112 day streak' : ' · new habit');
+        } else if (data[key]) {
+          slot.textContent = data[key];
+        }
+      });
+
+      /* The preview card echoes the user's own words at commit, like every
+         other habit card in the system. [D §2.2] */
+      var preview = $('[data-habit="preview"]', modal);
+      if (preview) preview.setAttribute('data-celebration', data.celebration);
+
+      var make = $('[data-idea-make]', modal);
+      var note = $('[data-idea-taken]', modal);
+      if (make) make.hidden = taken;
+      if (note) note.hidden = !taken;
+    }, true);
+  }
+
+
+  /* ==========================================================================
+     3. ONBOARDING PAGING
+     Three slides, hardcoded. The shipping flow is a swipe-only PageView with
+     no Next, no Back, no Skip and no way to jump — so it is unusable by
+     keyboard and gives no affordance at all on slides 1 and 2. Here every step
+     has a visible control, the dots are buttons you can jump with, and the
+     arrow keys work.
+
+     Only the active slide is in the DOM flow; the others carry `hidden`, so
+     they are out of the tab order and out of the accessibility tree rather
+     than merely off-screen.
+     ====================================================================== */
+
+  function initOnboarding(ctx) {
+    var stage = $('[data-ob-stage]', ctx);
+    if (!stage || stage.__hcOb) return;
+    stage.__hcOb = true;
+
+    var slides = $$('[data-ob-slide]', stage);
+    var dots   = $$('[data-ob-go]');
+    var prev   = $('[data-ob-prev]');
+    var next   = $('[data-ob-next]');
+    var done   = $('[data-ob-done]');
+    if (!slides.length) return;
+
+    var at = 1;
+
+    function go(n, announce) {
+      n = Math.min(Math.max(n, 1), slides.length);
+      at = n;
+
+      slides.forEach(function (s) {
+        var on = Number(s.getAttribute('data-ob-slide')) === n;
+        s.hidden = !on;
+        s.classList.remove('is-entering');
+        /* Under reduced motion the 8px rise is dropped entirely rather than
+           run fast — the CSS branch does the same thing for the class-based
+           path, and this keeps the two honest. [B §3.6] */
+        if (on && !reduced()) {
+          /* reflow so the animation restarts on every change */
+          void s.offsetWidth;
+          s.classList.add('is-entering');
+        }
+      });
+
+      dots.forEach(function (d) {
+        d.setAttribute('aria-current', String(Number(d.getAttribute('data-ob-go')) === n));
+      });
+
+      if (prev) prev.hidden = n === 1;
+      if (next) next.hidden = n === slides.length;
+      if (done) done.hidden = n !== slides.length;
+
+      if (announce) {
+        var title = $('.ob-slide__title', slides[n - 1]);
+        say('Slide ' + n + ' of ' + slides.length + (title ? ': ' + title.textContent.trim() : ''));
+      }
+    }
+
+    dots.forEach(function (d) {
+      bind(d, 'ObGo', 'click', function () { go(Number(d.getAttribute('data-ob-go')), true); });
+    });
+    if (prev) bind(prev, 'ObPrev', 'click', function () { go(at - 1, true); });
+    if (next) bind(next, 'ObNext', 'click', function () { go(at + 1, true); });
+
+    bind(document, 'ObKeys', 'keydown', function (e) {
+      if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); go(at + 1, true); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); go(at - 1, true); }
+    });
+
+    go(1, false);
+  }
+
+
+  /* ==========================================================================
+     4. AUTH — three views, one shell
+     Login, signup and password reset swap in place. No validation, no auth, no
+     persistence: submitting signin or signup walks the happy path to
+     onboarding (which is where the shipping app goes too — both auth buttons
+     set showOnboard), and submitting the reset form shows the confirmation
+     state the shipping screen never had.
+     ====================================================================== */
+
+  function initAuth(ctx) {
+    var views = $$('[data-auth-view]', ctx);
+    if (!views.length) return;
+    var root = views[0].closest('.auth') || document;
+    if (root.__hcAuth) return;
+    root.__hcAuth = true;
+
+    var TITLES = { signin: 'Sign in', signup: 'Create an account', reset: 'Reset your password' };
+
+    function setView(name, moveFocus) {
+      views.forEach(function (v) { v.hidden = v.getAttribute('data-auth-view') !== name; });
+      $$('[data-auth-go]').forEach(function (b) {
+        if (b.hasAttribute('aria-pressed')) {
+          b.setAttribute('aria-pressed', String(b.getAttribute('data-auth-go') === name));
+        }
+      });
+      document.title = TITLES[name] + ' · HabitCrafts';
+
+      var view = views.filter(function (v) { return !v.hidden; })[0];
+      var h1 = view && view.querySelector('h1');
+      if (h1 && moveFocus) {
+        h1.setAttribute('tabindex', '-1');
+        h1.focus({ preventScroll: true });
+      }
+      say(TITLES[name]);
+    }
+
+    $$('[data-auth-go]').forEach(function (btn) {
+      bind(btn, 'AuthGo', 'click', function () {
+        setView(btn.getAttribute('data-auth-go'), true);
+      });
+    });
+
+    /* Password reveal. A real button with aria-pressed and a text label, not an
+       unlabelled eye glyph. */
+    $$('[data-pw-toggle]', root).forEach(function (btn) {
+      bind(btn, 'PwToggle', 'click', function () {
+        var input = document.getElementById(btn.getAttribute('data-pw-toggle'));
+        if (!input) return;
+        var show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.setAttribute('aria-pressed', String(show));
+        btn.textContent = show ? 'Hide' : 'Show';
+        say(show ? 'Password shown' : 'Password hidden');
+      });
+    });
+
+    $$('[data-auth-form]', root).forEach(function (form) {
+      bind(form, 'AuthSubmit', 'submit', function (e) {
+        e.preventDefault();
+        var kind = form.getAttribute('data-auth-form');
+        if (kind === 'reset') {
+          var sent = $('[data-auth-sent]', form.parentNode);
+          if (sent) {
+            sent.hidden = false;
+            say('Reset link sent. Check your inbox.');
+          }
+          return;
+        }
+        window.location.href = 'onboarding.html';
+      });
+    });
+  }
+
+
+  /* ==========================================================================
+     5. WIRING — runs after prototype.js has booted, and again on HC.init().
+     ====================================================================== */
+
+  function initExtra(ctx) {
+    ctx = ctx || document;
+    $$('.browse-layout', ctx).forEach(initBrowse);
+    initIdeaPreview(ctx);
+    initOnboarding(ctx);
+    initAuth(ctx);
+  }
+
+  function attach() {
+    if (window.HC && typeof window.HC.init === 'function' && !window.HC.__extraChained) {
+      var kitInit = window.HC.init;
+      window.HC.__extraChained = true;
+      window.HC.init = function (root) { kitInit(root); initExtra(root); };
+    }
+    initExtra(document);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attach);
+  } else {
+    attach();
+  }
+})();

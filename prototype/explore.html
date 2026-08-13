@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Habit ideas · HabitCrafts</title>
+<meta name="description" content="HabitCrafts redesign prototype — Explore Habits. Browse by category, preview an idea, make it a habit.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="../assets/images/favicon.png">
+<!-- Order matters: tokens → base → components. -->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+<!-- ===========================================================================
+     ICON SPRITE — the block from home.html, extended with this screen's glyphs.
+     One family, one style, inline SVG on a 24px grid, currentColor. [D §6]
+     ======================================================================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-habits" viewBox="0 0 24 24"><path d="M7 2v2H5.5A2.5 2.5 0 0 0 3 6.5v12A2.5 2.5 0 0 0 5.5 21h13a2.5 2.5 0 0 0 2.5-2.5v-12A2.5 2.5 0 0 0 18.5 4H17V2h-2v2H9V2H7zm12 8v8.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V10h14z"/></symbol>
+    <symbol id="i-progress" viewBox="0 0 24 24"><path d="M4 12h3v8H4v-8zm6.5-8h3v16h-3V4zM17 15h3v5h-3v-5z"/></symbol>
+    <symbol id="i-community" viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm7.5 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20.2A6.7 6.7 0 0 1 9 14a6.7 6.7 0 0 1 7 6.2V21H2v-.8zm15.6-5.1A5.4 5.4 0 0 1 22 20.4V21h-4.2v-.8a8.2 8.2 0 0 0-1.5-4.7c.4-.2.8-.3 1.3-.4z"/></symbol>
+    <symbol id="i-library" viewBox="0 0 24 24"><path d="M6 2h13a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2H6zm0 2a.5.5 0 0 0-.5.5V17H18V4H6zm-.5 15v.5a.5.5 0 0 0 .5.5H18v-1H5.5z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12.6 2c.3 3 2 3.9 3.4 5.6A7.7 7.7 0 0 1 18 12.6a6 6 0 1 1-12 0c0-2 .8-3.7 1.9-5.1.1 1.6 1 2.7 2.1 2.7 1.2 0 2.1-1.1 2.1-3C12.1 5.4 12.4 3.6 12.6 2z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M13 5l7 7-7 7-1.4-1.4 4.6-4.6H4v-2h12.2l-4.6-4.6L13 5z"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4.1 0-7.4 2.3-7.4 5.2V21h14.8v-1.8c0-2.9-3.3-5.2-7.4-5.2z"/></symbol>
+    <symbol id="i-rosette" viewBox="0 0 24 24"><path d="M12 2l2.2 3.1 3.7-.9.4 3.8 3.4 1.7-2.3 3 2.3 3-3.4 1.7-.4 3.8-3.7-.9L12 24l-2.2-3.1-3.7.9-.4-3.8L2.3 16l2.3-3-2.3-3 3.4-1.7.4-3.8 3.7.9L12 2zm0 5.5A4.5 4.5 0 1 0 12 16.5 4.5 4.5 0 0 0 12 7.5z"/></symbol>
+    <!-- ── added for Explore ── -->
+    <symbol id="i-explore" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm4.6 3.4l-2.4 6.2-6.2 2.4 2.4-6.2 6.2-2.4zM12 10.8a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.3 4.3-1.4 1.4-4.3-4.3A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16z"/><path d="M11 6.5h2V12l4.2 2.5-1 1.7L11 13.2V6.5z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M9.6 17.2L4.4 12l-1.5 1.4 6.7 6.7L21.1 8.6 19.6 7.2 9.6 17.2z"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7l1.4-1.4 6.3 6.3 6.3-6.3z"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9.5 21.5h5v-1.7h-5v1.7zm2.5-20a7 7 0 0 0-4 12.8v2.9h8v-2.9a7 7 0 0 0-4-12.8z"/></symbol>
+  </defs>
+</svg>
+
+<a class="skip-link" href="#main">Skip to habit ideas</a>
+
+<!-- PROTOTYPE CONTROLS — the block from home.html, verbatim. -->
+<div class="devbar" role="group" aria-label="Prototype controls">
+  <div class="devbar__group" role="group" aria-label="Theme">
+    <button class="devbar__btn" type="button" data-theme-btn="system" aria-pressed="true">Auto</button>
+    <button class="devbar__btn" type="button" data-theme-btn="light" aria-pressed="false">Light</button>
+    <button class="devbar__btn" type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+  </div>
+  <div class="devbar__group">
+    <label for="hour" class="visually-hidden">Simulated hour of day</label>
+    <input id="hour" type="range" min="0" max="23" step="1" data-hour-input>
+    <output class="devbar__reading" data-hour-readout>—</output>
+  </div>
+  <div class="devbar__group" role="group" aria-label="Motion">
+    <button class="devbar__btn" type="button" data-motion-btn="auto" aria-pressed="true">Motion: auto</button>
+    <button class="devbar__btn" type="button" data-motion-btn="reduce" aria-pressed="false">Reduce</button>
+  </div>
+  <button class="devbar__btn" type="button" data-demo="reset">Reset day</button>
+</div>
+
+<div class="app-shell">
+
+  <!-- =========================================================================
+       NAVIGATION — home.html's block. The four core destinations are verbatim;
+       Explore and Library are appended as rail-only destinations (.nav-li--rail,
+       hidden below 600 where the bottom bar has room for four and no more).
+       See components.css §E1. [B §6.2] [B §6.3]
+       ====================================================================== -->
+  <nav class="app-nav" aria-label="Primary">
+    <a class="app-nav__brand" href="index.html">
+      <img src="../assets/images/Habit_Craft_Logo_File-09.png" alt="">
+      <span>HabitCrafts</span>
+    </a>
+
+    <a class="nav-fab" href="create-habit.html">
+      <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+      <span class="nav-fab__label">New habit</span>
+      <span class="visually-hidden">Craft a new habit</span>
+    </a>
+
+    <ul class="app-nav__list">
+      <li><a class="nav-item" href="home.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-habits"></use></svg>
+        <span class="nav-item__label">Habits</span>
+      </a></li>
+      <li><a class="nav-item" href="progress.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-progress"></use></svg>
+        <span class="nav-item__label">Progress</span>
+      </a></li>
+      <li><a class="nav-item" href="community.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-community"></use></svg>
+        <span class="nav-item__label">Community</span>
+      </a></li>
+      <li class="nav-li--rail"><a class="nav-item" href="explore.html" aria-current="page">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-explore"></use></svg>
+        <span class="nav-item__label">Explore</span>
+      </a></li>
+      <li class="nav-li--rail"><a class="nav-item" href="library.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-library"></use></svg>
+        <span class="nav-item__label">Library</span>
+      </a></li>
+      <li><a class="nav-item" href="profile.html">
+        <span class="nav-item__pill" aria-hidden="true"></span>
+        <svg class="icon" aria-hidden="true"><use href="#i-person"></use></svg>
+        <span class="nav-item__label">Profile</span>
+      </a></li>
+    </ul>
+
+    <a class="app-nav__user" href="profile.html">
+      <span class="avatar" aria-hidden="true">M</span>
+      <span>
+        <span class="t-label" style="display:block">Mark</span>
+        <span class="t-body-sm t-muted">Member since 2024</span>
+      </span>
+    </a>
+  </nav>
+
+  <main id="main" class="page">
+
+    <!-- =======================================================================
+         HEADER. The shipping page's own strings: "Habit Ideas" /
+         "Get inspired to cultivate positive habits." / "Search".
+         What changes: the screen is a real destination instead of a dead end
+         reached only through a tooltip on Create Habit, and it keeps the nav.
+         ==================================================================== -->
+    <!-- Below 600 Explore is not in the bottom bar, so it gets a back link. -->
+    <a class="page-back page-back--compact" href="home.html">
+      <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow"></use></svg>
+      Today
+    </a>
+
+    <header class="page-head">
+      <div class="page-head__text">
+        <h1 class="t-h1">Habit ideas</h1>
+        <p class="page-head__sub t-body-sm">Get inspired to cultivate positive habits.</p>
+      </div>
+
+      <label class="input-with-icon" style="flex:1 1 260px;max-inline-size:360px">
+        <span class="visually-hidden">Search habit ideas</span>
+        <svg class="icon icon--sm" aria-hidden="true"><use href="#i-search"></use></svg>
+        <input class="input" type="search" placeholder="Search" data-idea-search>
+      </label>
+    </header>
+
+    <!-- The one --c-hero-fill surface on this screen. Real product copy:
+         "Keep it small, you can always do more." [README §7] -->
+    <section class="hero" aria-labelledby="start-small-h" style="margin-block-end:var(--space-24)">
+      <h2 id="start-small-h" class="t-h3" style="color:var(--c-hero-ink)">Not sure where to start?</h2>
+      <p class="hero__body t-body" style="margin-block-start:var(--space-8);max-inline-size:52ch">
+        Keep it small, you can always do more. Every idea here is already the
+        two-minute version — the one you can still do on your worst day.
+      </p>
+    </section>
+
+    <div class="browse-layout">
+
+      <!-- =====================================================================
+           CATEGORY RAIL. One <ul>: a horizontally scrollable pill row below
+           840, a 240px vertical rail above it. The shipping screen nests
+           category → subcategory → habit inside two levels of ExpandablePanel;
+           here the top level is navigation and only the subcategory stays a
+           filter, so nothing is ever more than one tap deep.
+           ================================================================== -->
+      <div class="browse-rail">
+        <h2 class="browse-rail__title t-label" id="cats-h">Categories</h2>
+        <ul class="cat-list" role="tablist" aria-orientation="vertical"
+            aria-labelledby="cats-h" data-cat-list>
+          <li><button class="cat-btn" type="button" role="tab" data-cat="all"
+                      aria-selected="true">Everything <span class="cat-btn__count">12</span></button></li>
+          <li><button class="cat-btn" type="button" role="tab" data-cat="movement" tabindex="-1"
+                      aria-selected="false">Movement <span class="cat-btn__count">3</span></button></li>
+          <li><button class="cat-btn" type="button" role="tab" data-cat="mind" tabindex="-1"
+                      aria-selected="false">Mind <span class="cat-btn__count">3</span></button></li>
+          <li><button class="cat-btn" type="button" role="tab" data-cat="sleep" tabindex="-1"
+                      aria-selected="false">Sleep <span class="cat-btn__count">2</span></button></li>
+          <li><button class="cat-btn" type="button" role="tab" data-cat="food" tabindex="-1"
+                      aria-selected="false">Food <span class="cat-btn__count">2</span></button></li>
+          <li><button class="cat-btn" type="button" role="tab" data-cat="connection" tabindex="-1"
+                      aria-selected="false">Connection <span class="cat-btn__count">2</span></button></li>
+        </ul>
+      </div>
+
+      <!-- =====================================================================
+           RESULTS. Subcategory chips refine within the category; the count line
+           is the app's own "{n} habits" string.
+           ================================================================== -->
+      <section aria-labelledby="ideas-h">
+        <div class="section-head" style="margin-block-end:var(--space-12)">
+          <h2 id="ideas-h" class="t-h3" data-idea-heading>Everything</h2>
+          <p class="t-body-sm t-muted"><span data-idea-count>12</span> habits</p>
+        </div>
+
+        <ul class="subcat-row" aria-label="Refine">
+          <li><button class="subcat-btn" type="button" data-sub="two-minute" aria-pressed="false">Two minutes or less</button></li>
+          <li><button class="subcat-btn" type="button" data-sub="morning" aria-pressed="false">Morning</button></li>
+          <li><button class="subcat-btn" type="button" data-sub="evening" aria-pressed="false">Evening</button></li>
+          <li><button class="subcat-btn" type="button" data-sub="no-kit" aria-pressed="false">Needs nothing</button></li>
+        </ul>
+
+        <!-- Fixture data, hardcoded. The shipping app has no seed file and every
+             category, subcategory and habit idea is Firestore content, so these
+             names are invented for the prototype — the SHAPE is real: each idea
+             carries the four Fogg fields the `habits` collection stores
+             (behavior · prompt · celebration · why). -->
+        <ul class="idea-grid" data-idea-grid>
+
+          <li>
+            <button class="card card--interactive idea-card" type="button"
+                    data-modal-open="idea" data-cats="movement" data-sub="two-minute no-kit"
+                    data-behavior="Walk around the block"
+                    data-prompt="After I close my laptop"
+                    data-celebration="Stretch and smile."
+                    data-why="Five minutes outside resets your attention better than five more minutes at the desk."
+                    data-time="2 min">
+              <h3 class="idea-card__title t-h3">Walk around the block</h3>
+              <p class="idea-card__prompt t-body-sm">After I close my laptop</p>
+              <span class="idea-card__foot">
+                <span class="chip chip--brand">Movement</span>
+                <span class="idea-card__cue">
+                  <svg class="icon icon--sm" aria-hidden="true"><use href="#i-clock"></use></svg>2 min
+                </span>
+              </span>
+            </button>
+          </li>
+
+          <li>
+            <button class="card card--interactive idea-card" type="button"
+                    data-modal-open="idea" data-cats="movement" data-sub="morning no-kit"
+                    data-behavior="Do two push-ups"
+                    data-prompt="After I brush my teeth"
+                    data-celebration="Say: strong start."
+                    data-why="Two is small enough that you will never skip it, and most days you will do more."
+                    data-time="1 min">
+              <h3 class="idea-card__title t-h3">Do two push-ups</h3>
+              <p class="idea-card__prompt t-body-sm">After I brush my teeth</p>
+              <span class="idea-card__foot">
+                <span class="chip chip--brand">Movement</span>
+                <span class="idea-card__cue">
+                  <svg class="icon icon--sm" aria-hidden="true"><use href="#i-clock"></use></svg>1 min
+                </span>
+              </span>
+            </button>
+          </li>
+
+          <li>
+            <button class="card card--interactive idea-card" type="button"
+                    data-modal-open="idea" data-cats="movement" data-sub="evening"
+                    data-behavior="Stretch for one song"
+                    data-prompt="After I put the kettle on"
+                    data-celebration="Roll your shoulders and sigh."
+                    data-why="Tying it to a song gives the habit an end, so you never have to decide when to stop."
+                    data-time="3 min">
+              <h3 class="idea-card__title t-h3">Stretch for one song</h3>
+              <p class="idea-card__prompt t-body-sm">After I put the kettle on</p>
+              <span class="idea-card__foot">
+                <span class="chip chip--brand">Movement</span>
+                <span class="idea-card__cue">
+                  <svg class="icon icon--sm" aria-hidden="true"><use href="#i-clock"></use></svg>3 min
+                </span>
+              </span>
+            </button>
+          </li>
+
+          <!-- One idea already taken. Three redundant signals: the tone step,
+               the tick glyph, and the word "Already yours". [D §6] -->
+          <li>
+            <button class="card card--interactive idea-card is-taken" type="button"
+                    data-modal-open="idea" data-cats="mind" data-sub="two-minute morning no-kit"
+                    data-behavior="Meditate for two minutes"
+                    data-prompt="After I pour my morning coffee"
+                    data-celebration="Fist pump!"
+                    data-why="Two minutes is short enough to survive a bad morning, which is the only reason it lasts."
+                    data-time="2 min" data-taken="true">
+              <h3 class="idea-card__title t-h3">Meditate for two minutes</h3>
+              <p class="idea-card__prompt t-body-sm">After I pour my morning coffee</p>
+              <span class="idea-card__foot">
+                <span class="chip chip--sage">
+                  <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>Already yours
+                </span>
+                <span class="idea-card__cue">
+                  <svg class="icon icon--sm" aria-hidden="true"><use href="#i-clock"></use></svg>2 min
+                </span>
+              </span>
+            </button>
+          </li>
+
+          <li>
+            <button class="card card--interactive idea-card" type="button"
+                    data-modal-open="idea" data-cats="mind" data-sub="evening no-kit"
+                    data-behavior="Write down one good thing"
+                    data-prompt="After I plug in my phone for the night"
+                    data-celebration="Read it back to yourself."
+                    data-why="Naming one specific thing beats a gratitude list you stop writing by Thursday."
+                    data-time="2 min">
+              <h3 class="idea-card__title t-h3">Write down one good thing</h3>
+              <p class="idea-card__prompt t-body-sm">After I plug in my phone for the night</p>
+              <span class="idea-card__foot">
+                <span class="chip chip--brand">Mind</span>
+                <span class="idea-card__cue">
+                  <svg class="icon icon--sm" aria-hidden="true"><use href="#i-clock"></use></svg>2 min
+                </span>
+              </span>
+            </button>
+          </li>
+
+          <li>
+            <button class="card card--interactive idea-card" type="button"
+                    data-modal-open="idea" data-cats="mind" data-sub="two-minute no-kit"
+                    data-behavior="Take three slow breaths"
+                    data-prompt="After I sit down at my desk"
+                    data-celebration="Say: I'm here."
+                    data-why="It costs twenty seconds, so there is no day it does not fit."
+                    data-time="1 min">
+              <h3 class="idea-card__title t-h3">Take three slow breaths</h3>
+              <p class="idea-card__prompt t-body-sm">After I sit down at my desk</p>
+              <span class="idea-card__foot">
+                <span class="chip chip--brand">Mind</span>
+                <span class="idea-card__cue">
+                  <svg class="icon icon--sm" aria-hidden="true"><use href="#i-clock"></use></svg>1 min
+                </span>
+              </span>
+            </button>
+          </li>
+
+          <li>
+            <button class="card card--interactive idea-card" type="button"
+                    data-modal-open="idea" data-cats="sleep" data-sub="evening"
+                    data-behavior="Read one page"
+                    data-prompt="After I get into bed"
+                    data-celebration="Say out loud: that's who I am now."
+                    data-why="One page is a promise you can keep at midnight. The book does the rest."
+                    data-time="2 min">
+              <h3 class="idea-card__title t-h3">Read one page</h3>
+              <p class="idea-card__prompt t-body-sm">After I get into bed</p>
+              <span class="idea-card__foot">
+                <span class="chip chip--brand">Sleep</span>
+                <span class="idea-card__cue">
+                  <svg class="icon icon--sm" aria-hidden="true"><use href="#i-clock"></use></svg>2 min
+                </span>
+              </span>
+            </button>
+          </li>
+
+          <li>
+            <button class="card card--interactive idea-card" type="button"
+                    data-modal-open="idea" data-cats="sleep" data-sub="evening no-kit"
+                    data-behavior="Put my phone on the shelf"
+                    data-prompt="After I set my alarm"
+                    data-celebration="Turn off the lamp like you mean it."
+                    data-why="The habit is the distance, not the willpower. Two metres is enough."
+                    data-time="1 min">
+              <h3 class="idea-card__title t-h3">Put my phone on the shelf</h3>
+              <p class="idea-card__prompt t-body-sm">After I set my alarm</p>
+              <span class="idea-card__foot">
+                <span class="chip chip--brand">Sleep</span>
+                <span class="idea-card__cue">
+                  <svg class="icon icon--sm" aria-hidden="true"><use href="#i-clock"></use></svg>1 min
+                </span>
+              </span>
+            </button>
+          </li>
+
+          <li>
+            <button class="card card--interactive idea-card" type="button"
+                    data-modal-open="idea" data-cats="food" data-sub="morning"
+                    data-behavior="Fill the glass before the kettle"
+                    data-prompt="After I walk into the kitchen"
+                    data-celebration="Drink it standing up, all of it."
+                    data-why="The kettle is already a habit. This one just gets in front of it."
+                    data-time="1 min">
+              <h3 class="idea-card__title t-h3">Fill the glass before the kettle</h3>
+              <p class="idea-card__prompt t-body-sm">After I walk into the kitchen</p>
+              <span class="idea-card__foot">
+                <span class="chip chip--brand">Food</span>
+                <span class="idea-card__cue">
+                  <svg class="icon icon--sm" aria-hidden="true"><use href="#i-clock"></use></svg>1 min
+                </span>
+              </span>
+            </button>
+          </li>
+
+          <li>
+            <button class="card card--interactive idea-card" type="button"
+                    data-modal-open="idea" data-cats="food" data-sub="evening"
+                    data-behavior="Put one vegetable on the plate"
+                    data-prompt="After I take the pan off the heat"
+                    data-celebration="Nice."
+                    data-why="Adding beats subtracting. Nothing is being taken away from you here."
+                    data-time="1 min">
+              <h3 class="idea-card__title t-h3">Put one vegetable on the plate</h3>
+              <p class="idea-card__prompt t-body-sm">After I take the pan off the heat</p>
+              <span class="idea-card__foot">
+                <span class="chip chip--brand">Food</span>
+                <span class="idea-card__cue">
+                  <svg class="icon icon--sm" aria-hidden="true"><use href="#i-clock"></use></svg>1 min
+                </span>
+              </span>
+            </button>
+          </li>
+
+          <li>
+            <button class="card card--interactive idea-card" type="button"
+                    data-modal-open="idea" data-cats="connection" data-sub="two-minute no-kit"
+                    data-behavior="Send one person a good message"
+                    data-prompt="After I finish my lunch"
+                    data-celebration="Picture them reading it."
+                    data-why="Habits stick harder when someone else notices them. This is the cheapest way to be noticed."
+                    data-time="2 min">
+              <h3 class="idea-card__title t-h3">Send one person a good message</h3>
+              <p class="idea-card__prompt t-body-sm">After I finish my lunch</p>
+              <span class="idea-card__foot">
+                <span class="chip chip--brand">Connection</span>
+                <span class="idea-card__cue">
+                  <svg class="icon icon--sm" aria-hidden="true"><use href="#i-clock"></use></svg>2 min
+                </span>
+              </span>
+            </button>
+          </li>
+
+          <li>
+            <button class="card card--interactive idea-card" type="button"
+                    data-modal-open="idea" data-cats="connection" data-sub="evening"
+                    data-behavior="Ask one real question at dinner"
+                    data-prompt="After the plates are down"
+                    data-celebration="Listen to the whole answer."
+                    data-why="A partner who sees the habit is worth more than a reminder that does not."
+                    data-time="2 min">
+              <h3 class="idea-card__title t-h3">Ask one real question at dinner</h3>
+              <p class="idea-card__prompt t-body-sm">After the plates are down</p>
+              <span class="idea-card__foot">
+                <span class="chip chip--brand">Connection</span>
+                <span class="idea-card__cue">
+                  <svg class="icon icon--sm" aria-hidden="true"><use href="#i-clock"></use></svg>2 min
+                </span>
+              </span>
+            </button>
+          </li>
+        </ul>
+
+        <!-- Shown by the filter script when nothing matches. Real empty copy,
+             no dead end: the way out is to craft one yourself. -->
+        <div class="empty-state" data-idea-empty hidden>
+          <svg class="empty-state__art" viewBox="0 0 120 120" role="img"
+               aria-label="An empty stem waiting for a leaf">
+            <ellipse cx="60" cy="98" rx="34" ry="9" fill="var(--c-brand-300)" opacity=".55"/>
+            <path d="M60 96V40" stroke="var(--c-brand-700)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <circle cx="60" cy="36" r="6" fill="none" stroke="var(--c-brand-300)" stroke-width="2.5"/>
+          </svg>
+          <p class="empty-state__title">Nothing here yet</p>
+          <p class="empty-state__body t-body">Try another category — or craft the one you already had in mind.</p>
+          <a class="btn btn--primary" href="create-habit.html">Craft it yourself</a>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- ===========================================================================
+     THE PREVIEW DIALOG. In the shipping app a habit idea is a 73px row with no
+     affordance at all: tapping it jumps straight into Create Habit with six
+     prefill query parameters and no chance to look first. Here you see the
+     whole idea — behaviour, prompt, celebration, why — and the card you would
+     be getting, before you commit to anything.
+
+     "Make it a habit" is the string the shipping code already has, at
+     resource_article_list_item_widget.dart:210 — inside `if (false)`. The
+     redesign takes it out of the dead branch and makes it the bridge.
+     ======================================================================== -->
+<div class="scrim" data-modal="idea" hidden>
+  <div class="modal modal--wide" role="dialog" aria-modal="true" aria-labelledby="idea-title">
+    <div class="u-between" style="align-items:flex-start">
+      <div>
+        <p class="t-label t-muted">Habit idea</p>
+        <h2 id="idea-title" class="t-h2" data-idea-field="behavior" style="margin-block-start:var(--space-4)">
+          Walk around the block
+        </h2>
+      </div>
+      <button class="icon-btn" type="button" data-modal-close aria-label="Close preview">
+        <svg class="icon icon--sm" aria-hidden="true"><use href="#i-close"></use></svg>
+      </button>
+    </div>
+
+    <p class="idea-preview__lead t-body" style="margin-block-start:var(--space-12)"
+       data-idea-field="why">
+      Five minutes outside resets your attention better than five more minutes at the desk.
+    </p>
+
+    <div class="idea-preview__section" style="margin-block-start:var(--space-24)">
+      <span class="idea-preview__label t-label">When will you do the behavior?</span>
+      <p class="t-body" data-idea-field="prompt">After I close my laptop</p>
+    </div>
+
+    <div class="idea-preview__section">
+      <span class="idea-preview__label t-label">How will you celebrate?</span>
+      <p class="t-body" data-idea-field="celebration">Stretch and smile.</p>
+    </div>
+
+    <div class="idea-preview__section">
+      <span class="idea-preview__label t-label">What it will look like</span>
+      <!-- data-habit="preview" — a real card, wired to the real ring, but NOT
+           counted by the day arc. [README §4] -->
+      <article class="card habit-card" data-habit="preview" data-celebration="Stretch and smile.">
+        <div class="habit-card__body">
+          <h3 class="habit-card__title" data-idea-field="behavior">Walk around the block</h3>
+          <p class="habit-card__meta" data-idea-field="prompt-meta">After I close my laptop · new habit</p>
+          <p class="habit-card__echo" data-echo hidden></p>
+        </div>
+        <button class="btn btn--ghost btn--sm habit-card__undo" type="button" data-undo hidden>Undo</button>
+        <button class="ring" type="button" data-checkin aria-pressed="false"
+                aria-label="Preview check-in. Press and hold to see how it feels.">
+          <svg class="ring__svg" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+            <circle class="ring__track" cx="22" cy="22" r="16" pathLength="100"/>
+            <circle class="ring__fill"  cx="22" cy="22" r="16" pathLength="100"/>
+            <path class="ring__check" d="M14.6 22.4l5.1 5.1 9.7-10.6" pathLength="100"/>
+          </svg>
+          <span class="ring__hint" data-ring-hint hidden>Hold to check in</span>
+        </button>
+      </article>
+    </div>
+
+    <div class="idea-preview__actions">
+      <a class="btn btn--primary" href="create-habit.html" data-idea-make>Make it a habit</a>
+      <button class="btn btn--ghost" type="button" data-modal-close>Not this one</button>
+    </div>
+
+    <!-- Shown instead of the CTA when the idea is already an active habit. -->
+    <p class="t-body-sm t-muted" data-idea-taken hidden style="margin-block-start:var(--space-12)">
+      You already have this one. It's on Today, at 112 days.
+    </p>
+  </div>
+</div>
+
+<script src="js/prototype.js"></script>
+</body>
+</html>
