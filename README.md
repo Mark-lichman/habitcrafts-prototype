@@ -1,12 +1,15 @@
 # HabitCrafts Prototype
 
-The **design-exploration prototype** for the HabitCrafts redesign — research, design
-direction, and clickable static mockups of every screen. Nothing in this repo ships
-directly to users.
+The HabitCrafts prototype: research, design direction, a working preview of every
+screen, and simulations of the three business-model experiments tracked in
+[issue #1](https://github.com/Mark-lichman/habitcrafts-prototype/issues/1).
 
-The **production app** is the Flutter repo at
-[`Mark-lichman/HabitCrafts`](https://github.com/Mark-lichman/HabitCrafts) (private). Design
-validated here gets re-implemented there in Flutter, tracked under the design-system epic.
+**This is now written to be reusable as the real front end**, not only as a thing the
+real front end is written from — the data layer sits behind a swappable adapter and the
+view layer has no idea where its data comes from. That forces a decision about the
+Flutter app at [`Mark-lichman/HabitCrafts`](https://github.com/Mark-lichman/HabitCrafts),
+which is laid out in [`docs/production-path.md`](docs/production-path.md) §1. Until that
+decision is taken, nothing here ships to users.
 
 ## The idea — paper and springs
 
@@ -32,6 +35,8 @@ spring."
   breakpoints, and a Flutter-web checklist.
 - `docs/design-direction.md` — the point of view. Overrules the brief in five places, each
   marked and reasoned.
+- `docs/production-path.md` — what was changed so this can become the front end, what is
+  still missing, and the review rules that keep the claim true.
 - `prototype/` — the working prototype: a single-page app preview, the ten original static
   screens it was built from, and a design-system gallery.
 - `prototype/README-buildnotes.md` — the build contract: CSS architecture, token naming,
@@ -44,8 +49,12 @@ spring."
 
 A preview of the working app, without the data flows. Creating a habit adds it to Home;
 checking one in advances the day arc, raises the streak, reorders the list and can fire a
-milestone. But it is still **UI/UX only**: fixture data, in-session state, **no backend, no
-network, no validation and no auth.**
+milestone. Binding a source produces a real draft Practice you have to read before you can
+publish it, and a habit crafted from one of its lessons is attributed back to it.
+
+Still **fixture data, in-session state, no backend, no network, no validation and no auth**
+— but the seams for all of those now exist rather than being assumed. The conversion in
+the Bindery is two hand-written corpora, not a model call.
 
 ## How to run
 
@@ -60,6 +69,15 @@ node scripts/serve.js 8080     # pick a different port
 Still no build step and no dependencies; the server uses only Node built-ins, no
 `npm install`. GitHub Pages serves it over `http://` too, so the served path is the real
 one.
+
+The data layer runs without a browser at all:
+
+```sh
+node scripts/smoke.mjs         # asserts the rules the business depends on
+```
+
+That it *can* run is the point — it only works because the store talks to an adapter and
+`render()` is pure. If it ever stops being runnable, the production seam has closed.
 
 Then open **`http://localhost:5173/`** — the prototype harness. The app runs in a device
 frame with a control bar around it: viewport (Mobile 390 · Tablet 768 · Desktop 1280 · Full
@@ -81,6 +99,29 @@ app's views are built from.
 
 Home · Progress · Community · Create Habit · Profile · Explore · Library · Library Detail ·
 Onboarding · Auth
+
+And the knowledge layer the experiments add — the Bindery (bring a source · choose what to
+make · bind · review and publish) · Practice reader · Studio · Spaces · Join.
+
+### Switching experiments
+
+The top bar inside the app switches between **Base**, **E1 Creators**, **E2 Communities**
+and **E3 Consumers**. Switching does not reload: the nav, the surfaces and the money moment
+change underneath you while you stand on the same screen. The harness bar carries the same
+control.
+
+Each configuration **opens on the decision its experiment is asking about**, not on Home:
+creators land on "bring a source", community members on "join your community", consumers on
+"what are you reading right now". These are discovery instruments — a participant who has to
+be navigated to the thing under test has been shown it rather than finding it.
+
+- `app.html?x=creator#/studio` — a shareable link to a screen in the state it should be
+  reviewed in.
+- `app.html?chrome=clean` — no switcher. **This is the URL to screenshot.**
+
+Each configuration is a set of feature flags in `prototype/js/config.js`. A view asks
+`flag('bindery')`; no view asks which experiment is running. When one of them wins, its
+flags become the shipping configuration and the other three are deleted.
 
 Every screen is responsive across 390 / 768 / 1280 in both light and dark. The navigation
 renders as a bottom bar, a rail, an extended rail, or a drawer from identical markup.
