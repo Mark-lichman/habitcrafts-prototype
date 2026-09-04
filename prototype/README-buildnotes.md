@@ -1010,3 +1010,249 @@ optional.
 level up, outside the frame, styled deliberately as an undesigned toolbar —
 system-ui, square corners, flat, no shadow, no gold — so nobody reviews it as a
 designed surface. A screenshot of the frame is a screenshot of the app.
+
+
+## 13. The knowledge layer — Practices, and the experiment switcher
+
+Added for the three business-model experiments (issues #1–#9). Everything in
+this section is **additive**: the habit layer, its screens, its store API and
+its CSS are untouched, and a configuration with every flag off renders exactly
+the app that was here before.
+
+### 13.1 The two new seams
+
+**`js/config.js` — which product is running.** In the prototype that means which
+business-model experiment is being simulated; in production it means feature
+flags. Same mechanism.
+
+A view asks `flag('bindery')`. **A view never asks which experiment is running.**
+The only legitimate readers of `experimentId()` are the nav painter and the
+switcher itself — everything else is a capability question, and asking it the
+other way is how you get `if (isE1)` in eleven files, which is the thing this
+module exists to delete.
+
+Flags in use: `bindery`, `studio`, `publishing`, `priceOnPublish`, `spaces`,
+`roster`, `cohort`, `memberPaywall`, `bringYourOwn`, `plusPaywall`.
+
+**`js/persistence.js` — where the data lives.** `store.js` no longer knows.
+It asks an adapter for `seed()`, `load()`, `save(state)` and optionally
+`watch(onRemote)`. `fixtureAdapter` is what runs here; `memoryAdapter` is for
+tests and deterministic screenshots; a backend adapter is
+`store.configure(myAdapter)` at boot and nothing else. See
+`docs/production-path.md`.
+
+### 13.2 Navigation is data
+
+`app.html` holds `<ul class="app-nav__list" data-nav-list></ul>` — an empty
+mount point. `js/app.js` fills it from `config.navItems()` at boot and again on
+every configuration change. The generated markup is identical to the six
+hand-written `<li>`s that were there; all four nav shapes are still pure CSS off
+this one list.
+
+Add a destination by adding a row to `BASE_NAV` (or to an experiment's `nav`),
+not by editing markup.
+
+### 13.3 The experiment switcher
+
+`[data-xbar]` at the top of `app.html` is **the one piece of scaffolding in that
+file**, and it earns the exception on three conditions:
+
+1. it is styled from the harness vocabulary (§X1.1) and never the product's, so
+   it cannot be mistaken for shipping design;
+2. it states the hypothesis the surfaces below it exist to test;
+3. `app.html?chrome=clean` removes it entirely — that is the URL to screenshot.
+
+`app.html?x=creator#/studio` is a shareable link to a screen in the state it
+should be reviewed in. Resolution order is query → sessionStorage → `none`.
+
+The harness bar carries the same control; both call `HCApp.setExperiment`, so
+there is one switch and not two implementations that can disagree.
+
+### 13.4 The data shape
+
+Four collections alongside the habit layer, seeded from `js/data-practices.js`:
+
+```js
+sources     // { id, title, author, kind, pages, corpus, rightsConfirmed }
+practices   // { id, sourceId, title, author, code, status, outputs, prompt,
+            //   reviewedWeeks, weeks: [{ n, title, lessons: [...] }] }
+enrolments  // { id, practiceId, joinedAt, week1Complete, habitCreated, lastCheckIn }
+spaces      // { id, name, operator, practiceId, seats, joined, roster, cohort }
+```
+
+A generated lesson **extends** the existing lesson shape rather than replacing
+it — `sourceRef { chapter, page, quote }`, `checks[]`, `habitSuggestion` — so a
+bound lesson and a first-party Library lesson render through the same
+components.
+
+A habit created across the bridge gains `fromPractice` and `fromLesson`. It is
+otherwise an ordinary habit: the day a Practice habit becomes a different kind of
+habit is the day the check-in gesture stops working on it.
+
+**There is no `ptr` field, and there must never be one** — same rule as
+`streak`. `store.ptrOf()` derives it. See §13.6.
+
+### 13.5 New store API
+
+```js
+// sources and binding
+store.addSource(fields)                 // rightsConfirmed is required, never defaulted
+store.bindSource(sourceId, opts)        // → a DRAFT. There is no publish shortcut.
+store.reviewWeek(practiceId, n)  ·  store.readyToPublish(practice)
+store.editLesson(practiceId, lessonId, fields)
+store.regenerateLesson(practiceId, lessonId, prompt)
+store.removeLesson(practiceId, lessonId)
+store.publishPractice(practiceId, opts) // refuses an unreviewed draft
+
+// the reader's side
+store.joinPractice(id)  ·  store.hasJoined(id)  ·  store.practiceByCode(code)
+store.createHabitFromLesson(practiceId, lessonId, fields)   // the instrumented bridge
+
+// selectors
+store.practiceById(id)  ·  store.publishedPractices()  ·  store.draftPractices()
+store.practiceLessons(practice)  ·  store.practiceLessonById(practice, id)
+store.ptrOf(practiceId)          // { pct, kept, of } — pct is null when immature
+store.studioStats(practiceId)    // { enrolled, week1, habits, ptr }
+store.ptrSeries(practiceId, n)   // [{ week, pct, of }] — pct null = a gap, not a zero
+store.joinedSpaces()  ·  store.spaceById(id)  ·  store.joinSpace(id)
+store.needsPlusToBind()  ·  store.startPlus()
+```
+
+Two rules worth stating outright, both enforced in the store rather than in a
+view, so a second entry point cannot route around them:
+
+- **`bindSource` always returns a draft, and `publishPractice` refuses one whose
+  weeks have not all been opened.** Nothing publishes unreviewed. This is the
+  trust artefact the creator experiment is selling, not a nag.
+- **`codeFor()` guarantees a unique join code.** Two practices from the same
+  source generate the same letters, and `practiceByCode` can only return the
+  first match — a duplicate would silently send a reader to somebody else's
+  programme.
+
+### 13.6 Practice Take Rate — the one number
+
+> Of the people who enrol in a Practice, the percentage who created at least one
+> habit from it **and were still checking that habit in on day 14.**
+
+Derived in `store.ptrOf()` and **nowhere else**. The Studio, an operator report
+and a consumer funnel all call it, or E1's number stops being comparable to
+E2's, which is the entire reason it exists.
+
+`ptrOf` counts only enrolments that have HAD a day 14. Without that a Practice
+published last week reports near zero because most of its readers have not
+reached the measurement point — a good Practice looking like a failing one on
+launch day. An immature cohort returns `pct: null`, and every consumer of it
+renders that as an absence, never as a zero.
+
+### 13.7 New routes and views
+
+```
+#/bindery              views/bindery.js         steps 1–3, module-local draft
+#/bindery/:id/review   views/bindery-review.js  step 4 + the provenance component
+#/practice/:id         views/practice.js        the reader's side
+#/studio               views/studio.js          the author dashboard (E1)
+#/spaces               views/spaces.js          the community container (E2)
+#/join                 views/join.js            the audience front door
+```
+
+The route table is the same in every configuration; the **views** check `flag()`
+and render an unavailable state. A link into an experiment surface therefore
+always resolves and explains itself, instead of silently falling back to Home
+the way a route table that changed shape would.
+
+`views/library.js` gained a `practiceBand()`, gated on `flag('bindery')`, so the
+Bindery has a door in the product and not only a URL.
+
+`views/create.js` gained `fromPractice` / `fromLesson` on its draft: the bridge
+carries attribution through the workbench so the crossing can be recorded on
+save, whatever the reader edits the habit into.
+
+### 13.8 New component classes — components.css §X1
+
+| Classes | What |
+|---|---|
+| `.xbar` `__row` `__legend` `__group` `__btn` `__persona` `__hypothesis` | the experiment switcher (scaffolding) |
+| `.bind-steps` `__step` · `.bind-desk` · `.bind-drop` `__title` `__sub` · `.bind-sheet` `__page` `__fold` `__rule` | Bindery step 1 |
+| `.bind-samples` · `.bind-sample` `__kind` `__title` `__author` `__blurb` · `.bind-rights` · `.bind-actions` | the source picker |
+| `.bind-source-row` · `.bind-opts` · `.bind-warn` | step 2 |
+| `.bind-binding` `__stage` `__note` · `.bind-signatures` · `.bind-sig` `__leaf` `__spine` | step 3 — the no-spinner rule |
+| **`.prov-wrap` · `.prov` `__icon` `__ref` `__cue` · `.prov__quote`** | **the provenance line** |
+| `.draft-flag` · `.draft-list` · `.draft-card` `__head` `__state` `__title` `__standfirst` `__len` `__actions` · `.draft-week` | draft cards |
+| `.draft-checks` `__q` `__opts` `__opt` · `.draft-habit` `__behavior` `__cue` | generated outputs in review |
+| `.publish-panel` `__title` `__body` · `.publish-price` `__amount` `__note` | the publish gate and the price ask |
+| `.prac-hero__meta` · `.prac-week` · `.prac-list` · `.prac-lesson` `__title` `__body` `__para` | the reader |
+| `.prac-check` `__q` `__opts` `__opt` `__verdict` · `.prac-suggest` `__behavior` `__cue` | recall checks and the bridge |
+| `.studio-practice` · `.studio-ptr` `__value` `__sub` `__pending` · `.studio-stats` · `.studio-drafts` `.studio-draft` | the Studio |
+| `.ptr-chart` `__bar` `__base` `__target` `__target-label` | the one chart |
+| `.space` · `.space-hero` `__title` `__meta` · `.space-mine` `__row` · `.space-cohort` `__row` `__body` `__name` `__what` `__note` | Spaces |
+| `.space-invite` `__body` · `.space-upgrade` `__price` | invitations and the member arm |
+| `.bind-wall` `__title` `__body` `__price` `__alt` · `.join-form` · `.join-code` · `.join-open` `__row` | the walls and the join door |
+
+### 13.9 The three rules this section was most at risk of breaking
+
+**No spinner in the Bindery.** Step 3 is the one place a loading state could
+wreck the calm. It is a determinate meter over named stages plus a sheet folding
+into signatures — progress that is true rather than progress that is
+entertaining. The meter is `.week-meter`, reused, because a second progress
+language is exactly the drift these notes exist to prevent.
+
+**The binding animation is imperative, not a re-render.** `router.refresh()`
+tears a view down and rebuilds it, so a ticking meter that called it would cancel
+its own timer on the first tick. `bindery.js` renders the stage once and walks
+the DOM to 100% from `mount()` — the same reason `meta.ownsCheckIn` exists.
+Elapsed time is kept on the draft rather than in the closure, so an unrelated
+store commit resumes the meter instead of restarting it.
+
+**Draft is a material state, not a badge.** Unbound paper: a stitched edge, and
+the edit affordance live at rest rather than on hover. Hover-to-edit does not
+exist on a phone and this flow has to work there — and an author who cannot tell
+at a glance which words are theirs will not put their name on any of them.
+
+### 13.10 Running the checks
+
+```sh
+node scripts/serve.js 5173     # the app
+node scripts/smoke.mjs         # the data layer, no browser, no dependencies
+```
+
+`smoke.mjs` asserts the rules the business depends on, and doubles as a canary:
+if it ever becomes impossible to run, something in the data layer has started
+reaching into the DOM and the production seam has closed. See
+`docs/production-path.md` §5.
+
+### 13.11 Front doors — the app opens where the interview starts
+
+Each configuration declares an `entry` route in `config.js`, and `router.js`
+uses it as the fallback when the URL names no route:
+
+```
+none      → /home        (nothing to put in front of anyone)
+creator   → /bindery     "Turn your material into daily practice"
+community → /spaces      "Join your community"
+consumer  → /bindery     "What are you reading right now?"
+```
+
+These configurations get put in front of a stranger on a fifteen-minute call.
+A participant who has to be *navigated* to the thing under test has been shown
+it rather than finding it, which destroys the only honest signal the prototype
+can give — and has spent a tenth of the session getting there.
+
+An explicit hash always wins, so `app.html?x=creator#/studio` still works.
+
+Two consequences worth knowing about:
+
+- **Switching experiments keeps your route unless that route does not exist in
+  the new configuration**, in which case you land on its front door instead of
+  being parked on an "unavailable" page. `config.routeAvailable(path)` decides;
+  the views still guard themselves regardless.
+- **Spaces leads with joining**, above what a member already has. That ordering
+  is for the interview and not for a returning member — those two want opposite
+  things, and discovery wins only because there are no returning members yet.
+  It is flagged in the source as a deliberate, temporary inversion.
+
+**Home was deliberately left alone.** The obvious move is a promotional band at
+the top of Home pointing at the Bindery, and it was rejected: "the homepage
+clutters core tasks with shops, journeys, and premium" is a defect this redesign
+exists to fix (§10, and the research brief's audit). Adding a band to sell the
+knowledge layer would re-introduce it in the same release that fixed it. The
+front door, the nav and the Library band are enough.
