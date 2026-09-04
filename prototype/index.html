@@ -169,6 +169,19 @@ body {
 
 <div class="hz-bar" role="group" aria-label="Prototype controls">
 
+  <!-- WHICH BUSINESS MODEL AM I LOOKING AT.
+       Mirrors the switcher inside the frame rather than duplicating it: both
+       call the same HCApp.setExperiment, so there is one switch and not two
+       implementations that can disagree. Switching does not reload the frame —
+       the app repaints its nav and re-renders in place, so you can stand on one
+       screen and watch it change shape as the payer changes. -->
+  <div class="hz-group" role="group" aria-label="Experiment">
+    <span class="hz-legend" aria-hidden="true">Experiment</span>
+    <button class="hz-btn" type="button" data-x-set="none"      aria-pressed="true">Base</button>
+    <button class="hz-btn" type="button" data-x-set="creator"   aria-pressed="false">E1 Creators</button>
+    <button class="hz-btn" type="button" data-x-set="community" aria-pressed="false">E2 Communities</button>
+    <button class="hz-btn" type="button" data-x-set="consumer"  aria-pressed="false">E3 Consumers</button>
+  </div>
   <!-- Viewport. The reason the app is in an iframe at all. -->
   <div class="hz-group" role="group" aria-label="Viewport">
     <span class="hz-legend" aria-hidden="true">Viewport</span>
@@ -241,6 +254,7 @@ body {
     motion: 'auto',
     hour: new Date().getHours(),
     size: 'full',
+    experiment: 'none',
   };
 
   function press(selector, attr, value) {
@@ -277,6 +291,7 @@ body {
     w.HC.setTheme(settings.theme);
     w.HC.setMotion(settings.motion);
     w.HC.setHour(settings.hour);
+    if (w.HCApp) w.HCApp.setExperiment(settings.experiment);
   }
 
   function setTheme(mode) {
@@ -291,6 +306,12 @@ body {
     apply();
   }
 
+  function setExperiment(id) {
+    settings.experiment = id;
+    press('[data-x-set]', 'data-x-set', id);
+    var w = app();
+    if (w && w.HCApp) w.HCApp.setExperiment(id);
+  }
   function setHour(h) {
     settings.hour = Math.max(0, Math.min(23, parseInt(h, 10) || 0));
     hourInput.value = settings.hour;
@@ -309,6 +330,9 @@ body {
   document.querySelectorAll('[data-motion-set]').forEach(function (b) {
     b.addEventListener('click', function () { setMotion(b.getAttribute('data-motion-set')); });
   });
+  document.querySelectorAll('[data-x-set]').forEach(function (b) {
+    b.addEventListener('click', function () { setExperiment(b.getAttribute('data-x-set')); });
+  });
   hourInput.addEventListener('input', function () { setHour(hourInput.value); });
 
   /* Reset data: back to the fixtures, same route, no reload — so you can watch
@@ -321,7 +345,18 @@ body {
 
   /* The app is reloadable from inside the frame (a hard refresh, a bad hash).
      Re-apply on every load or the theme silently reverts. */
-  frame.addEventListener('load', apply);
+  frame.addEventListener('load', function () {
+    var w = app();
+    /* The app resolves its own experiment from ?x= or the session. Adopt
+       whatever it decided rather than stamping the harness default over it —
+       otherwise a shared app.html?x=creator link loses its state the moment
+       it is opened through the harness. */
+    if (w && w.HCApp && w.HCApp.experimentId) {
+      settings.experiment = w.HCApp.experimentId();
+      press('[data-x-set]', 'data-x-set', settings.experiment);
+    }
+    apply();
+  });
 
   setSize('full');
   setHour(settings.hour);

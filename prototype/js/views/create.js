@@ -77,6 +77,11 @@ function blank() {
   return {
     behavior: '', prompt: '', celebration: '', goal: '',
     days: [], time: '07:00', remind: false, category: '',
+    /* Where this habit came from, when it came from a Practice. Carried
+       through the workbench so the bridge can be attributed on save — this is
+       the fact Practice Take Rate is derived from, and it is only knowable
+       here. A habit crafted from scratch leaves both null. [#9] */
+    fromPractice: null, fromLesson: null,
   };
 }
 
@@ -94,6 +99,8 @@ export function prefillFrom(idea) {
     celebration: idea.celebration || '',
     goal: idea.why || '',
     category: idea.cat || '',
+    fromPractice: idea.fromPractice || null,
+    fromLesson: idea.fromLesson || null,
     prefilled: true,
   });
 }
@@ -597,7 +604,13 @@ export function mount(root) {
       e.preventDefault();
       const d = Object.assign(draft, readDom(root));
       if (!d.behavior) return;          /* prototype scope: no validation UI */
-      store.createHabit(toHabit(d));
+      /* One save, two attributions. A habit that came across the bridge from a
+         Practice goes through the instrumented mutation so the crossing is
+         recorded where PTR is derived from; everything else is unchanged. The
+         habit itself is identical either way — a Practice habit is not a
+         different kind of habit. [#9] */
+      if (d.fromPractice) store.createHabitFromLesson(d.fromPractice, d.fromLesson, toHabit(d));
+      else store.createHabit(toHabit(d));
       draft = blank();
       router.go('/home');
     });

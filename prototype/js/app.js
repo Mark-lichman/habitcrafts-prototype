@@ -15,7 +15,9 @@
 
 import * as store from './store.js';
 import * as router from './router.js';
+import * as config from './config.js';
 import { longDate, today } from './data.js';
+import { html, icon } from './ui.js';
 
 /* --------------------------------------------------------------------------
    1. SHELL — nav state, document title, logged-out chrome
@@ -23,7 +25,35 @@ import { longDate, today } from './data.js';
 
 const shell = document.querySelector('[data-shell]');
 const navRoot = document.querySelector('[data-nav-root]');
+const navList = document.querySelector('[data-nav-list]');
 const viewRoot = document.querySelector('[data-view-root]');
+const xbar = document.querySelector('[data-xbar]');
+
+/* --------------------------------------------------------------------------
+   THE NAVIGATION IS DATA NOW
+
+   app.html used to hand-write six <li>s. It holds an empty <ul> instead,
+   because an experiment can add a destination (Studio, Spaces) and a shipping
+   configuration will eventually remove some — and markup is the wrong place
+   for a decision that changes per configuration.
+
+   The markup produced here is byte-for-byte what was there before. The four
+   nav shapes (bar / rail / extended rail / drawer) are pure CSS off this one
+   list, so nothing about the responsive behaviour depends on who wrote it.
+-------------------------------------------------------------------------- */
+
+function paintNav() {
+  if (!navList) return;
+  navList.innerHTML = String(html`
+    ${config.navItems().map((item) => html`
+      <li class="${item.rail ? 'nav-li--rail' : ''}">
+        <a class="nav-item" href="${item.href}" data-nav="${item.id}">
+          <span class="nav-item__pill" aria-hidden="true"></span>
+          ${icon(item.icon)}
+          <span class="nav-item__label">${item.label}</span>
+        </a>
+      </li>`)}`);
+}
 
 function paintShell(meta) {
   /* Selected destination. `aria-current="page"` is the whole mechanism — the
@@ -52,6 +82,85 @@ function paintUser() {
   set('[data-user-since]', 'Member since ' + u.memberSince);
   document.documentElement.setAttribute('data-quick-checkin', String(!!u.quickCheckIn));
 }
+
+/* --------------------------------------------------------------------------
+   THE EXPERIMENT SWITCHER
+
+   The one piece of scaffolding allowed inside app.html, and it is allowed on
+   three conditions:
+
+     1. It is styled from the harness's vocabulary, not the product's, so it can
+        never be mistaken for shipping design in a screenshot.
+     2. It states the hypothesis the surfaces below it exist to test. A reviewer
+        clicking through E1 should be able to see, without leaving the screen,
+        what the screen is supposed to prove.
+     3. It can be turned off outright: `app.html?chrome=clean`.
+
+   Switching does not reload. It repaints the nav, re-renders the current view
+   and leaves the route and the store alone — so you can stand on one screen and
+   watch it change shape as the payer changes, which is the entire point of
+   having the control at all.
+
+   WHEN AN EXPERIMENT WINS: delete this function, the [data-xbar] element, and
+   every entry in EXPERIMENTS except the winner. Nothing else changes, because
+   nothing else reads the experiment id.
+-------------------------------------------------------------------------- */
+
+function paintSwitcher() {
+  if (!xbar) return;
+  if (!config.switcherVisible()) { xbar.hidden = true; return; }
+
+  const active = config.experiment();
+  xbar.hidden = false;
+  xbar.innerHTML = String(html`
+    <div class="xbar__row">
+      <span class="xbar__legend">Simulating</span>
+      <div class="xbar__group" role="group" aria-label="Business model experiment">
+        ${config.EXPERIMENT_IDS.map((id) => {
+          const x = config.EXPERIMENTS[id];
+          return html`
+            <button class="xbar__btn" type="button" data-x="${id}"
+                    aria-pressed="${String(id === active.id)}">${x.label}</button>`;
+        })}
+      </div>
+      <span class="xbar__spacer"></span>
+      ${active.ticket
+        ? html`<a class="xbar__link"
+                  href="https://github.com/Mark-lichman/habitcrafts-prototype/issues/${active.ticket}"
+                  target="_blank" rel="noopener">issue #${active.ticket} ↗</a>`
+        : ''}
+    </div>
+    <p class="xbar__persona">${active.persona}</p>
+    ${active.hypothesis
+      ? html`<p class="xbar__hypothesis"><strong>Hypothesis:</strong> ${active.hypothesis}</p>`
+      : ''}`);
+}
+
+/* Repaint everything a configuration can change, then re-render the view in
+   place. `router.refresh()` rather than a navigation: the reviewer stays where
+   they were standing. */
+config.onExperimentChange(() => {
+  paintNav();
+  paintSwitcher();
+  const cur = router.current();
+  paintShell(cur && cur.meta ? cur.meta : {});
+
+  /* Stay where you are standing — that is the point of the switcher, and
+     watching one screen change shape as the payer changes is the whole reason
+     to have the control.
+
+     Unless the screen you are standing on does not exist in the configuration
+     you just switched into. Then go to that configuration's front door rather
+     than leaving a reviewer parked on an "unavailable" page with a paragraph
+     explaining why. */
+  if (cur && !config.routeAvailable(cur.path)) router.go(config.entryRoute());
+  else router.refresh();
+});
+
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-x]');
+  if (btn) config.setExperiment(btn.getAttribute('data-x'));
+});
 
 /* --------------------------------------------------------------------------
    2. THE BRIDGE — prototype.js ⇄ store.js
@@ -139,6 +248,10 @@ router.afterRender((meta) => {
 -------------------------------------------------------------------------- */
 
 function boot() {
+  /* The nav has to exist before the first render — paintShell moves
+     aria-current onto an item it expects to already be in the document. */
+  paintNav();
+  paintSwitcher();
   paintUser();
   router.start(viewRoot);
 }
@@ -156,6 +269,11 @@ else boot();
 window.HCApp = {
   store,
   router,
+  config,
+  /** The harness's experiment control drives the same path the in-app one does,
+      so there is one switch and not two implementations of it. */
+  setExperiment(id) { config.setExperiment(id); },
+  experimentId() { return config.experimentId(); },
   /** "Reset data" on the control bar. Back to the fixtures, same route. */
   reset() {
     store.resetAll();

@@ -58,6 +58,8 @@
    construction can therefore land one at a time.
 -------------------------------------------------------------------------- */
 
+import * as config from './config.js';
+
 const ROUTES = [
   { path: '/home',        load: () => import('./views/home.js') },
   { path: '/progress',    load: () => import('./views/progress.js') },
@@ -70,9 +72,30 @@ const ROUTES = [
   { path: '/habit/:id',   load: () => import('./views/habit-detail.js') },
   { path: '/onboarding',  load: () => import('./views/onboarding.js') },
   { path: '/auth',        load: () => import('./views/auth.js') },
+
+  /* --- the knowledge layer the business-model experiments add ------------
+     These routes exist in every configuration; the VIEWS check `flag()` and
+     render an unavailable state when their experiment is not the active one.
+     Keeping the table constant means a link into an experiment surface always
+     resolves — it explains itself instead of silently falling back to Home,
+     which is what a route table that changed shape would do. */
+  { path: '/bindery',            load: () => import('./views/bindery.js') },
+  { path: '/bindery/:id/review', load: () => import('./views/bindery-review.js') },
+  { path: '/practice/:id',       load: () => import('./views/practice.js') },
+  { path: '/studio',             load: () => import('./views/studio.js') },
+  { path: '/spaces',             load: () => import('./views/spaces.js') },
+  { path: '/join',               load: () => import('./views/join.js') },
 ];
 
-const DEFAULT_ROUTE = '/home';
+/* The fallback when the URL names no route. It is CONFIGURATION, not a
+   constant: each business-model experiment opens on the decision it is asking
+   about rather than on Home, because these configurations get put in front of
+   a stranger on a fifteen-minute call and a participant who has to be
+   navigated to the thing under test has been shown it rather than finding it.
+   See config.js, above EXPERIMENTS. An explicit hash always wins. */
+function defaultRoute() {
+  return config.entryRoute();
+}
 
 /* --------------------------------------------------------------------------
    MATCHING
@@ -80,7 +103,7 @@ const DEFAULT_ROUTE = '/home';
 
 function parseHash() {
   const raw = (window.location.hash || '').replace(/^#/, '');
-  return raw.startsWith('/') ? raw : DEFAULT_ROUTE;
+  return raw.startsWith('/') ? raw : defaultRoute();
 }
 
 function match(pathname) {
@@ -200,7 +223,7 @@ async function render() {
   navigating = true;
 
   const path = parseHash();
-  const found = match(path) || match(DEFAULT_ROUTE);
+  const found = match(path) || match(defaultRoute()) || match('/home');
   if (!found) { navigating = false; return; }
 
   let mod;
@@ -302,7 +325,7 @@ export function refresh() {
 
 export function start(el) {
   mountEl = el;
-  if (!window.location.hash) window.location.hash = '#' + DEFAULT_ROUTE;
+  if (!window.location.hash) window.location.hash = '#' + defaultRoute();
   window.addEventListener('hashchange', render);
   render();
 }

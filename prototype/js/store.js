@@ -44,43 +44,54 @@
 
 import * as data from './data.js';
 import { iso, today, daysAgo } from './data.js';
-
-const STORAGE_KEY = 'hc:proto:v1';
+import { fixtureAdapter } from './persistence.js';
+import { convert } from './data-practices.js';
 
 /* --------------------------------------------------------------------------
    1. SEED + HYDRATE
+
+   WHERE THE DATA COMES FROM IS NOT THIS FILE'S BUSINESS. It asks an adapter
+   (see persistence.js) for a seed and for whatever was saved, and hands it
+   back on every commit. Swapping fixtures for a real backend is
+   `store.configure(myAdapter)` at boot and nothing else — which is the single
+   change that lets this prototype become the production front end rather than
+   a thing production is written from.
 -------------------------------------------------------------------------- */
 
-/** A fresh copy of the fixture data. Deep-cloned so a mutation can never
-    reach back into data.js and quietly rewrite the seed. */
-function seedState() {
-  return {
-    user: structuredClone(data.user),
-    habits: structuredClone(data.habits),
-    groups: structuredClone(data.groups),
-    invitations: structuredClone(data.invitations),
-    lessons: structuredClone(data.lessons),
-    dismissedLessons: [],
-    theme: 'system',
-    motion: 'auto',
-  };
-}
+let adapter = fixtureAdapter;
 
 function hydrate() {
-  const fresh = seedState();
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return fresh;
-    const saved = JSON.parse(raw);
-    /* Shallow merge: saved keys win, missing keys fall back to the seed, so a
-       state shape gaining a key does not need a migration. */
-    return Object.assign(fresh, saved);
-  } catch (e) {
-    return fresh;
-  }
+  const fresh = adapter.seed();
+  const saved = adapter.load();
+  /* Shallow merge: saved keys win, missing keys fall back to the seed, so a
+     state shape gaining a key does not need a migration. */
+  return saved ? Object.assign(fresh, saved) : fresh;
 }
 
 export const state = hydrate();
+
+/**
+ * Install a different persistence adapter and re-hydrate from it.
+ * Call this BEFORE `router.start()` — a view that has already rendered is
+ * holding references into the old state object.
+ *
+ *     store.configure(firestoreAdapter({ uid }))   // js/adapters/firestore.js
+ */
+export function configure(next) {
+  adapter = next || fixtureAdapter;
+  const fresh = hydrate();
+  Object.keys(state).forEach((k) => { delete state[k]; });
+  Object.assign(state, fresh);
+  memo.clear();
+  /* A backend that pushes changes feeds them in here. Fixtures never do. */
+  if (adapter.watch) {
+    adapter.watch((patch) => {
+      Object.assign(state, patch);
+      commit({ type: 'remote', origin: 'remote' });
+    });
+  }
+  commit({ type: 'configure' });
+}
 
 /* --------------------------------------------------------------------------
    2. SUBSCRIBE / NOTIFY / PERSIST
@@ -96,9 +107,7 @@ export function subscribe(fn) {
 }
 
 function persist() {
-  try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch (e) { /* private mode, quota — the prototype still works in memory */ }
+  adapter.save(state);
 }
 
 function commit(event) {
@@ -237,10 +246,10 @@ export function setQuickCheckIn(on) {
   commit({ type: 'quick-checkin' });
 }
 
-/** Back to the fixture data. The harness's "Reset data" button. */
+/** Back to the seed. The harness's "Reset data" button. */
 export function resetAll() {
-  try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) {}
-  const fresh = seedState();
+  if (adapter.clear) adapter.clear();
+  const fresh = adapter.seed();
   Object.keys(state).forEach((k) => { delete state[k]; });
   Object.assign(state, fresh);
   commit({ type: 'reset' });
@@ -407,6 +416,377 @@ export function milestoneAhead(habit) {
   if (isDoneOn(habit)) return null;
   const next = streakOf(habit) + 1;
   return data.MILESTONES.includes(next) ? next : null;
+}
+
+/* --------------------------------------------------------------------------
+   6. THE KNOWLEDGE LAYER — sources, Practices, enrolments, Spaces   [#5 #6 #9]
+
+   A Practice is a source turned into weeks of lessons, recall checks and
+   candidate habits. It is what all three business-model experiments sell; only
+   the payer changes. See docs on issue #1.
+
+   The rules from the habit layer carry over unchanged, and they are the reason
+   this section is short:
+
+     · Derive, never store a second fact. There is no `ptr` field for the same
+       reason there is no `streak` field — a stored number is a second fact that
+       can disagree with the first. [#9]
+     · Mutate through a mutation. Every one ends in commit().
+     · The converter is not the store's business. `convert()` produces weeks;
+       this file wraps them in identity, ownership and status.
+-------------------------------------------------------------------------- */
+
+export function sourceById(id) {
+  return state.sources.find((s) => s.id === id) || null;
+}
+
+export function practiceById(id) {
+  return state.practices.find((p) => p.id === id) || null;
+}
+
+export function publishedPractices() {
+  return state.practices.filter((p) => p.status === 'published');
+}
+
+export function draftPractices() {
+  return state.practices.filter((p) => p.status === 'draft');
+}
+
+/** Every lesson in a Practice, flattened, in reading order. */
+export function practiceLessons(practice) {
+  if (!practice) return [];
+  return practice.weeks.reduce((all, w) => all.concat(w.lessons), []);
+}
+
+export function practiceLessonById(practice, lessonId) {
+  return practiceLessons(practice).find((l) => l.id === lessonId) || null;
+}
+
+/**
+ * Record a source. `rightsConfirmed` is required rather than defaulted:
+ * an affirmative rights confirmation at upload is the whole copyright position
+ * for E1, and a field that defaults to true is not a confirmation. [#2 §copyright]
+ */
+export function addSource(fields = {}) {
+  const s = {
+    id: 'src-' + Math.random().toString(36).slice(2, 9),
+    title: fields.title || 'Untitled source',
+    author: fields.author || '',
+    kind: fields.kind || 'pdf',
+    pages: fields.pages || 0,
+    blurb: fields.blurb || '',
+    corpus: fields.corpus || 'longgame',
+    addedAt: iso(today()),
+    rightsConfirmed: !!fields.rightsConfirmed,
+  };
+  state.sources.push(s);
+  commit({ type: 'source-add', id: s.id });
+  return s;
+}
+
+/**
+ * Bind a source into a DRAFT Practice.
+ *
+ * Draft is not a default that a caller may override, and there is no
+ * `publish: true` shortcut. Nothing publishes unreviewed — the author must
+ * open each week and then call publishPractice() themselves. That is the
+ * design constraint the whole creator experiment rests on, and the safest
+ * place to enforce it is here, where every path has to come through. [#2 §3.4]
+ */
+export function bindSource(sourceId, opts = {}) {
+  const source = sourceById(sourceId);
+  if (!source) return null;
+  const outputs = {
+    lessons: opts.lessons !== false,
+    checks: !!opts.checks,
+    habits: opts.habits !== false,
+  };
+  const p = {
+    id: 'prc-' + Math.random().toString(36).slice(2, 9),
+    sourceId,
+    title: source.title + ' — the practice',
+    author: source.author,
+    code: null,
+    status: 'draft',
+    publishedAt: null,
+    outputs,
+    prompt: opts.prompt || '',
+    plan: null,
+    mine: true,          /* made in this session — what the E3 wall counts */
+    reviewedWeeks: [],
+    weeks: convert(source, outputs, opts.prompt || ''),
+  };
+  state.practices.push(p);
+  commit({ type: 'practice-bind', id: p.id });
+  return p;
+}
+
+/** Mark a week as opened in review. Publishing needs all of them. [#5] */
+export function reviewWeek(practiceId, weekN) {
+  const p = practiceById(practiceId);
+  if (!p) return;
+  if (!p.reviewedWeeks) p.reviewedWeeks = [];
+  if (!p.reviewedWeeks.includes(weekN)) p.reviewedWeeks.push(weekN);
+  commit({ type: 'practice-review', id: practiceId });
+}
+
+/** Can this draft be published yet? The review gate, in one place. */
+export function readyToPublish(practice) {
+  if (!practice || practice.status !== 'draft') return false;
+  const seen = practice.reviewedWeeks || [];
+  return practice.weeks.every((w) => seen.includes(w.n));
+}
+
+export function editLesson(practiceId, lessonId, fields = {}) {
+  const p = practiceById(practiceId);
+  const l = practiceLessonById(p, lessonId);
+  if (!l) return;
+  if (typeof fields.title === 'string') l.title = fields.title;
+  if (typeof fields.standfirst === 'string') l.standfirst = fields.standfirst;
+  l.edited = true;
+  commit({ type: 'lesson-edit', id: lessonId });
+}
+
+export function removeLesson(practiceId, lessonId) {
+  const p = practiceById(practiceId);
+  if (!p) return;
+  p.weeks.forEach((w) => { w.lessons = w.lessons.filter((l) => l.id !== lessonId); });
+  p.weeks = p.weeks.filter((w) => w.lessons.length);
+  commit({ type: 'lesson-remove', id: lessonId });
+}
+
+/**
+ * Re-run one card with its own prompt. The simulation reaches back into the
+ * converter for a fresh copy and re-applies the angle, so the guiding prompt
+ * demonstrably changes the output at card level too — an acceptance criterion
+ * on #5, not a flourish.
+ */
+export function regenerateLesson(practiceId, lessonId, prompt) {
+  const p = practiceById(practiceId);
+  const source = p && sourceById(p.sourceId);
+  if (!p || !source) return;
+  const fresh = convert(source, p.outputs, prompt || p.prompt);
+  const replacement = fresh
+    .reduce((all, w) => all.concat(w.lessons), [])
+    .find((l) => l.id === lessonId);
+  if (!replacement) return;
+  p.weeks.forEach((w) => {
+    const i = w.lessons.findIndex((l) => l.id === lessonId);
+    if (i >= 0) w.lessons[i] = Object.assign(replacement, { edited: true });
+  });
+  commit({ type: 'lesson-regenerate', id: lessonId });
+}
+
+/**
+ * A join code a person can read off the back of a book and type without
+ * checking twice. Letters only, no articles, no filler, capped at ten.
+ *
+ * Naive slicing produced "THELONGG" for "The Long Game — the practice", which
+ * is the kind of detail that makes a product feel machine-made in exactly the
+ * screen where it must not.
+ *
+ * It must also be UNIQUE. Two practices derived from the same source generate
+ * the same letters, and a duplicate code silently sends a reader to somebody
+ * else's programme — `practiceByCode` can only ever return the first match. So
+ * a taken code gets a numeric suffix rather than being handed out twice.
+ */
+function codeFor(title) {
+  const skip = new Set(['the', 'a', 'an', 'of', 'and', 'practice', 'daily']);
+  const base = String(title)
+    .split(/[^a-z]+/i)
+    .filter((w) => w && !skip.has(w.toLowerCase()))
+    .join('')
+    .slice(0, 10)
+    .toUpperCase() || 'PRACTICE';
+
+  const taken = new Set(state.practices.map((p) => p.code).filter(Boolean));
+  if (!taken.has(base)) return base;
+  for (let n = 2; n < 100; n++) {
+    const candidate = base.slice(0, 9) + n;
+    if (!taken.has(candidate)) return candidate;
+  }
+  return base + Math.random().toString(36).slice(2, 5).toUpperCase();
+}
+
+/** Publish a reviewed draft to an audience. Refuses an unreviewed one. */
+export function publishPractice(practiceId, opts = {}) {
+  const p = practiceById(practiceId);
+  if (!p || !readyToPublish(p)) return null;
+  p.status = 'published';
+  p.publishedAt = iso(today());
+  p.plan = opts.plan || 'companion';
+  p.code = codeFor(p.title);
+  commit({ type: 'practice-publish', id: p.id });
+  return p;
+}
+
+/* --- the reader's side ---------------------------------------------------- */
+
+export function hasJoined(practiceId) {
+  return state.membership.joined.includes(practiceId);
+}
+
+export function joinPractice(practiceId) {
+  const p = practiceById(practiceId);
+  if (!p || hasJoined(practiceId)) return null;
+  state.membership.joined.push(practiceId);
+  state.enrolments.push({
+    id: 'me-' + practiceId,
+    practiceId,
+    mine: true,
+    joinedAt: iso(today()),
+    week1Complete: false,
+    habitCreated: false,
+    lastCheckIn: null,
+  });
+  commit({ type: 'practice-join', id: practiceId });
+  return p;
+}
+
+/** Find a published Practice by its join code. The `#/join` flow. */
+export function practiceByCode(code) {
+  const want = String(code || '').trim().toUpperCase();
+  if (!want) return null;
+  return publishedPractices().find((p) => p.code === want) || null;
+}
+
+/**
+ * The bridge, instrumented. [#9]
+ *
+ * Creating a habit from a Practice lesson is the moment PTR measures, so it
+ * goes through one function rather than each view remembering to record it.
+ * The habit itself is created by the existing mutation — a Practice habit is
+ * not a different kind of habit, and the day it becomes one is the day the
+ * check-in gesture stops working on it.
+ */
+export function createHabitFromLesson(practiceId, lessonId, fields = {}) {
+  const habit = createHabit(Object.assign({}, fields, { origin: 'practice' }));
+  habit.fromPractice = practiceId;
+  habit.fromLesson = lessonId;
+  const mine = state.enrolments.find((e) => e.mine && e.practiceId === practiceId);
+  if (mine) {
+    mine.habitCreated = true;
+    mine.lastCheckIn = iso(today());
+  }
+  commit({ type: 'practice-bridge', id: habit.id });
+  return habit;
+}
+
+/* --- PTR and the Studio's four numbers ------------------------------------ */
+
+const DAY_MS = 86400000;
+
+function daysBetween(aIso, bIso) {
+  return Math.round((new Date(bIso + 'T00:00:00') - new Date(aIso + 'T00:00:00')) / DAY_MS);
+}
+
+export function enrolmentsFor(practiceId) {
+  return state.enrolments.filter((e) => e.practiceId === practiceId);
+}
+
+/**
+ * PRACTICE TAKE RATE — the one number. [#9]
+ *
+ * Of the people who enrolled, the percentage who created at least one habit
+ * from the Practice AND were still checking it in on day 14.
+ *
+ * Derived here and nowhere else. The Studio, the operator report and the
+ * consumer funnel all call this, so there is exactly one definition in the
+ * codebase and E1's number is comparable to E2's. Not opens, not lessons
+ * read, not sign-ups: this is the only number that says the bridge was
+ * crossed and held.
+ *
+ * `cohortOnly` restricts to enrolments old enough to have HAD a day 14 —
+ * without it a Practice published last week reports a PTR near zero because
+ * most of its readers have not reached the measurement point yet, which would
+ * make a good Practice look like a failing one on launch day.
+ */
+export function ptrOf(practiceId) {
+  return cached('ptr:' + practiceId, () => {
+    const now = iso(today());
+    const mature = enrolmentsFor(practiceId).filter((e) => daysBetween(e.joinedAt, now) >= 14);
+    if (!mature.length) return { pct: null, kept: 0, of: 0 };
+    const kept = mature.filter((e) => {
+      if (!e.habitCreated || !e.lastCheckIn) return false;
+      return daysBetween(e.joinedAt, e.lastCheckIn) >= 14;
+    }).length;
+    return { pct: Math.round((kept / mature.length) * 100), kept, of: mature.length };
+  });
+}
+
+/** The Studio's four numbers, and nothing else. Adding a fifth is a design
+    decision, not a data one — see #6. */
+export function studioStats(practiceId) {
+  const all = enrolmentsFor(practiceId);
+  return {
+    enrolled: all.length,
+    week1: all.filter((e) => e.week1Complete).length,
+    habits: all.filter((e) => e.habitCreated).length,
+    ptr: ptrOf(practiceId),
+  };
+}
+
+/**
+ * PTR by joining week, oldest first — the Studio's one chart.
+ * Weeks with nobody mature enough to measure are returned with `pct: null` so
+ * the chart can leave a gap rather than draw a zero it does not mean.
+ */
+export function ptrSeries(practiceId, weeks = 6) {
+  const now = iso(today());
+  const rows = enrolmentsFor(practiceId);
+  const out = [];
+  for (let w = weeks; w >= 1; w--) {
+    const hi = w * 7, lo = (w - 1) * 7;
+    const bucket = rows.filter((e) => {
+      const age = daysBetween(e.joinedAt, now);
+      return age >= lo && age < hi && age >= 14;
+    });
+    const kept = bucket.filter((e) => e.habitCreated && e.lastCheckIn &&
+      daysBetween(e.joinedAt, e.lastCheckIn) >= 14).length;
+    out.push({
+      week: w,
+      pct: bucket.length ? Math.round((kept / bucket.length) * 100) : null,
+      of: bucket.length,
+    });
+  }
+  return out;
+}
+
+/* --- Spaces (E2) ---------------------------------------------------------- */
+
+export function spaceById(id) {
+  return state.spaces.find((s) => s.id === id) || null;
+}
+
+export function joinedSpaces() {
+  return state.spaces.filter((s) => s.joined);
+}
+
+export function joinSpace(id) {
+  const s = spaceById(id);
+  if (!s || s.joined) return;
+  s.joined = true;
+  if (s.practiceId) joinPractice(s.practiceId);
+  commit({ type: 'space-join', id });
+}
+
+/* --- the consumer paywall (E3) -------------------------------------------- */
+
+/**
+ * The wall sits on CONVERSION, never on the check-in. [#4 §5.4]
+ *
+ * One free Practice; a second source needs Plus. This function is the only
+ * place that rule is written down, so moving the wall is a one-line change and
+ * moving it onto the core loop would have to be done here, deliberately, in
+ * front of the comment saying not to.
+ */
+export function needsPlusToBind() {
+  return !state.membership.plus && state.practices.some((p) => p.mine);
+}
+
+export function startPlus() {
+  state.membership.plus = true;
+  commit({ type: 'plus' });
 }
 
 /* Re-export the fixture bits views need read-only access to, so a view imports

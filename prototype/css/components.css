@@ -4430,3 +4430,951 @@ body:has(.devbar) .page { padding-block-end: 128px; }
   border-inline-start-color: var(--c-brand-600);
   background: var(--c-surface-tinted);
 }
+
+
+/* ############################################################################
+   X1. THE KNOWLEDGE LAYER — Bindery, Practice, Studio, Spaces
+   Appended for the business-model experiment simulations (issues #5–#9).
+   APPEND-ONLY and self-contained: it modifies nothing above this line and
+   depends on no rule's position. Semantic --c-* tokens only, no new literal
+   hex — the palette is closed.
+
+   Paper and springs still hold here, and this section is where they were most
+   at risk:
+
+     · A conversion pipeline wants a spinner. It does not get one. §X1.3 is a
+       determinate meter and a sheet folding into signatures — progress that is
+       true rather than progress that is entertaining.
+     · A generated card wants a coloured "AI" badge. It does not get one. Draft
+       is expressed as a material state (unbound paper, edge stitching) because
+       the environment must not decorate.
+     · Everything that responds to a finger presses. The provenance line, the
+       sample cards, the recall options.
+   ######################################################################### */
+
+
+/* ============================================================================
+   X1.1 THE EXPERIMENT SWITCHER — scaffolding, and dressed as scaffolding
+
+   The one non-product element inside app.html. It deliberately looks nothing
+   like the app: system font stack, flat surfaces, square-ish corners, no grain,
+   no spring. If a reviewer ever has to ask whether this bar is part of the
+   product, this rule has failed.
+
+   `?chrome=clean` hides it via the `hidden` attribute from app.js — no CSS
+   involvement, so there is no way for a stylesheet change to leak it back into
+   a screenshot.
+   ========================================================================= */
+
+.xbar {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--c-canvas-sunken);
+  border-block-end: 1px solid var(--c-border);
+  padding: var(--space-8) var(--space-12);
+  color: var(--c-ink-muted);
+}
+
+.xbar[hidden] { display: none; }
+
+.xbar__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.xbar__legend {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-ink-subtle);
+}
+
+.xbar__group { display: flex; gap: 4px; }
+
+.xbar__btn {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-xs);
+  background: var(--c-surface);
+  color: var(--c-ink-muted);
+  cursor: pointer;
+}
+
+.xbar__btn:hover { border-color: var(--c-border-control); }
+
+/* Selected is ink and weight, never opacity — the same rule the product nav
+   follows, kept here so the two do not teach a reviewer different things. */
+.xbar__btn[aria-pressed="true"] {
+  background: var(--c-brand-600);
+  border-color: var(--c-brand-600);
+  color: var(--c-on-brand);
+  font-weight: 600;
+}
+
+.xbar__btn:focus-visible {
+  outline: var(--stroke-focus) solid var(--c-border-focus);
+  outline-offset: 2px;
+}
+
+.xbar__spacer { flex: 1 1 auto; }
+
+.xbar__link { font-size: 12px; color: var(--c-brand-600); }
+
+.xbar__persona,
+.xbar__hypothesis {
+  margin-block-start: 4px;
+  font-size: 12px;
+  line-height: 17px;
+  max-inline-size: 90ch;
+}
+
+.xbar__hypothesis { color: var(--c-ink-subtle); }
+
+@media (max-width: 599px) {
+  .xbar__legend,
+  .xbar__persona { display: none; }
+}
+
+
+/* ============================================================================
+   X1.2 THE BINDERY — steps 1 and 2
+   ========================================================================= */
+
+.bindery { margin-block-start: var(--space-24); }
+
+/* The step rail. Numbered by counter rather than by hand so a step cannot be
+   inserted with the wrong label. */
+.bind-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8) var(--space-16);
+  counter-reset: bindstep;
+  margin-block-end: var(--space-24);
+  padding: 0;
+  list-style: none;
+}
+
+.bind-steps__step {
+  counter-increment: bindstep;
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body-sm);
+  color: var(--c-ink-subtle);
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.bind-steps__step::before {
+  content: counter(bindstep);
+  inline-size: 20px;
+  block-size: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  border: var(--stroke-hairline) solid var(--c-border);
+  font-size: 12px;
+  font-weight: var(--fw-label);
+}
+
+.bind-steps__step.is-done { color: var(--c-sage-700); }
+
+.bind-steps__step.is-done::before {
+  content: "✓";
+  border-color: var(--c-sage-500);
+  color: var(--c-sage-700);
+}
+
+.bind-steps__step[aria-current="step"] {
+  color: var(--c-ink-strong);
+  font-weight: var(--fw-label);
+}
+
+.bind-steps__step[aria-current="step"]::before {
+  border-color: var(--c-brand-600);
+  color: var(--c-brand-600);
+}
+
+/* --- step 1: the desk ---------------------------------------------------
+   The drop target is a sheet of paper with a turned corner, not the dashed
+   rectangle every upload widget on the web uses. A dashed border is a browser
+   convention; this app's ground rule is that everything you look at is paper.
+   It presses like every other object.                                      */
+
+.bind-desk {
+  display: grid;
+  place-items: center;
+  padding: var(--space-32) var(--space-16);
+  background: var(--c-canvas-sunken);
+  border-radius: var(--radius-lg);
+}
+
+.bind-drop {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-8);
+  padding: var(--space-24) var(--space-32);
+  background: var(--c-surface);
+  border: var(--stroke-hairline) solid var(--c-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  min-block-size: var(--target-min);
+  transition:
+    transform var(--dur-press) var(--ease-standard),
+    border-color var(--dur-quick) var(--ease-standard);
+}
+
+.bind-drop:hover { border-color: var(--c-brand-400); }
+.bind-drop:active { transform: scale(0.97); }
+
+.bind-drop:focus-visible {
+  outline: var(--stroke-focus) solid var(--c-border-focus);
+  outline-offset: 3px;
+}
+
+.bind-drop__title {
+  font-size: var(--fs-body-lg);
+  font-weight: var(--fw-h3);
+  color: var(--c-ink-strong);
+}
+
+.bind-sheet { inline-size: 64px; block-size: 80px; }
+
+.bind-sheet__page {
+  fill: var(--c-surface);
+  stroke: var(--c-illus-line);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.bind-sheet__fold {
+  fill: none;
+  stroke: var(--c-illus-line);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.bind-sheet__rule {
+  fill: none;
+  stroke: var(--c-brand-300);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+/* --- the samples --------------------------------------------------------- */
+
+.bind-samples {
+  display: grid;
+  gap: var(--space-12);
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  margin-block-end: var(--space-24);
+}
+
+.bind-sample {
+  display: grid;
+  gap: var(--space-4);
+  text-align: start;
+  align-content: start;
+}
+
+.bind-sample__kind { color: var(--c-ink-subtle); }
+.bind-sample__blurb { color: var(--c-ink-muted); }
+
+.bind-rights {
+  margin-block: var(--space-24);
+  align-items: start;
+}
+
+.bind-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-12);
+  margin-block-start: var(--space-24);
+}
+
+/* --- step 2: the outputs ------------------------------------------------- */
+
+.bind-source-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-8) var(--space-12);
+  margin-block-end: var(--space-16);
+}
+
+.bind-source-row .btn { margin-inline-start: auto; }
+
+.bind-opts { margin-block-end: var(--space-16); }
+
+.bind-warn {
+  margin-block-start: var(--space-12);
+  color: var(--c-clay-600);
+}
+
+
+/* ============================================================================
+   X1.3 BINDING — the no-spinner rule, built
+
+   The one place in the app where a loading state could wreck the calm. What is
+   here instead is determinate: a real meter over named stages, and the sheet
+   visibly folding into signatures as sections complete. `.week-meter` is reused
+   rather than reinvented — it is already the app's honest-progress component,
+   and a second progress language would be exactly the drift this file is
+   organised to prevent.
+
+   Reduced motion keeps the meter and the fold state; only the fold TRANSITION
+   is dropped. The information survives, the movement does not [B §3.6].
+   ========================================================================= */
+
+.bind-binding {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-16);
+  text-align: center;
+}
+
+.bind-signatures { inline-size: 200px; block-size: 120px; }
+
+.bind-sig {
+  transform-origin: left center;
+  transform: rotateY(0deg);
+  transition: opacity var(--dur-base) var(--ease-standard);
+  opacity: 0.35;
+}
+
+.bind-sig.is-folded { opacity: 1; }
+
+.bind-sig__leaf {
+  fill: var(--c-surface);
+  stroke: var(--c-illus-line);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.bind-sig.is-folded .bind-sig__leaf { fill: var(--c-brand-100); }
+
+.bind-sig__spine {
+  stroke: var(--c-brand-400);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.bind-binding__stage {
+  color: var(--c-ink-strong);
+  min-block-size: var(--lh-body);
+}
+
+.bind-binding .week-meter { inline-size: min(420px, 100%); }
+
+.bind-binding__note { max-inline-size: 46ch; }
+
+
+/* ============================================================================
+   X1.4 THE PROVENANCE LINE                                              [#8]
+
+   The one genuinely new component the experiments create. It appears on every
+   generated card in every experiment, and it is the mechanism the whole
+   business rests on: an author, an operator or a reader believing that what
+   came out of the Bindery is faithful to what went in.
+
+   QUIET AT REST. It must not compete with the lesson title — this is a
+   citation, not a call to action. It is also the first thing that will be
+   proposed for removal on grounds of visual noise, which is exactly why it is
+   specified here rather than improvised per screen.
+
+   It reveals the passage IN PLACE. The reason to check a citation is to stay
+   where you are; a component that navigated away would make checking cost more
+   than trusting, and nobody would check.
+
+   Muted is not licence to drop below the contrast floor: --c-ink-muted is a
+   token that clears it in both themes, and no smaller size than --fs-body-sm
+   (13px) is permitted anywhere in this system.
+   ========================================================================= */
+
+.prov-wrap { margin-block: var(--space-12); }
+
+.prov {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-4) var(--space-8);
+  margin-inline-start: calc(var(--space-8) * -1);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-xs);
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body-sm);
+  color: var(--c-ink-muted);
+  cursor: pointer;
+  text-align: start;
+  transition: transform var(--dur-press) var(--ease-standard),
+              background-color var(--dur-quick) var(--ease-standard);
+}
+
+.prov:hover { background: var(--c-surface-tinted); }
+.prov:active { transform: scale(0.98); }        /* objects must spring */
+
+.prov:focus-visible {
+  outline: var(--stroke-focus) solid var(--c-border-focus);
+  outline-offset: 2px;
+}
+
+.prov[disabled] { cursor: default; opacity: 1; }
+.prov[disabled]:hover { background: none; }
+
+.prov__icon { color: var(--c-ink-subtle); flex: none; }
+
+.prov__ref { font-variant-numeric: tabular-nums; }
+
+.prov__cue {
+  color: var(--c-brand-600);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* The passage itself. Set as paper — a rule and a serif line, the same
+   treatment `.article__quote` gives a pull quote — rather than a tinted box,
+   because a tinted box would be the environment decorating. */
+.prov__quote {
+  margin-block-start: var(--space-8);
+  padding-inline-start: var(--space-16);
+  border-inline-start: 2px solid var(--c-brand-300);
+  /* The same serif voice `.article__quote` uses, one step down: this is a
+     citation being checked, not a pull quote being admired. */
+  font-family: var(--font-display);
+  font-variation-settings: var(--fvs-h1);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body-lg);
+  color: var(--c-ink);
+  max-inline-size: var(--layout-read-max);
+}
+
+.prov__quote[hidden] { display: none; }
+
+
+/* ============================================================================
+   X1.5 DRAFT CARDS — review, step 4
+
+   Draft is a MATERIAL state, not a badge. Unbound paper: a stitched edge where
+   the binding will go, the edit affordance live at rest rather than on hover.
+
+   Hover-to-edit was rejected outright. It does not exist on a phone, and this
+   flow has to work there; and an author who cannot tell at a glance which words
+   are theirs will not put their name on any of them.
+   ========================================================================= */
+
+.draft-flag {
+  color: var(--c-clay-600);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.draft-list {
+  display: grid;
+  gap: var(--space-16);
+  padding: 0;
+  list-style: none;
+}
+
+.draft-card {
+  position: relative;
+  padding-inline-start: var(--space-24);
+}
+
+/* The stitched edge — the signature marks of an unbound section. */
+.draft-card::before {
+  content: "";
+  position: absolute;
+  inset-block: var(--space-16);
+  inset-inline-start: var(--space-8);
+  inline-size: 3px;
+  border-radius: var(--radius-full);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--c-clay-600) 0 6px,
+    transparent 6px 12px
+  );
+  opacity: 0.5;
+}
+
+.draft-card.is-edited::before {
+  background-image: none;
+  background-color: var(--c-sage-500);
+  opacity: 1;
+}
+
+.draft-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8);
+  margin-block-end: var(--space-8);
+}
+
+.draft-card__state { color: var(--c-ink-subtle); }
+
+/* Editable at rest: a dotted underline that says "this is yours to change",
+   and a real surface the moment focus lands. */
+.draft-card__title,
+.draft-card__standfirst {
+  border-radius: var(--radius-xs);
+  padding: 2px var(--space-4);
+  margin-inline-start: calc(var(--space-4) * -1);
+  text-decoration: underline dotted var(--c-border-control);
+  text-underline-offset: 4px;
+}
+
+.draft-card__standfirst {
+  font-size: var(--fs-body-lg);
+  line-height: var(--lh-body-lg);
+  color: var(--c-ink-muted);
+  margin-block-start: var(--space-4);
+}
+
+.draft-card__title:focus,
+.draft-card__standfirst:focus {
+  outline: var(--stroke-focus) solid var(--c-border-focus);
+  outline-offset: 2px;
+  background: var(--c-surface-tinted);
+  text-decoration: none;
+}
+
+.draft-card__len { margin-block-start: var(--space-8); }
+
+.draft-checks,
+.draft-habit {
+  margin-block-start: var(--space-16);
+  padding-block-start: var(--space-12);
+  border-block-start: var(--stroke-hairline) solid var(--c-border);
+}
+
+.draft-checks__q { margin-block: var(--space-8) var(--space-4); }
+
+.draft-checks__opts {
+  display: grid;
+  gap: var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.draft-checks__opt {
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body-sm);
+  color: var(--c-ink-muted);
+  padding-inline-start: var(--space-16);
+  position: relative;
+}
+
+.draft-checks__opt::before {
+  content: "○";
+  position: absolute;
+  inset-inline-start: 0;
+  color: var(--c-ink-subtle);
+}
+
+.draft-checks__opt.is-answer { color: var(--c-sage-700); }
+.draft-checks__opt.is-answer::before { content: "●"; color: var(--c-sage-600); }
+
+.draft-habit__behavior { margin-block-start: var(--space-4); }
+.draft-habit__cue { margin-block-start: 2px; }
+
+.draft-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin-block-start: var(--space-16);
+}
+
+.draft-week { margin-block-end: var(--space-16); }
+
+/* --- the publish panel --------------------------------------------------- */
+
+.publish-panel { margin-block: var(--space-24); }
+
+.publish-panel__title {
+  font-size: var(--fs-h2);
+  line-height: var(--lh-h2);
+  font-weight: var(--fw-h2);
+  color: var(--c-hero-ink);
+}
+
+.publish-panel__body {
+  color: var(--c-hero-ink-muted);
+  margin-block-start: var(--space-8);
+  max-inline-size: 56ch;
+}
+
+.publish-price {
+  margin-block-start: var(--space-16);
+  padding-block-start: var(--space-16);
+  border-block-start: var(--stroke-hairline) solid var(--c-hero-border);
+}
+
+.publish-price__amount {
+  font-size: var(--fs-h1);
+  line-height: var(--lh-h1);
+  font-weight: var(--fw-h1);
+  color: var(--c-gold-400);
+}
+
+.publish-price__amount span { color: var(--c-hero-ink-muted); }
+
+.publish-price__note {
+  color: var(--c-hero-ink-muted);
+  margin-block-start: var(--space-4);
+  max-inline-size: 48ch;
+}
+
+
+/* ============================================================================
+   X1.6 THE PRACTICE READER
+   The Library with an author on it. Everything here leans on §E5/§E6 and adds
+   only what a generated, joinable programme needs.
+   ========================================================================= */
+
+.prac-hero__meta { color: var(--c-hero-ink-muted); margin-block: var(--space-8); }
+
+.prac-preview-note { margin-block: var(--space-16); }
+
+.prac-week { margin-block-start: var(--space-32); }
+
+.prac-list { display: grid; gap: var(--space-12); }
+
+.prac-lesson__title {
+  font-weight: var(--fw-label);
+  color: var(--c-ink-strong);
+}
+
+.prac-lesson__body { max-inline-size: var(--layout-read-max); }
+
+.prac-lesson__para { margin-block-start: var(--space-12); }
+
+/* --- recall checks. A retrieval prompt, never an exam ---------------------
+   No score, no streak, no penalty. Turning recall into something you can fail
+   makes skipping it the rational move, which is the opposite of what it is
+   for. Right and wrong are stated once, plainly, and the passage above has the
+   answer either way.                                                        */
+
+.prac-check {
+  margin-block-start: var(--space-24);
+  padding: var(--space-16);
+  background: var(--c-canvas-sunken);
+  border-radius: var(--radius-md);
+}
+
+.prac-check__q { margin-block: var(--space-8); }
+
+.prac-check__opts {
+  display: grid;
+  gap: var(--space-8);
+  padding: 0;
+  list-style: none;
+}
+
+.prac-check__opt {
+  inline-size: 100%;
+  min-block-size: var(--target-min);
+  text-align: start;
+  padding: var(--space-8) var(--space-12);
+  background: var(--c-surface);
+  border: var(--stroke-hairline) solid var(--c-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: var(--fs-body);
+  color: var(--c-ink);
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-standard),
+              border-color var(--dur-quick) var(--ease-standard);
+}
+
+.prac-check__opt:hover { border-color: var(--c-brand-400); }
+.prac-check__opt:active { transform: scale(0.98); }
+
+.prac-check__opt:focus-visible {
+  outline: var(--stroke-focus) solid var(--c-border-focus);
+  outline-offset: 2px;
+}
+
+/* Colour is never the only signal — each state also names itself in the
+   verdict line below the list. */
+.prac-check__opt.is-right {
+  border-color: var(--c-sage-500);
+  background: var(--c-done-surface);
+  color: var(--c-done-ink);
+}
+
+.prac-check__opt.is-wrong {
+  border-color: var(--c-clay-600);
+  background: var(--c-clay-surface);
+}
+
+.prac-check__verdict { margin-block-start: var(--space-8); color: var(--c-ink-muted); }
+
+.prac-suggest {
+  display: grid;
+  gap: 2px;
+  margin-block: var(--space-12);
+  padding-inline-start: var(--space-12);
+  border-inline-start: 2px solid var(--c-gold-400);
+}
+
+.prac-suggest__behavior { color: var(--c-hero-ink); font-weight: var(--fw-label); }
+.prac-suggest__cue { color: var(--c-hero-ink-muted); }
+
+
+/* ============================================================================
+   X1.7 THE STUDIO                                                       [#6]
+
+   Four numbers and one chart. PTR carries this screen's single hero surface;
+   enrolled, week-1 and habits-created are deliberately plain tiles beneath it.
+   Enrolment is the vanity number — it measures the author's mailing list, not
+   their book — so giving it equal weight would be a design decision to mislead.
+   ========================================================================= */
+
+.studio-practice { margin-block-start: var(--space-32); }
+
+.studio-ptr { margin-block: var(--space-16); }
+
+.studio-ptr__value { color: var(--c-gold-400); }
+.studio-ptr__value span { font-size: 0.5em; color: var(--c-hero-ink-muted); }
+
+.studio-ptr__sub,
+.studio-ptr__pending {
+  color: var(--c-hero-ink-muted);
+  max-inline-size: 52ch;
+  margin-block-start: var(--space-8);
+}
+
+.studio-stats {
+  display: grid;
+  gap: var(--space-12);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.studio-actions { margin-block-start: var(--space-16); }
+
+.studio-drafts,
+.studio-draft { padding: 0; list-style: none; }
+
+.studio-draft {
+  display: grid;
+  gap: var(--space-4);
+  align-items: center;
+  margin-block-end: var(--space-8);
+}
+
+/* --- the chart -----------------------------------------------------------
+   Bars, not a line: the buckets are discrete cohorts and a line between them
+   would imply a continuity that does not exist. A week with nobody old enough
+   to measure is drawn as a GAP, never as a zero — a zero we do not mean reads
+   as a failure that did not happen.                                         */
+
+.ptr-chart {
+  margin: var(--space-16) 0 0;
+  max-inline-size: 420px;
+}
+
+.ptr-chart svg { inline-size: 100%; block-size: auto; }
+
+.ptr-chart__bar { fill: var(--c-gold-400); }
+
+.ptr-chart__base,
+.ptr-chart__target {
+  stroke: var(--c-hero-ink-muted);
+  stroke-width: 1;
+}
+
+.ptr-chart__target {
+  stroke-dasharray: 3 3;
+  opacity: 0.8;
+}
+
+.ptr-chart__target-label {
+  fill: var(--c-hero-ink-muted);
+  font-size: 9px;
+}
+
+.ptr-chart figcaption { color: var(--c-hero-ink-muted); margin-block-start: var(--space-8); }
+
+
+/* ============================================================================
+   X1.8 SPACES                                                           [#7]
+
+   Assembly, mostly, from the Community kit. The one rule worth stating in CSS:
+   the cohort strip shows what people are practising and how long they have kept
+   it — there is no styling here for a miss, a gap or a rank, because those are
+   not rendered. The design direction treats a missed day as data rather than
+   failure, and a cohort view is exactly where that would quietly become public.
+   ========================================================================= */
+
+.space { margin-block-end: var(--space-48); }
+
+.space-hero__title {
+  font-size: var(--fs-h2);
+  line-height: var(--lh-h2);
+  font-weight: var(--fw-h2);
+  color: var(--c-hero-ink);
+  margin-block-start: var(--space-4);
+}
+
+.space-hero__meta { color: var(--c-hero-ink-muted); margin-block: var(--space-8); }
+
+.space-mine,
+.space-cohort,
+.space-invites { display: grid; gap: var(--space-8); padding: 0; list-style: none; }
+
+.space-mine__row,
+.space-cohort__row,
+.space-invite {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.space-mine__behavior { flex: 1 1 auto; }
+
+.space-cohort__body { flex: 1 1 auto; display: grid; gap: 2px; }
+.space-cohort__what { color: var(--c-ink-muted); }
+.space-cohort__note { margin-block-start: var(--space-8); }
+
+.space-invite__body { flex: 1 1 auto; display: grid; gap: 2px; }
+
+.space-upgrade { margin-block-start: var(--space-24); }
+
+.space-upgrade__price {
+  font-size: var(--fs-h1);
+  line-height: var(--lh-h1);
+  font-weight: var(--fw-h1);
+  color: var(--c-ink-strong);
+  margin-block: var(--space-12);
+}
+
+.space-upgrade__price span { color: var(--c-ink-muted); }
+
+
+/* ============================================================================
+   X1.9 THE CONSUMER WALL AND THE JOIN DOOR
+
+   The wall sits on CONVERSION, never on the check-in. A user who never pays
+   still has a complete habit app — creating habits, checking in, streaks,
+   gilding and Progress are free forever. What Plus buys is a second source.
+   Putting a wall between a person and the ring would violate the design
+   direction outright, and there is deliberately no style here that could.
+   ========================================================================= */
+
+.bind-wall { text-align: center; }
+
+.bind-wall__title {
+  font-size: var(--fs-h1);
+  line-height: var(--lh-h1);
+  font-weight: var(--fw-h1);
+  color: var(--c-hero-ink);
+  margin-block-start: var(--space-8);
+  text-wrap: balance;
+}
+
+.bind-wall__body {
+  color: var(--c-hero-ink-muted);
+  margin: var(--space-12) auto 0;
+  max-inline-size: 52ch;
+}
+
+.bind-wall__price {
+  font-size: var(--fs-display);
+  line-height: var(--lh-display);
+  font-weight: var(--fw-display);
+  color: var(--c-gold-400);
+  margin-block-start: var(--space-24);
+}
+
+.bind-wall__price span { color: var(--c-hero-ink-muted); }
+
+.bind-wall__alt { display: block; color: var(--c-hero-ink-muted); }
+
+.bind-wall .bind-actions { justify-content: center; }
+
+.join-form { margin-block-end: var(--space-24); }
+
+.join-code {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+}
+
+.join-open, .join-open__row { padding: 0; list-style: none; }
+
+.join-open__row {
+  display: grid;
+  gap: var(--space-4);
+  margin-block-end: var(--space-8);
+}
+
+
+/* ============================================================================
+   X1.10 REDUCED MOTION
+   Reduced means reduced, not none. What is dropped here is movement and scale;
+   every state remains legible without it. base.css already kills transforms
+   globally — these rules exist so nothing in this section relies on a
+   transition to communicate rather than to decorate.
+   ========================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .bind-drop,
+  .prov,
+  .prac-check__opt { transition: none; }
+
+  .bind-drop:active,
+  .prov:active,
+  .prac-check__opt:active { transform: none; }
+
+  .bind-sig { transition: none; }
+}
+
+[data-motion="reduce"] .bind-drop,
+[data-motion="reduce"] .prov,
+[data-motion="reduce"] .prac-check__opt,
+[data-motion="reduce"] .bind-sig { transition: none; }
+
+[data-motion="reduce"] .bind-drop:active,
+[data-motion="reduce"] .prov:active,
+[data-motion="reduce"] .prac-check__opt:active { transform: none; }
+
+
+/* ============================================================================
+   X1.11 THE FRONT DOORS — discovery ordering
+
+   Each configuration opens on the decision its experiment is asking about, and
+   on Spaces that means the JOIN panel leads, above what a member already has.
+
+   That ordering is for the fifteen-minute interview, not for a returning
+   member, and the two want opposite things — a member wants their own practice
+   first. Discovery wins for now because there are no returning members yet.
+   Revisit the moment there are. This is a deliberate, temporary inversion.
+   ========================================================================= */
+
+.space-door { margin-block-end: var(--space-32); }
+
+.space-door__lede {
+  color: var(--c-ink-muted);
+  max-inline-size: 56ch;
+  margin-block-start: var(--space-8);
+}
+
+.space-door__invites { margin-block-start: var(--space-16); }
+.space-door__none { margin-block-start: var(--space-16); }
+
+.space-door__code {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-12);
+  margin-block-start: var(--space-16);
+  padding-block-start: var(--space-16);
+  border-block-start: var(--stroke-hairline) solid var(--c-border);
+}
+
+.space-door__code .field { flex: 1 1 200px; margin: 0; }
+
+.space-yours { margin-block-start: var(--space-32); }
