@@ -18,6 +18,7 @@
    ========================================================================= */
 
 import * as store from '../store.js';
+import { flag } from '../config.js';
 import { todaysLessonId } from '../data.js';
 import { html, icon, cls, plural, on, raw } from '../ui.js';
 
@@ -164,6 +165,55 @@ function emptyLibrary() {
    RENDER
 -------------------------------------------------------------------------- */
 
+/* --------------------------------------------------------------------------
+   PRACTICES — the Bindery band                                          [#5]
+
+   A Practice is the Library with an author on it, so it belongs on the
+   Library rather than in a destination of its own. Three configurations use
+   this band and each wants a different first verb, which is the one thing
+   worth branching on: a creator BINDS a source, a consumer starts from what
+   they are reading, and both can join someone else's with a code.
+-------------------------------------------------------------------------- */
+
+function practiceBand() {
+  const mine = store.publishedPractices().filter((p) => store.hasJoined(p.id));
+  const drafts = store.draftPractices();
+  const open = store.publishedPractices().filter((p) => !store.hasJoined(p.id));
+  const rows = [].concat(drafts, mine, open).slice(0, 4);
+
+  return html`
+    <section class="prac-band" aria-labelledby="prac-band-h"
+             style="margin-block-start:var(--space-24)">
+      <h2 id="prac-band-h" class="section-head t-label">Practices</h2>
+
+      ${rows.length ? html`
+        <ul class="join-open">
+          ${rows.map((p) => html`
+            <li>
+              <a class="card card--interactive join-open__row"
+                 href="${p.status === 'draft' ? '#/bindery/' + p.id + '/review' : '#/practice/' + p.id}">
+                <span class="t-h3">${p.title}</span>
+                <span class="t-body-sm t-muted">
+                  ${p.status === 'draft'
+                    ? 'Draft · not published'
+                    : store.hasJoined(p.id) ? 'Joined · ' + p.author : p.author + ' · code ' + p.code}
+                </span>
+              </a>
+            </li>`)}
+        </ul>` : html`
+        <p class="t-body t-muted">
+          Nothing yet. Turn something you have read into a week of practice.
+        </p>`}
+
+      <div class="bind-actions">
+        <a class="btn btn--primary" href="#/bindery">
+          ${flag('bringYourOwn') ? 'What are you reading?' : 'Bind a source'}
+        </a>
+        <a class="btn btn--ghost" href="#/join">Join with a code</a>
+      </div>
+    </section>`;
+}
+
 export function render() {
   const all = lessons();
   const hero = todaysLesson();
@@ -245,6 +295,16 @@ export function render() {
           </span>
         </div>
       </section>
+
+      <!-- THE KNOWLEDGE LAYER'S FRONT DOOR.
+           The Bindery and the practices made with it are reachable from here
+           rather than only from a URL, because the Library is where a person
+           already goes looking for something to learn from.
+
+           Gated on the capability, never on the experiment id: base config
+           sees the Library exactly as it was, and a shipping configuration
+           that keeps the Bindery keeps this with no edit. [#5] -->
+      ${flag('bindery') ? practiceBand() : ''}
 
       <div class="segmented" role="tablist" aria-label="Library sections" data-tabs
            style="margin-block:var(--space-24)">

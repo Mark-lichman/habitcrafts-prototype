@@ -113,6 +113,25 @@
 
 <a class="skip-link" href="#main">Skip to today's habits</a>
 
+<!-- ===========================================================================
+     THE EXPERIMENT SWITCHER — the ONE piece of scaffolding in this file.
+
+     app.html carries no devbar on purpose: everything inside the frame is
+     product, so a screenshot of the frame is a screenshot of the app. This bar
+     is the single exception, and it earns the exception on three conditions:
+
+       1. it borrows the harness vocabulary, never the product one, so it can
+          never be mistaken for shipping design;
+       2. it states the hypothesis the surfaces below it exist to test, so a
+          reviewer can see what the screen is meant to prove without leaving it;
+       3. it can be turned off outright — app.html?chrome=clean — which is what
+          you open for a screenshot.
+
+     Filled by js/app.js from js/config.js. Delete this element, paintSwitcher()
+     and the losing entries in EXPERIMENTS on the day one of them wins.
+     ======================================================================== -->
+<div class="xbar" data-xbar hidden></div>
+
 <div class="app-shell" data-shell>
 
   <!-- =========================================================================
@@ -139,38 +158,17 @@
       <span class="visually-hidden">Craft a new habit</span>
     </a>
 
-    <ul class="app-nav__list">
-      <li><a class="nav-item" href="#/home" data-nav="habits">
-        <span class="nav-item__pill" aria-hidden="true"></span>
-        <svg class="icon" aria-hidden="true"><use href="#i-habits"></use></svg>
-        <span class="nav-item__label">Habits</span>
-      </a></li>
-      <li><a class="nav-item" href="#/progress" data-nav="progress">
-        <span class="nav-item__pill" aria-hidden="true"></span>
-        <svg class="icon" aria-hidden="true"><use href="#i-progress"></use></svg>
-        <span class="nav-item__label">Progress</span>
-      </a></li>
-      <li><a class="nav-item" href="#/community" data-nav="community">
-        <span class="nav-item__pill" aria-hidden="true"></span>
-        <svg class="icon" aria-hidden="true"><use href="#i-community"></use></svg>
-        <span class="nav-item__label">Community</span>
-      </a></li>
-      <li class="nav-li--rail"><a class="nav-item" href="#/explore" data-nav="explore">
-        <span class="nav-item__pill" aria-hidden="true"></span>
-        <svg class="icon" aria-hidden="true"><use href="#i-explore"></use></svg>
-        <span class="nav-item__label">Explore</span>
-      </a></li>
-      <li class="nav-li--rail"><a class="nav-item" href="#/library" data-nav="library">
-        <span class="nav-item__pill" aria-hidden="true"></span>
-        <svg class="icon" aria-hidden="true"><use href="#i-library"></use></svg>
-        <span class="nav-item__label">Library</span>
-      </a></li>
-      <li><a class="nav-item" href="#/profile" data-nav="profile">
-        <span class="nav-item__pill" aria-hidden="true"></span>
-        <svg class="icon" aria-hidden="true"><use href="#i-person"></use></svg>
-        <span class="nav-item__label">Profile</span>
-      </a></li>
-    </ul>
+    <!-- THE DESTINATIONS ARE DATA, NOT MARKUP.
+         js/app.js fills this list from js/config.js at boot and again whenever
+         the active configuration changes. It used to be six hand-written <li>s;
+         it is empty now because an experiment can add a destination (Studio,
+         Spaces) and a shipping configuration will eventually remove some — and
+         markup is the wrong place for a decision that changes per configuration.
+
+         The generated markup is identical to what was here. All four nav shapes
+         — bar, rail, extended rail, drawer — are pure CSS off this one list, so
+         nothing about the responsive behaviour depends on who wrote it. -->
+    <ul class="app-nav__list" data-nav-list></ul>
 
     <a class="app-nav__user" href="#/profile">
       <span class="avatar" aria-hidden="true" data-user-initial>M</span>
