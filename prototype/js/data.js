@@ -318,7 +318,7 @@ export const lessons = [
     standfirst: 'The size of the habit is the whole game. Everything else is detail.',
     body: [
       'The habit you can do on your worst day is the only habit you actually have. Everything above that line is a habit you have on good days, which is another way of saying you do not have it yet.',
-      'So pick the version that survives the flu, the deadline and the argument. One page. One tooth. Two minutes. It should feel almost silly — that feeling is the signal you have got it right, not a sign you should aim higher.',
+      'So pick the version that survives the flu, the deadline and the argument. One page. One tooth. Two minutes. It should feel almost silly. That feeling is the signal you have got it right, not a sign you should aim higher.',
       'You are not training the behaviour. You are training the showing up.',
     ],
   },
@@ -415,11 +415,11 @@ export const ideas = [
 export const onboarding = [
   {
     id: 'ob-1', title: 'Craft one small habit',
-    body: 'Pick something so small it feels almost silly. That is the version that survives a bad week — and a bad week is the only real test.',
+    body: 'Pick something so small it feels almost silly. That is the version that survives a bad week, and a bad week is the only real test.',
   },
   {
     id: 'ob-2', title: 'Do it with other people',
-    body: 'Join a group and you will see who else showed up today. Not a leaderboard — just the quiet proof that you are not doing this on your own.',
+    body: 'Join a group and you will see who else showed up today. Not a leaderboard, just the quiet proof that you are not doing this on your own.',
   },
   {
     id: 'ob-3', title: 'Watch it turn gold',
