@@ -31,19 +31,47 @@
   padding-block-end: calc(var(--layout-nav-bar-h) + var(--space-32));
 }
 
-/* The content column. max-width 1184px is the dashboard content area from
-   [B §6.1]; the shell max is 1440px. NOT a 767px phone strip — that clamp is
-   the specific failure this redesign exists to kill. [D §5.3] */
+/* ---------------------------------------------------------------------------
+   THE PAGE TEMPLATE — one frame, every screen.
+
+   Every view's outermost element is `.page` and nothing else. The frame is
+   IDENTICAL on all of them, so the content column never moves when you
+   navigate: the nav is persistent, and a page that shifted sideways under it
+   would make the eye re-acquire the layout on every tab.
+
+   That was a real defect, not a preference. Home sat at 1440 and Progress at
+   1184, both centred, so crossing between the two most-visited screens slid
+   the page 128px sideways at a wide window.
+
+   ONE FRAME, TWO MEASURES:
+     .page          the frame. Same max-width, gutter and block padding always.
+     .page--read    narrows the TEXT MEASURE inside the frame to ~60ch for
+                    articles [B §6.1]. The frame itself does not move.
+
+   The max is the 1440px shell from [B §6.1]. The 1184px "dashboard content
+   area" is deliberately not used as a page cap: next to a 224px permanent
+   drawer it pushes a centred column 512px from the window edge, which reads as
+   dead space rather than as margin.
+
+   NOT a 767px phone strip — that clamp is the specific failure this redesign
+   exists to kill. [D §5.3]
+--------------------------------------------------------------------------- */
 .page {
   width: 100%;
-  max-width: var(--layout-content-max);
+  max-width: var(--layout-shell-max);
   margin-inline: auto;
   padding-inline: var(--layout-gutter);
   padding-block: var(--space-24) var(--space-48);
 }
 
-.page--wide { max-width: var(--layout-shell-max); }
-.page--read { max-width: var(--layout-read-max); } /* Library, habit detail */
+/* The reading measure. Applied to the frame's CHILDREN so the frame stays put:
+   a Library article is a narrow column on a full-width page, not a narrow
+   page. `> *` rather than a wrapper class keeps the views free of an extra
+   div. */
+.page--read > * {
+  max-width: var(--layout-read-max);
+  margin-inline: auto;
+}
 
 /* Section header: a title with an optional trailing action. */
 .section-head {
@@ -1210,7 +1238,7 @@ button.chip[aria-pressed="true"] { background: var(--c-brand-100); color: var(--
 }
 
 /* Each `.view` is a plain block in the flow. It carries no padding of its own —
-   the view inside it opens with `.page` (or `.page--wide` / `.page--read`), so
+   the view inside it opens with `.page` (optionally `.page--read`), so
    a view keeps full control of its own measure. */
 .view { display: block; }
 
@@ -4473,6 +4501,20 @@ body:has(.devbar) .page { padding-block-end: 128px; }
   padding: var(--space-8) var(--space-12);
   color: var(--c-ink-muted);
 }
+
+/* The nav is `position: fixed`, and the switcher sits ABOVE .app-shell in the
+   DOM, so it does not inherit the shell's inline inset and the rail lands on
+   top of it. Clear the rail at each of its widths.
+
+   These MUST come after the base rule above: a media query adds no specificity,
+   so the `padding` shorthand there would otherwise reset padding-inline-start
+   and this would silently do nothing.
+
+   Only bites on app.html opened directly — inside the harness the switcher is
+   suppressed with ?chrome=clean, because the harness bar already has one. */
+@media (min-width: 600px)  { .xbar { padding-inline-start: calc(var(--layout-nav-rail-w) + var(--space-12)); } }
+@media (min-width: 840px)  { .xbar { padding-inline-start: calc(var(--layout-rail-ext-w) + var(--space-12)); } }
+@media (min-width: 1200px) { .xbar { padding-inline-start: calc(var(--layout-drawer-w) + var(--space-12)); } }
 
 .xbar[hidden] { display: none; }
 

@@ -238,6 +238,7 @@ export function render() {
   const activity = store.state.groups[0];
 
   return String(html`
+    <div class="page">
     <!-- THE GREETING BLOCK — the hero on mobile. [D §3.1]
          data-greeting + data-name hand the copy to HC: it picks morning /
          afternoon / evening from the simulated hour, and crossfades to the
@@ -353,6 +354,7 @@ export function render() {
           <a class="text-link" href="#/community">Open Community ${icon('arrow', 'icon--sm')}</a>
         </section>
       </aside>
+    </div>
     </div>`);
 }
 

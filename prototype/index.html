@@ -223,7 +223,11 @@ body {
 </div>
 
 <div class="hz-stage" data-stage data-size="full">
-  <iframe class="hz-frame" src="app.html#/home" title="HabitCrafts app preview" data-frame></iframe>
+  <!-- ?chrome=clean suppresses the app's own .xbar. The harness bar above
+       already carries the experiment switch, so showing both puts two
+       switchers on screen. app.html opened directly still shows its own,
+       because there it is the only one. -->
+  <iframe class="hz-frame" src="app.html?chrome=clean#/home" title="HabitCrafts app preview" data-frame></iframe>
 </div>
 
 <script>

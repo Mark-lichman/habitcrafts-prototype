@@ -159,7 +159,7 @@ export function render() {
   const drafts = store.draftPractices();
 
   return String(html`
-    <div class="page page--wide">
+    <div class="page">
       <header class="page-head">
         <div class="page-head__text">
           <h1 class="t-h1">Studio</h1>
