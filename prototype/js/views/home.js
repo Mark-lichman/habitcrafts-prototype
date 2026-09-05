@@ -175,7 +175,7 @@ function noHabitsState() {
         </g>
       </svg>
       <p class="empty-state__title">No active habits</p>
-      <p class="empty-state__body t-body">Keep it small — you can always do more.</p>
+      <p class="empty-state__body t-body">Keep it small. You can always do more.</p>
       <a class="btn btn--primary" href="#/create">Craft your first habit</a>
     </div>`;
 }
@@ -212,7 +212,7 @@ function doneState(total) {
       </svg>
       <p class="empty-state__title">That's everything.</p>
       <p class="empty-state__body t-body">
-        ${total} for ${total}. Nothing else is waiting for you here — the app will
+        ${total} for ${total}. Nothing else is waiting for you here. The app will
         still be here tomorrow.
       </p>
     </div>`;

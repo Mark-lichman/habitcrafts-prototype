@@ -42,7 +42,7 @@ export function scaffold(o) {
       <div class="card card--roomy" style="margin-block-start:var(--space-24)">
         <p class="t-label t-muted">Not built yet</p>
         <p class="t-body" style="margin-block-start:var(--space-8)">
-          This route is live and the transitions run — the screen itself is the
+          This route is live and the transitions run. The screen itself is the
           next piece of work. Replace this file's <code>render()</code> with the
           real view; the contract is documented in
           <code>js/views/home.js</code> and <code>README-buildnotes.md §12</code>.

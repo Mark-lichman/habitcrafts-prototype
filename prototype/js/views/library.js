@@ -271,7 +271,7 @@ export function render() {
 
             <div class="empty-state empty-state--compact" data-lib-empty hidden>
               <p class="empty-state__title">No lessons match</p>
-              <p class="empty-state__body t-body-sm">Try fewer words — the whole library is still here.</p>
+              <p class="empty-state__body t-body-sm">Try fewer words. The whole library is still here.</p>
             </div>
           </section>
 
