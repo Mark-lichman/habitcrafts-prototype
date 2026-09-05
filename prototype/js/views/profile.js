@@ -352,7 +352,7 @@ export function render() {
               <div class="field">
                 <label class="field__label" for="p-age">Date of birth</label>
                 <input class="input" id="p-age" type="date" value="1988-04-12">
-                <span class="field__help">Your birthday is never shown — only the age it works out to.</span>
+                <span class="field__help">Your birthday is never shown, only the age it works out to.</span>
               </div>
               <div class="field">
                 <label class="field__label" for="p-gender">Gender</label>
@@ -635,7 +635,7 @@ export function render() {
         <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-title">
           <h2 class="t-h2" id="delete-title">Delete your account?</h2>
           <p class="t-body t-muted" style="margin-block:var(--space-8) var(--space-24)">
-            This permanently removes your account and everything in it — every habit,
+            This permanently removes your account and everything in it: every habit,
             every day you showed up, and every mark you earned. It can't be undone.
           </p>
           <div class="u-flow u-wrap">

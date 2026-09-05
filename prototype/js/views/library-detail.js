@@ -139,7 +139,7 @@ export function render(params) {
             <h2 id="bridge-h" class="read-bridge__title">Make it a habit</h2>
             <p class="read-bridge__body t-body">
               Reading it is not the habit. Give it a prompt, keep it small, and
-              decide now how you'll celebrate — it takes about a minute.
+              decide now how you'll celebrate. It takes about a minute.
             </p>
             <div class="read-bridge__actions">
               <a class="btn btn--secondary" href="#/create" data-make-habit="${lesson.id}">Craft it now</a>
