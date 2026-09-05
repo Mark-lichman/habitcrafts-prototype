@@ -210,7 +210,7 @@ export function render() {
   const invited = store.state.spaces.filter((s) => !s.joined);
 
   return String(html`
-    <div class="page page--wide">
+    <div class="page">
       <header class="page-head">
         <div class="page-head__text">
           <h1 class="t-h1">Spaces</h1>

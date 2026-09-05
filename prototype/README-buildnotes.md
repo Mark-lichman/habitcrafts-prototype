@@ -200,8 +200,8 @@ BEM-ish: block `.card`, element `.card__title`, modifier `.card--hero`, state
 | Class | What / where |
 |---|---|
 | `.app-shell` | Wraps nav + page. Handles the bottom-bar padding and the rail/drawer inset. |
-| `.page` | Content column, max 1184px, centred, with the gutter. |
-| `.page--wide` (1440) · `.page--read` (600) | Shell-width and reading-measure variants. |
+| `.page` | **The page template. Every view's outermost element, no exceptions.** Max 1440px, centred, with the gutter. Identical on every screen so the content column never shifts when you navigate under a persistent nav. |
+| `.page--read` | Narrows the reading measure to 600px (~60ch) for articles — applied to the frame's *children*, so the frame itself stays put. |
 | `.app-nav` | **One component, three shapes.** Bottom bar <600 → collapsed rail 600 → extended rail 840 → permanent drawer 1200. |
 | `.app-nav__list` · `.nav-item` · `.nav-item__pill` · `.nav-item__label` | Destinations. Selected = `aria-current="page"` → brand-600 + the 3px gold pill. Never `opacity: 0.5`. |
 | `.nav-li--rail` | On an `<li>`: hidden below 600, shown from 600 up. Explore and Library only. |
@@ -917,8 +917,10 @@ export function mount(root, params) {
 **`render` is a pure function of the store.** It reads, it returns markup, it
 writes nothing. It is called again from scratch on every state change, so it
 must not depend on anything it left in the DOM last time. It returns the view's
-own `.page` (or `.page--wide` / `.page--read`) — the router's `.view` wrapper
-adds no padding, so a view keeps full control of its own measure.
+own `.page` (optionally with `.page--read`) — the router's `.view` wrapper adds
+no padding, so the page template is the single source of the measure. A view
+must not set its own max-width or inline padding on that outer element: that is
+what let Home and Progress drift 128px apart.
 
 **`mount` runs after the markup is in the document and after `HC.init` has wired
 it.** Use it for delegated listeners and anything that needs real nodes. Return

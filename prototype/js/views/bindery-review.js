@@ -182,7 +182,7 @@ export function render(params) {
   const lessons = store.practiceLessons(p);
 
   return String(html`
-    <div class="page page--wide">
+    <div class="page">
       <a class="page-back" href="#/library">${icon('arrow-back', 'icon--sm')} Library</a>
 
       <ol class="bind-steps" aria-label="Bindery progress">

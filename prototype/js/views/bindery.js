@@ -341,7 +341,7 @@ export function render() {
 
 function page(body, title, sub) {
   return html`
-    <div class="page page--wide">
+    <div class="page">
       <a class="page-back" href="#/library">${icon('arrow-back', 'icon--sm')} Library</a>
       <header class="page-head">
         <div class="page-head__text">

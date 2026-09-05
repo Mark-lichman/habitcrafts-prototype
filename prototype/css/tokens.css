@@ -392,7 +392,15 @@
                                    the longest label ("Community") must fit at
                                    the system's 13px floor without ellipsis. */
   --layout-rail-ext-w:  200px;  /* lg: extended rail, icon beside label */
-  --layout-drawer-w:    256px;  /* xl: permanent drawer */
+  --layout-drawer-w:    224px;  /* xl: permanent drawer. M3 and [B §6.2] both
+                                   say 256; this is a deliberate 32px trim, on
+                                   the 8dp grid. The widest label ("Community")
+                                   plus icon and padding measures ~184px, so
+                                   256 left ~70px of dead space inside the
+                                   drawer while the content column had no
+                                   gutter at all. The 32px is returned to the
+                                   content, which matters most between 1200 and
+                                   1700 where the page is not yet capped. */
 }
 
 /* Gutters and gaps step up with the window. [B §6.1] */
