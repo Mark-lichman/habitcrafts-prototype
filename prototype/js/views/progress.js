@@ -291,7 +291,7 @@ function monthGrid(year, month, marks) {
   const name = MONTH[month] + ' ' + year;
   const summary = elapsed === 0
     ? 'Nothing here yet.'
-    : plural(elapsed, 'day') + ' so far, ' + anyDays + ' with a check-in — ' +
+    : plural(elapsed, 'day') + ' so far, ' + anyDays + ' with a check-in. ' +
       doneDays + ' of them you kept everything.' +
       (year === t.getFullYear() && month === t.getMonth() ? ' Today is still open.' : '');
 
@@ -335,7 +335,7 @@ function calendar(marks) {
       <ul class="prog-key">
         <li><span class="prog-key__swatch cal-cell cal-cell--done" aria-hidden="true"><span class="cal-cell__glyph"></span></span> Kept everything</li>
         <li><span class="prog-key__swatch cal-cell cal-cell--partial" aria-hidden="true"><span class="cal-cell__glyph"></span></span> Kept some of it</li>
-        <li><span class="prog-key__swatch cal-cell" aria-hidden="true"></span> Nothing yet — days you miss are simply empty</li>
+        <li><span class="prog-key__swatch cal-cell" aria-hidden="true"></span> Nothing yet. Days you miss are simply empty</li>
         <li><span class="prog-key__swatch cal-cell prog-cal__cell--future" aria-hidden="true"></span> Still to come</li>
         <li><span class="prog-key__swatch cal-cell cal-cell--done cal-cell--milestone" aria-hidden="true"><span class="cal-cell__glyph"></span></span> A day something was gilded</li>
       </ul>
@@ -427,7 +427,7 @@ function chart() {
       </ul>
 
       <p class="prog-chart__caption t-body-sm">
-        Days per week, out of seven. Whole weeks only — this week is still being written.
+        Days per week, out of seven. Whole weeks only. This week is still being written.
       </p>
     </section>`;
 }
@@ -513,7 +513,7 @@ function repair(streak) {
             <p class="repair__title">A gap softens a streak, it does not end it</p>
             <p class="repair__text" data-repair-readout
                data-full="You showed up for ${plural(streak, 'day')} straight."
-               data-decayed="You showed up for ${plural(streak, 'day')} straight. After a week away it reads ${decayed} — the days you did are still yours.">
+               data-decayed="You showed up for ${plural(streak, 'day')} straight. After a week away it reads ${decayed}. The days you did are still yours.">
               You showed up for ${plural(streak, 'day')} straight.
             </p>
 
@@ -774,7 +774,7 @@ export function render() {
             <h2 id="life-h" class="t-h2">Part of your life now</h2>
             <p class="t-body t-measure" style="margin-block-start:var(--space-8)">
               These have been kept for a hundred days or more. They are not
-              projects any more — they are just things you do.
+              projects any more. They are just things you do.
             </p>
 
             ${graduated.length ? html`

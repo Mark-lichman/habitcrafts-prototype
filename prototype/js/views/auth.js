@@ -219,7 +219,7 @@ function reset() {
           <span class="chip chip--sage">${icon('check')}Sent</span>
         </p>
         <p class="t-body" style="margin-block-start:var(--space-8)">
-          Check your inbox. The link works for one hour — if it expires, come
+          Check your inbox. The link works for one hour. If it expires, come
           back and ask for another one.
         </p>
       </div>
@@ -283,7 +283,7 @@ export function render() {
         ${reset()}
 
         <p class="auth__legal t-body-sm">
-          Prototype only — no account is created and nothing is sent. There is
+          Prototype only. No account is created and nothing is sent. There is
           no validation, no auth and no persistence behind these forms.
         </p>
       </div>

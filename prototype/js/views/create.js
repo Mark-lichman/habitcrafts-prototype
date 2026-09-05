@@ -347,7 +347,7 @@ export function render() {
             <section class="card card--tinted" data-craft-crowded aria-labelledby="crowded-h">
               <h2 id="crowded-h" class="t-label">You already keep ${active} habits</h2>
               <p class="t-body t-muted" style="margin-block-start:var(--space-4)">
-                That's a lot to keep. Consider finishing one first — this one will
+                That's a lot to keep. Consider finishing one first. This one will
                 still be here.
               </p>
             </section>` : ''}
@@ -562,7 +562,7 @@ export function mount(root) {
       const region = root.querySelector('[data-craft-schedule]');
       if (region) region.hidden = !box.checked;
       repaint();
-      if (window.HC) window.HC.announce(box.checked ? 'Schedule on.' : 'Schedule off — every day.');
+      if (window.HC) window.HC.announce(box.checked ? 'Schedule on.' : 'Schedule off. Every day.');
     });
 
     /* A template fills the whole object at once and lands with one settle. */

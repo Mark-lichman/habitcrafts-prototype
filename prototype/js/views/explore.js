@@ -238,7 +238,7 @@ export function render() {
         <h2 id="start-small-h" class="t-h3" style="color:var(--c-hero-ink)">Not sure where to start?</h2>
         <p class="hero__body t-body" style="margin-block-start:var(--space-8);max-inline-size:52ch">
           Keep it small, you can always do more. Every idea here is already the
-          two-minute version — the one you can still do on your worst day.
+          two-minute version. It is the one you can still do on your worst day.
         </p>
       </section>
 
@@ -269,7 +269,7 @@ export function render() {
             </svg>
             <p class="empty-state__title">Nothing here yet</p>
             <p class="empty-state__body t-body">
-              Try another category — or craft the one you already had in mind.
+              Try another category, or craft the one you already had in mind.
             </p>
             <a class="btn btn--primary" href="#/create">Craft it yourself</a>
           </div>
@@ -401,7 +401,7 @@ function fill(modal, id) {
     if (habit) {
       /* Built as nodes rather than a string: the link is this screen's only
          cross-reference into a detail route and must stay a real anchor. */
-      note.append('You already keep this one — ' + plural(store.streakOf(habit), 'day') + ' so far. ');
+      note.append('You already keep this one. ' + plural(store.streakOf(habit), 'day') + ' so far. ');
       const a = document.createElement('a');
       a.className = 'text-link';
       a.href = '#/habit/' + habit.id;
