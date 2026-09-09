@@ -1,6 +1,7 @@
 /* ============================================================================
    HabitCrafts — views/onboarding.js
-   THE WELCOME TOUR. Three paged slides, then into the app.
+   THE WELCOME TOUR. Three paged slides, then into the app — four where the
+   experiment's front door is the Bindery, because there the upload leads.
 
    `meta.chrome = false` is what removes the nav: app.js reads it, sets
    `data-chrome="none"` on the shell and hides the nav root, so the bottom bar,
@@ -23,7 +24,7 @@
    reduced motion — the branch is in its `go()`, not left to CSS), announces
    each change, and binds the arrow keys. This view writes no second handler
    for any of that. It only supplies markup and the two destinations, both of
-   which are plain `<a href="#/home">` — keyboard- and middle-click-friendly
+   which are plain anchors to `entryRoute()` — keyboard- and middle-click-friendly
    for free, and `[data-ob-done]` is an anchor precisely because prototype.js
    only ever toggles its `hidden`, never its click.
 
@@ -50,6 +51,7 @@
 
 import * as store from '../store.js';
 import { html, icon } from '../ui.js';
+import { flag, entryRoute } from '../config.js';
 
 export const meta = {
   title: 'Welcome',
@@ -123,8 +125,11 @@ const ART = [
    one home and the art is matched to it by position.
 -------------------------------------------------------------------------- */
 
-function slide(item, i, total) {
-  const n = i + 1;
+/* `i` indexes the COPY (and so the art, which is matched to it by position);
+   `offset` shifts the carousel position when the upload slide leads. Keeping
+   the two separate is what stops the art sliding out of step with the text. */
+function slide(item, i, total, offset = 0) {
+  const n = i + 1 + offset;
   return html`
     <section class="ob-slide" data-ob-slide="${n}" aria-labelledby="${item.id}-h" ${n > 1 ? 'hidden' : ''}>
       <div class="ob-slide__art">${ART[i % ART.length]}</div>
@@ -136,9 +141,74 @@ function slide(item, i, total) {
     </section>`;
 }
 
+/* --------------------------------------------------------------------------
+   THE UPLOAD STEP — slide 1 wherever a source is the point.
+
+   E1 and E3 both declare `entry: '/bindery'`, but the only path a new account
+   actually takes was signup → onboarding → a hardcoded #/home. So the two
+   experiments whose whole hypothesis is "bring a source" opened on a habits
+   dashboard with no source in it, and `bringYourOwn` — documented in config as
+   "the five-minute single-source path in onboarding" — was never read here.
+   This is that path.
+
+   E2 is deliberately excluded: its entry is /spaces, because a member joins a
+   community first and the source is already inside it.
+
+   It is a real slide, not a screen of its own, so prototype.js's existing
+   machinery carries it: it counts `[data-ob-slide]` from the DOM, so the dots,
+   Back / Next, the arrow keys and the roving tabindex all pick up a fourth
+   slide with no new JS.
+
+   The dropzone is `.bind-drop`, the SAME component the Bindery's step 1 uses,
+   and its button leaves for #/bindery rather than reimplementing the pipeline.
+   The front door is a door, not a second room. [#5]
+-------------------------------------------------------------------------- */
+
+function uploadSlide(total) {
+  /* Matches bindery.js's own split: a creator is asked about their book, a
+     consumer about their own reading. Same pipeline after step 1. */
+  const [title, body] = flag('bringYourOwn')
+    ? ['What are you reading right now?',
+       'Bring it in and get a week of practice out of it. Takes about a minute.']
+    : ['Start with something you have already written',
+       'Bring a source. Loose pages in, something your audience can keep out.'];
+
+  return html`
+    <section class="ob-slide" data-ob-slide="1" aria-labelledby="ob-upload-h">
+      <div class="ob-slide__art">
+        <a class="bind-drop" href="#/bindery" aria-describedby="ob-drop-help">
+          <svg class="bind-sheet" viewBox="0 0 96 120" aria-hidden="true">
+            <path class="bind-sheet__page" d="M12 6h56l16 16v92H12z"/>
+            <path class="bind-sheet__fold" d="M68 6v16h16"/>
+            <path class="bind-sheet__rule" d="M26 46h44M26 60h44M26 74h30"/>
+          </svg>
+          <span class="bind-drop__title">Drop a PDF here</span>
+          <span class="bind-drop__sub t-body-sm">or choose a sample</span>
+        </a>
+      </div>
+      <div class="ob-slide__text">
+        <h1 id="ob-upload-h" class="ob-slide__title">${title}</h1>
+        <p class="ob-slide__body t-body-lg">${body}</p>
+        <p id="ob-drop-help" class="visually-hidden">
+          Opens the Bindery. The prototype does not read real files; a sample
+          binds the same pipeline with fixture content.
+        </p>
+        <p class="visually-hidden">Slide 1 of ${total}</p>
+      </div>
+    </section>`;
+}
+
 export function render() {
   const slides = store.data.onboarding;
-  const total = slides.length;
+
+  /* Upload leads wherever the experiment's front door is the Bindery. E1 is
+     `publishing`, E3 is `bringYourOwn`; E2 and the base app have neither. */
+  const uploadFirst = flag('publishing') || flag('bringYourOwn');
+  const total = slides.length + (uploadFirst ? 1 : 0);
+
+  /* Where finishing lands. Was hardcoded to #/home, which silently overrode
+     every experiment's declared entry. */
+  const done = '#' + entryRoute();
 
   return String(html`
     <div class="ob-page">
@@ -150,12 +220,13 @@ export function render() {
         </span>
         <!-- The skip the shipping flow does not offer. It lands exactly where
              finishing lands: nothing is withheld for sitting through it. -->
-        <a class="text-link" href="#/home">Skip</a>
+        <a class="text-link" href="${done}">Skip</a>
       </div>
 
       <div class="ob-card">
         <div class="ob-stage" data-ob-stage>
-          ${slides.map((item, i) => slide(item, i, total))}
+          ${uploadFirst ? uploadSlide(total) : ''}
+          ${slides.map((item, i) => slide(item, i, total, uploadFirst ? 1 : 0))}
         </div>
 
         <!-- Three grid tracks, not a flex row, so the dots stay optically
@@ -166,19 +237,25 @@ export function render() {
             ${icon('arrow-back', 'icon--sm')} Back
           </button>
 
+          <!-- One dot per slide, upload included, so the indicator agrees with
+               the stage. Built from a titles list rather than from the slides
+               array alone, for exactly that reason.
+               (No backticks in here — they close the template literal.) -->
           <ul class="ob-dots" data-ob-dots aria-label="Slide">
-            ${slides.map((item, i) => html`
-              <li><button class="ob-dot" type="button" data-ob-go="${i + 1}"
-                          aria-current="${i === 0 ? 'true' : 'false'}">
-                <span class="visually-hidden">Slide ${i + 1} of ${total}: ${item.title}</span>
-              </button></li>`)}
+            ${(uploadFirst ? ['Bring a source'] : [])
+              .concat(slides.map((s) => s.title))
+              .map((title, i) => html`
+                <li><button class="ob-dot" type="button" data-ob-go="${i + 1}"
+                            aria-current="${i === 0 ? 'true' : 'false'}">
+                  <span class="visually-hidden">Slide ${i + 1} of ${total}: ${title}</span>
+                </button></li>`)}
           </ul>
 
           <button class="btn btn--primary" type="button" data-ob-next>
             Next ${icon('arrow', 'icon--sm')}
           </button>
 
-          <a class="btn btn--primary" href="#/home" data-ob-done hidden>Get Started</a>
+          <a class="btn btn--primary" href="${done}" data-ob-done hidden>Get Started</a>
         </div>
       </div>
     </div>`);

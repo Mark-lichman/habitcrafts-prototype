@@ -212,6 +212,16 @@ body {
     <output class="hz-read" data-hour-read>—</output>
   </div>
 
+  <!-- Jump to a screen the nav cannot reach. Onboarding and Auth are logged-out
+       and carry no nav chrome, so without this the only route to them is typing
+       a hash — and the FTUE is the thing most often being reviewed. -->
+  <div class="hz-group" role="group" aria-label="Jump to">
+    <span class="hz-legend" aria-hidden="true">Jump</span>
+    <button class="hz-btn" type="button" data-go="/onboarding">Onboarding</button>
+    <button class="hz-btn" type="button" data-go="/auth">Auth</button>
+    <button class="hz-btn" type="button" data-go="/home">App</button>
+  </div>
+
   <span class="hz-spacer"></span>
 
   <button class="hz-btn" type="button" data-reset>Reset data</button>
@@ -249,6 +259,18 @@ body {
   var root = document.documentElement;
   var stage = document.querySelector('[data-stage]');
   var frame = document.querySelector('[data-frame]');
+
+  /* Honour a route handed over by app.html's redirect, so
+     `app.html#/onboarding` lands here showing onboarding rather than Home.
+     Set before the frame has loaded, so it is the first navigation and not a
+     second one the reviewer sees flash past. */
+  if (location.hash) {
+    /* Carry the harness's own query through — dropping it lost `?x=creator`,
+       so the frame booted as the base app while the bar still read E1. */
+    var q = new URLSearchParams(location.search);
+    q.set('chrome', 'clean');
+    frame.src = 'app.html?' + q.toString() + location.hash;
+  }
   var hourInput = document.querySelector('[data-hour]');
   var hourRead = document.querySelector('[data-hour-read]');
 
@@ -338,6 +360,21 @@ body {
     b.addEventListener('click', function () { setExperiment(b.getAttribute('data-x-set')); });
   });
   hourInput.addEventListener('input', function () { setHour(hourInput.value); });
+
+  /* Jump. Sets the frame's hash rather than its src, so the app is never
+     reloaded and the theme, hour and experiment all survive the jump. */
+  document.querySelectorAll('[data-go]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var w = app();
+      var path = b.getAttribute('data-go');
+      if (!w) return;
+      /* Through the router, so pressing a route you are already on still
+         re-renders. A bare `location.hash = ...` fires no hashchange when the
+         value is unchanged, which made this read as a dead button. */
+      if (w.HCApp) w.HCApp.go(path);
+      else w.location.hash = '#' + path;
+    });
+  });
 
   /* Reset data: back to the fixtures, same route, no reload — so you can watch
      the habits you just completed come back un-checked. */
