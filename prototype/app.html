@@ -130,6 +130,29 @@
      Filled by js/app.js from js/config.js. Delete this element, paintSwitcher()
      and the losing entries in EXPERIMENTS on the day one of them wins.
      ======================================================================== -->
+<!-- =========================================================================
+     KEEP THE CONTROLS. The viewport buttons work by resizing the iframe, so
+     they CANNOT exist on this page — opened directly there is no frame to
+     resize, and the reviewer loses Mobile / Tablet / Desktop with no way back.
+
+     So a top-level visit hands off to the harness and keeps the route: open
+     app.html#/progress and you land on the harness showing Progress, controls
+     intact. Inside the iframe `self !== top`, so the app itself is unaffected.
+
+     Escape hatch for the screenshot case this page exists for:
+       app.html?solo=1     open it bare, no harness, no redirect.
+     ====================================================================== -->
+<script>
+  (function () {
+    if (window.self !== window.top) return;                 /* in the harness */
+    var q = new URLSearchParams(location.search);
+    if (q.has('solo') || q.get('chrome') === 'clean') return;
+    q.delete('solo');
+    var s = q.toString();
+    location.replace('index.html' + (s ? '?' + s : '') + location.hash);
+  }());
+</script>
+
 <div class="xbar" data-xbar hidden></div>
 
 <div class="app-shell" data-shell>

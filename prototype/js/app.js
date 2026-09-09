@@ -274,6 +274,20 @@ window.HCApp = {
       so there is one switch and not two implementations of it. */
   setExperiment(id) { config.setExperiment(id); },
   experimentId() { return config.experimentId(); },
+  /**
+   * "Jump to" on the control bar. Navigate, and re-render even when the route
+   * asked for is the one already showing.
+   *
+   * The harness cannot do this by assigning `location.hash`: assigning a hash
+   * its own value fires no `hashchange`, so pressing Onboarding while already
+   * on Onboarding did nothing at all and read as a dead button. Going through
+   * the router makes the control honest — it always shows you the screen it
+   * names.
+   */
+  go(path) {
+    if (router.current() === path) router.refresh();
+    else router.go(path);
+  },
   /** "Reset data" on the control bar. Back to the fixtures, same route. */
   reset() {
     store.resetAll();
