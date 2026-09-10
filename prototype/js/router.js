@@ -80,6 +80,9 @@ const ROUTES = [
      resolves — it explains itself instead of silently falling back to Home,
      which is what a route table that changed shape would do. */
   { path: '/learn',              load: () => import('./views/learn.js') },
+  /* Deep link into one lesson, so a reminder can open the thing it is
+     reminding you about rather than dropping you at the top of a flow. */
+  { path: '/learn/:key',         load: () => import('./views/learn.js') },
   { path: '/bindery',            load: () => import('./views/bindery.js') },
   { path: '/bindery/:id/review', load: () => import('./views/bindery-review.js') },
   { path: '/practice/:id',       load: () => import('./views/practice.js') },

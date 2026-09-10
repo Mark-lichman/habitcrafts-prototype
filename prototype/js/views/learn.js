@@ -43,11 +43,14 @@ let revealed = {};      /* exerciseId -> answer has been shown */
 let results = {};       /* exerciseId -> 'got' | 'again' */
 let practice = {};      /* lessonKey -> reading is put away, exercises showing */
 let anchors = {};       /* lessonKey -> { on, prompt, time } */
+let covered = null;     /* which lessons the one reminder covers; null = all */
+let logged = {};        /* lessonKey -> this visit's completion already counted */
 let created = [];       /* habit ids, once the bridge has fired */
 
 export function resetFlow() {
   step = 1; answers = {}; kindId = null; openLesson = null;
-  revealed = {}; results = {}; practice = {}; anchors = {}; created = [];
+  revealed = {}; results = {}; practice = {}; anchors = {};
+  covered = null; logged = {}; created = [];
 }
 
 /* -------------------------------------------------------------------------
@@ -450,9 +453,16 @@ function stepWhen() {
       })()}
     </section>
 
-    <!-- The daily practice habit. On by default, because it is the one the
-         cadence asks for; the per-lesson anchors below are the alternative for
-         someone who would rather attach each piece to its own moment. -->
+    <!-- ONE reminder, covering as many lessons as you like.
+
+         The first version asked for an anchor per lesson, which is five
+         decisions to make a week of practice and five notifications to receive
+         on the same morning. Five reminders at once is one reminder, and
+         nobody sets up five anchors twice.
+
+         So the reminder is the unit and the lessons are its contents. Picking
+         which lessons it covers is a multi-select, everything on by default,
+         and the reminder rotates through what you have not done recently. -->
     <section class="card card--roomy" style="margin-block-start:var(--space-16)">
       <div class="section-head">
         <h3 class="t-h3">Your daily practice</h3>
@@ -461,30 +471,42 @@ function stepWhen() {
       <p class="t-body-lg"><strong>${h.behavior}</strong></p>
       <p class="t-body t-muted">${h.why}</p>
       ${anchorFields('daily', h.prompt, '07:00')}
-    </section>
 
-    <p class="t-label" style="margin-block-start:var(--space-24)">
-      Or anchor each lesson to its own moment
-    </p>
-    ${JA.lessons.map((l) => html`
-      <section class="card" style="margin-block-start:var(--space-8)">
-        <div class="section-head">
-          <p class="t-body"><strong>${l.habitSuggestion.behavior}</strong></p>
-          ${anchorToggle(l.key)}
-        </div>
-        ${anchorFields(l.key, l.habitSuggestion.prompt, DEFAULT_TIMES[l.n - 1] || '19:00')}
-      </section>`)}
+      ${anchorState('daily', '', '').on ? html`
+        <p class="t-label" style="margin-block-start:var(--space-24)">
+          What this reminder covers
+        </p>
+        <p class="t-body t-muted">
+          ${coveredKeys().length} of ${JA.lessons.length} lessons, plus the
+          exceptions drill. It offers whichever you have gone longest without.
+        </p>
+        <div class="u-row" style="gap:var(--space-8);flex-wrap:wrap;margin-block-start:var(--space-12)">
+          ${JA.lessons.map((l) => {
+            const on = coveredKeys().includes(l.key);
+            return html`
+              <button class="${cls('btn', 'btn--sm', on ? 'btn--primary' : 'btn--ghost')}"
+                      type="button" data-cover="${l.key}"
+                      role="checkbox" aria-checked="${on ? 'true' : 'false'}">
+                <span aria-hidden="true">${on ? '✓' : '+'}</span> ${l.n}. ${l.title}
+              </button>`;
+          })}
+        </div>` : ''}
+    </section>
 
     ${createdPanel()}
 
-    ${foot(true, !created.length && countOn() > 0,
-           'Create ' + plural(countOn(), 'reminder'),
+    ${foot(true, !created.length && anchorState('daily', '', '').on && coveredKeys().length > 0,
+           'Set the reminder',
            'data-create-habits')}`;
 }
 
-/* Sensible clock times for the five lesson anchors, spread across a day rather
-   than stacked, because five reminders at once is one reminder. */
-const DEFAULT_TIMES = ['07:30', '12:30', '17:30', '13:00', '21:30'];
+/* Which lessons this one reminder covers. All of them until told otherwise:
+   the default should be the whole practice, because someone who just built it
+   wants it, and narrowing is the rarer intent. */
+function coveredKeys() {
+  if (covered === null) return JA.lessons.map((l) => l.key);
+  return covered;
+}
 
 function anchorState(key, promptText, time) {
   const a = anchors[key] || {};
@@ -496,9 +518,7 @@ function anchorState(key, promptText, time) {
 }
 
 function countOn() {
-  let n = anchorState('daily', '', '').on ? 1 : 0;
-  JA.lessons.forEach((l) => { if (anchorState(l.key, '', '').on) n += 1; });
-  return n;
+  return anchorState('daily', '', '').on ? 1 : 0;
 }
 
 function anchorToggle(key) {
@@ -559,7 +579,13 @@ function createdPanel() {
 
 const RENDERERS = [stepUpload, stepFound, stepQuestions, stepLessons, stepWhen];
 
-export function render() {
+export function render(params) {
+  /* Deep link: /learn/<lessonKey> opens that lesson directly. The reminder
+     uses it, and so does the Library, so neither has to replay the flow. */
+  if (params && params.key && JA.lessons.some((l) => l.key === params.key)) {
+    step = 4;
+    openLesson = params.key;
+  }
   return String(html`
     <div class="page">
       ${stepper(step)}
@@ -619,11 +645,29 @@ export function mount(root) {
     router.refresh();
   });
   on(root, 'click', '[data-mark]', (e, el) => {
-    results[el.getAttribute('data-mark')] = el.getAttribute('data-result');
+    const id = el.getAttribute('data-mark');
+    results[id] = el.getAttribute('data-result');
+
+    /* A lesson counts as run once every exercise in it has been marked. The
+       count is what separates "read once" from "practised eleven times", and
+       it is recorded here rather than on open, because opening is not
+       practising. Logged once per visit: re-marking does not inflate it. */
+    const key = id.split(':')[0];
+    const l = JA.lessons.find((x) => x.key === key);
+    if (l && !logged[key] && l.exercises.every((_, i) => results[key + ':' + i])) {
+      logged[key] = true;
+      store.completeLesson(key);
+    }
     router.refresh();
   });
 
   /* --- anchors and reminders ------------------------------------------ */
+  on(root, 'click', '[data-cover]', (e, el) => {
+    const k = el.getAttribute('data-cover');
+    const cur = coveredKeys();
+    covered = cur.includes(k) ? cur.filter((x) => x !== k) : cur.concat(k);
+    router.refresh();
+  });
   on(root, 'click', '[data-anchor-toggle]', (e, el) => {
     const k = el.getAttribute('data-anchor-toggle');
     const cur = anchorState(k, '', '');
@@ -649,26 +693,17 @@ export function mount(root) {
   on(root, 'click', '[data-create-habits]', () => {
     if (created.length) return;                    /* fire once */
     const h = JA.proposedHabit;
-
     const daily = anchorState('daily', h.prompt, '07:00');
-    if (daily.on) {
-      created.push(store.createHabit({
-        behavior: h.behavior, prompt: daily.prompt, celebration: h.celebration,
-        why: h.why, time: daily.time, days: h.days, category: 'c-mind',
-        origin: 'learn',
-      }).id);
-    }
+    if (!daily.on || !coveredKeys().length) return;
 
-    JA.lessons.forEach((l, i) => {
-      const a = anchorState(l.key, l.habitSuggestion.prompt, DEFAULT_TIMES[i] || '19:00');
-      if (!a.on) return;
-      created.push(store.createHabit({
-        behavior: l.habitSuggestion.behavior, prompt: a.prompt,
-        celebration: l.habitSuggestion.celebration, why: l.habitSuggestion.why,
-        time: a.time, days: [0, 1, 2, 3, 4, 5, 6], category: 'c-mind',
-        origin: 'learn',
-      }).id);
-    });
+    /* ONE habit, carrying the lessons it covers. The reminder is the unit; the
+       lessons are its contents, and which one it offers is decided when it
+       fires rather than now. */
+    created.push(store.createHabit({
+      behavior: h.behavior, prompt: daily.prompt, celebration: h.celebration,
+      why: h.why, time: daily.time, days: h.days, category: 'c-mind',
+      lessons: coveredKeys(), sourceId: JA.source.id, origin: 'learn',
+    }).id);
 
     router.refresh();
   });
