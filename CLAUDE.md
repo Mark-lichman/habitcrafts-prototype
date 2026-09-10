@@ -65,14 +65,17 @@ which remain the authority where there is more detail.
 
 ## What does not belong in this repository
 
-**It is public.** Design, research and architecture are fine and already here. Named-prospect
-judgements are not: "too slow", "will build rather than buy" and do-not-pitch lists about real
-companies live in Google Drive instead. `docs/icp-catalog.md` holds the reasoning; the outreach
-sheet holds the names.
+**It is public.** Design and architecture belong here. **Go-to-market does not** — the ICP
+catalogue, the interview research plan and the evidence appendix were moved to Google Drive on
+10 September 2026 and should not come back. Segment reasoning, kill criteria, competitive reads and
+anything naming a real company as a prospect live in Drive, under the `HabitCrafts GTM —` prefix.
+
+The line: if it describes how the product works, it goes here. If it describes who we sell to or
+what we think of a named company, it does not.
 
 ## Where things are
 
-- `docs/README.md` — the docs index, grouped by design / architecture / go to market
+- `docs/README.md` — the docs index. Design and architecture only; go-to-market is in Drive.
 - `prototype/README.md` — what is live versus reference, and the code map
 - `prototype/README-buildnotes.md` — the build contract
 - On GitHub, **press `t`** and type part of a filename rather than remembering paths.
