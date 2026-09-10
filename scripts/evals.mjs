@@ -241,6 +241,50 @@ check(multiQs.length === 0 || /role="\$\{q\.kind === 'multi' \? 'checkbox' : 'ra
   'multi questions expose checkbox semantics to assistive tech');
 
 /* ==========================================================================
+   6b. TERMINOLOGY A LEARNER CAN ACT ON
+
+   "Kana" is the correct umbrella term for the two syllabaries and the wrong
+   word to put in front of a learner: it names a category rather than the thing
+   on the card, and it cannot be acted on without already knowing which script
+   is which. Say hiragana or katakana.
+
+   Mark caught this by reading a screen. It is a terminology rule, so it is
+   checkable without a judge — the judge tier is only needed for terms this
+   list does not know about yet.
+   ====================================================================== */
+section('terminology');
+
+const BANNED = [
+  { term: /\bkana\b/i, instead: 'name the script: hiragana or katakana' },
+];
+
+const facing = [
+  ...JA.questions.flatMap((q) => [q.ask, q.why, q.affects,
+    ...q.options.flatMap((o) => [o.label, o.consequence])]),
+  ...JA.lessons.flatMap((l) => [l.title, l.standfirst, ...(l.body || [])]),
+  ...JA.rules.map((r) => r.gloss),
+].filter(Boolean);
+
+for (const { term, instead } of BANNED) {
+  const hits = facing.filter((s) => term.test(s));
+  check(hits.length === 0,
+    `no user-facing string uses a term the learner cannot act on (${term.source})`,
+    hits.length ? `${hits.length} hit(s) — ${instead}. First: "${hits[0].slice(0, 70)}…"` : '');
+}
+
+/* The romaji question offers a per-script answer, so every term it could apply
+   to has to declare which script it is written in. Without that the option is
+   unimplementable and the question becomes a survey question. */
+const scriptQ = JA.questions.find((q) => q.id === 'q-script');
+const perScript = scriptQ && scriptQ.options.some((o) => /katakana|hiragana/i.test(o.label));
+if (perScript) {
+  const termsNeedingScript = [...JA.items, ...(JA.katakanaTerms || []), ...JA.irregulars];
+  check(termsNeedingScript.every((t) => t.script === 'hiragana' || t.script === 'katakana'),
+    'every term declares its script, so a per-script answer is implementable',
+    termsNeedingScript.filter((t) => !t.script).map((t) => t.ja).join(', '));
+}
+
+/* ==========================================================================
    7. THE DURATION BUDGET
    Duration is a budget, not a target. A session that cannot fit the smallest
    offered budget is a practice that gets abandoned in week two.
