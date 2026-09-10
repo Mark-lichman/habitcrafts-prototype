@@ -29,19 +29,21 @@ The build contract that turns these into code is **[`../prototype/README-buildno
 
 ---
 
-## Go to market — who we sell to and how we find out
+## Go to market — not in this repository
 
-| File | Size | What it is |
-|---|---|---|
-| [`icp-catalog.md`](icp-catalog.md) | 202 lines | **Start here for anything segment-related.** §1 is seven reusable tests for whether something is an ICP candidate at all. Then the five streams, the qualification filters, two recorded rejections, and the PMF gates. |
-| [`research-plan.md`](research-plan.md) | 758 lines | The 15-minute discovery interview programme. §4 question bank, §6 the paste-ready AI moderator system prompt, §8 the scoring rubric, §9 kill criteria. |
-| [`research-evidence.md`](research-evidence.md) | 271 lines | The citations behind every number in the two files above. §6 states what was lost when the original research digest went with a cleaned scratchpad. |
+ICP catalogue, the interview research plan and the evidence appendix live in **Google Drive**, not
+here. This repository is public, and segment reasoning, kill criteria and competitive reads are not
+things to publish.
 
-**Named prospects are not in this repository.** The outreach tracker and the per-company
-judgements live in Google Drive, because this repo is public and assessments of real companies
-do not belong in it. `icp-catalog.md` holds the reasoning; the sheet holds the names.
+Look for the three documents prefixed **`HabitCrafts GTM —`**:
 
----
+1. **ICP Catalogue** — seven reusable tests for whether something is an ICP candidate, the five
+   outreach streams, the qualification filters, two recorded rejections, and the PMF gates.
+2. **Research Plan** — the 15-minute discovery interview programme: question bank, the paste-ready
+   AI moderator system prompt, the scoring rubric, kill criteria.
+3. **Evidence Appendix** — the citations behind every number in the two above.
+
+The outreach tracker is the sheet **Design Partner Pipeline v2 (5 streams)**.
 
 ## Looking for something specific?
 
@@ -49,6 +51,6 @@ do not belong in it. `icp-catalog.md` holds the reasoning; the sheet holds the n
 - **What are the exact colour or motion values?** → `design-research-brief.md`
 - **How do I add a route, a view, or a component?** → `../prototype/README-buildnotes.md` §12–13
 - **Can we ship this as the real front end?** → `production-path.md` §1
-- **Who are we selling to?** → `icp-catalog.md`
-- **What do I ask in an interview?** → `research-plan.md` §4
-- **Where did that statistic come from?** → `research-evidence.md`
+- **Who are we selling to?** → Drive: *GTM — 1. ICP Catalogue*
+- **What do I ask in an interview?** → Drive: *GTM — 2. Research Plan* §4
+- **Where did that statistic come from?** → Drive: *GTM — 3. Evidence Appendix*
