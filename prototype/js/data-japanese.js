@@ -4,9 +4,9 @@
 
    This is a REAL decomposition of a real upload — Mark's Lesson 1 slide deck,
    14 pages, February 2025. It is here rather than in data-practices.js because
-   it is the first corpus of a different KIND (memorisation and rules), and the
-   whole point of the pilot is that a different kind produces a different
-   shape. Putting it in the prose file would have hidden exactly that.
+   it is the first corpus of a different KIND (language practice), and the whole
+   point of the pilot is that a different kind produces a different shape.
+   Putting it in the prose file would have hidden exactly that.
 
    WHAT THE UPLOAD ACTUALLY WAS, because it shaped the pipeline:
    a 14-page scanned slide deck with a 519-character text layer. The text layer
@@ -82,14 +82,30 @@ export const detected = {
 
 export const questions = [
   {
+    /* "Kana" is the umbrella term for both syllabaries, and it is the wrong
+       word to put in front of a learner: it names a category rather than the
+       thing on the card, and it cannot be acted on without already knowing
+       which script is which. This deck is 36 distinct hiragana characters to
+       16 katakana — hiragana carries the grammar and vocabulary, katakana
+       appears only for foreign names (ミラー, キム, ソフィア, ドイツ).
+
+       Splitting the question by script is not just clearer wording, it is a
+       better question: a Lesson 1 learner usually reads hiragana and is still
+       slow on katakana, so romaji on the names alone is a real answer that the
+       umbrella version could not express. */
     id: 'q-script',
-    ask: 'Should cards show romaji next to the kana?',
-    why: 'Your deck has both. Romaji makes the first week easier and the third week slower.',
+    ask: 'Should cards show romaji?',
+    why: 'Your deck is mostly hiragana, with katakana for the foreign names. Romaji makes the first week easier and the third week slower.',
     affects: 'Every card face',
     options: [
-      { id: 'kana-only', label: 'Kana only', consequence: 'Cards show かな alone. Harder now, faster later.' },
-      { id: 'both', label: 'Kana with romaji', consequence: 'Romaji sits under every kana line.', default: true },
-      { id: 'romaji-only', label: 'Romaji only', consequence: 'No kana. Speaking practice only — reading will not develop.' },
+      { id: 'none', label: 'No romaji',
+        consequence: 'Hiragana and katakana only. Harder now, faster later.' },
+      { id: 'katakana-only', label: 'On katakana only',
+        consequence: 'Romaji under the foreign names (ミラーさん, ドイツ) and nothing else — the usual gap at this stage.', default: true },
+      { id: 'all', label: 'On everything',
+        consequence: 'Romaji under every Japanese line, hiragana included.' },
+      { id: 'romaji-only', label: 'Romaji instead',
+        consequence: 'No Japanese script at all. Speaking practice only — reading will not develop.' },
     ],
   },
   {
@@ -243,22 +259,38 @@ export const rules = [
   },
 ];
 
-/* ITEMS: things to hold in memory. No transformation, just the pair. */
+/* ITEMS: things to hold in memory. No transformation, just the pair.
+
+   `script` is load-bearing rather than decorative — the romaji question offers
+   "on katakana only", and without knowing which script a term is written in
+   there is no way to honour that answer. Every item in this lesson happens to
+   be hiragana; the katakana in the deck is all proper nouns, below. */
 export const items = [
-  { key: 'i-san',       ja: 'さん',         romaji: 'san',        en: 'Mr. / Ms. (never used about yourself)', page: 2,  quote: 'Name + さん san ＝Mr. Ms.' },
-  { key: 'i-nihonjin',  ja: 'にほんじん',   romaji: 'nihonjin',   en: 'Japanese person',                       page: 1,  quote: 'Country + じん JIN ＝nationality' },
-  { key: 'i-sensei',    ja: 'せんせい',     romaji: 'sensei',     en: 'teacher',                               page: 12, quote: 'Watashi wa sensei desu' },
-  { key: 'i-ginkouin',  ja: 'ぎんこういん', romaji: 'ginkōin',    en: 'bank employee',                         page: 7,  quote: 'ミラーさん は ぎんこういんじゃ ありません' },
-  { key: 'i-shain',     ja: 'しゃいん',     romaji: 'shain',      en: 'company employee',                      page: 11, quote: 'Kimsan wa SUMSUNG no shain desu' },
+  { key: 'i-san',       ja: 'さん',         romaji: 'san',        en: 'Mr. / Ms. (never used about yourself)', script: 'hiragana', page: 2,  quote: 'Name + さん san ＝Mr. Ms.' },
+  { key: 'i-nihonjin',  ja: 'にほんじん',   romaji: 'nihonjin',   en: 'Japanese person',                       script: 'hiragana', page: 1,  quote: 'Country + じん JIN ＝nationality' },
+  { key: 'i-sensei',    ja: 'せんせい',     romaji: 'sensei',     en: 'teacher',                               script: 'hiragana', page: 12, quote: 'Watashi wa sensei desu' },
+  { key: 'i-ginkouin',  ja: 'ぎんこういん', romaji: 'ginkōin',    en: 'bank employee',                         script: 'hiragana', page: 7,  quote: 'ミラーさん は ぎんこういんじゃ ありません' },
+  { key: 'i-shain',     ja: 'しゃいん',     romaji: 'shain',      en: 'company employee',                      script: 'hiragana', page: 11, quote: 'Kimsan wa SUMSUNG no shain desu' },
+];
+
+/* The katakana in this deck, which is entirely proper nouns. Separated because
+   it is what "romaji on katakana only" actually targets, and because a learner
+   at Lesson 1 typically reads hiragana comfortably and is still slow here. */
+export const katakanaTerms = [
+  { key: 'k-mira',   ja: 'ミラーさん',   romaji: 'Mirā-san',   en: 'Mr. Miller',  script: 'katakana', page: 7 },
+  { key: 'k-kim',    ja: 'キムさん',     romaji: 'Kim-san',    en: 'Mr. Kim',     script: 'katakana', page: 11 },
+  { key: 'k-sofia',  ja: 'ソフィアさん', romaji: 'Sofia-san',  en: 'Ms. Sofia',   script: 'katakana', page: 12 },
+  { key: 'k-kai',    ja: 'カイ',         romaji: 'Kai',        en: 'Kai',         script: 'katakana', page: 14 },
+  { key: 'k-doitsu', ja: 'ドイツ',       romaji: 'Doitsu',     en: 'Germany',     script: 'katakana', page: 1 },
 ];
 
 /* IRREGULARS: the expensive part. Their own bucket because the kind declares
    `emphasises: 'irregulars'`, and a generator that treats them as ordinary
    items under-drills them by construction. */
 export const irregulars = [
-  { key: 'x-1',  n: 1,  ja: 'いっさい',   romaji: 'issai',    expected: 'いちさい', note: 'いち loses its ち and doubles the s.', page: 13 },
-  { key: 'x-8',  n: 8,  ja: 'はっさい',   romaji: 'hassai',   expected: 'はちさい', note: 'はち loses its ち and doubles the s.', page: 13 },
-  { key: 'x-10', n: 10, ja: 'じゅっさい', romaji: 'jussai',   expected: 'じゅうさい', note: 'じゅう shortens before さい.',        page: 13 },
+  { key: 'x-1',  n: 1,  ja: 'いっさい',   romaji: 'issai',    expected: 'いちさい', note: 'いち loses its ち and doubles the s.', script: 'hiragana', page: 13 },
+  { key: 'x-8',  n: 8,  ja: 'はっさい',   romaji: 'hassai',   expected: 'はちさい', note: 'はち loses its ち and doubles the s.', script: 'hiragana', page: 13 },
+  { key: 'x-10', n: 10, ja: 'じゅっさい', romaji: 'jussai',   expected: 'じゅうさい', note: 'じゅう shortens before さい.',        script: 'hiragana', page: 13 },
 ];
 
 /* The seven that behave, kept so a drill can mix them in and so the learner
@@ -440,6 +472,6 @@ export const proposedHabit = {
 };
 
 export default {
-  source, detected, questions, rules, items, irregulars, regularAges,
+  source, detected, questions, rules, items, katakanaTerms, irregulars, regularAges,
   lessons, irregularDrill, proposedHabit,
 };
