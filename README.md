@@ -28,6 +28,18 @@ That gives a veto rule running in both directions: anything decorating the *envi
 fails "paper stays quiet," and anything leaving an *interaction* inert fails "objects must
 spring."
 
+## Where things are
+
+Three indexes, each rendered automatically when you open its folder. On GitHub you can also
+**press `t`** anywhere in the repo and type part of a filename rather than remembering a path.
+
+- **[`docs/`](docs/)** — design, architecture, and go-to-market. Grouped index with a
+  "looking for something specific?" list at the bottom.
+- **[`prototype/`](prototype/)** — what is live versus what is kept as reference, plus the code map.
+- **[`prototype/README-buildnotes.md`](prototype/README-buildnotes.md)** — the build contract. Read
+  before changing code.
+- **[`CLAUDE.md`](CLAUDE.md)** — the conventions that already hold here, collected in one place.
+
 ## What lives here
 
 - `docs/design-research-brief.md` — the evidence base: audit of the existing design system,
