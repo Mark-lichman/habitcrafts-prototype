@@ -504,7 +504,7 @@ export function bindSource(sourceId, opts = {}) {
   const p = {
     id: 'prc-' + Math.random().toString(36).slice(2, 9),
     sourceId,
-    title: source.title + ' — the practice',
+    title: source.title + ': the practice',
     author: source.author,
     code: null,
     status: 'draft',

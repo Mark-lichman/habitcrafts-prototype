@@ -84,7 +84,7 @@ function lesson(practice, l, n) {
             <p class="read-bridge__body t-body">
               ${already
                 ? 'You already crafted one from this lesson. You can make another.'
-                : 'Reading it is not the habit. Here is a starting point — change any of it.'}
+                : 'Reading it is not the habit. Here is a starting point. Change any of it.'}
             </p>
             <p class="prac-suggest">
               <span class="prac-suggest__behavior">${l.habitSuggestion.behavior}</span>
@@ -215,7 +215,7 @@ export function mount(root, params) {
       verdict.hidden = false;
       verdict.textContent = right
         ? 'That is the one.'
-        : 'Not quite — the passage above has it.';
+        : 'Not quite. The passage above has it.';
     }
   });
 

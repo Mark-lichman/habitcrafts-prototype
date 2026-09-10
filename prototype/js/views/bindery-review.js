@@ -295,7 +295,7 @@ export function mount(root, params) {
   on(root, 'click', '[data-regen]', (e, el) => {
     const id = el.getAttribute('data-regen');
     const extra = window.prompt(
-      'Guide this card only — leave blank to reuse the practice prompt:',
+      'Guide this card only. Leave blank to reuse the practice prompt:',
       practice.prompt || ''
     );
     if (extra === null) return;    /* cancelled */

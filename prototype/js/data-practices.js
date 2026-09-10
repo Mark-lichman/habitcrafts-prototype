@@ -69,7 +69,7 @@ export const sources = [
   },
   {
     id: 'src-northbeam',
-    title: 'Outcome-Led Discovery — the practitioner canon',
+    title: 'Outcome-Led Discovery: the practitioner canon',
     author: 'Northbeam Institute',
     kind: 'library',
     pages: 118,
@@ -108,14 +108,14 @@ const CORPORA = {
             minutes: 4,
             standfirst: 'Most work resets to zero every quarter. Find the part that does not.',
             body: [
-              'Almost everything on your list this week will be worth nothing in a year. That is not a criticism of the list — most work is maintenance, and maintenance is how the lights stay on. But somewhere in the same week there is usually one thing that accumulates: a relationship, a piece of writing, a system that will still be paying out long after you have forgotten building it.',
+              'Almost everything on your list this week will be worth nothing in a year. That is not a criticism of the list. Most work is maintenance, and maintenance is how the lights stay on. But somewhere in the same week there is usually one thing that accumulates: a relationship, a piece of writing, a system that will still be paying out long after you have forgotten building it.',
               'The trouble is that the compounding thing never looks urgent. It has no deadline, nobody is waiting on it, and it will still be there tomorrow. So it loses, every day, to things that are merely loud.',
               'The fix is not discipline. It is naming it. Once the compounding thing has a name you can put it somewhere in the day, and a thing with a place in the day stops competing with the noise.',
             ],
             sourceRef: {
-              chapter: 'Ch. 2 — The quarterly reset',
+              chapter: 'Ch. 2: The quarterly reset',
               page: 41,
-              quote: 'Ask of any task: if I did this every week for three years, what would exist at the end? For most of your week the honest answer is nothing, and that is fine — but not for all of it.',
+              quote: 'Ask of any task: if I did this every week for three years, what would exist at the end? For most of your week the honest answer is nothing, and that is fine, but not for all of it.',
             },
             checks: [
               {
@@ -143,11 +143,11 @@ const CORPORA = {
             standfirst: 'A recurring meeting is usually a decision nobody wanted to make.',
             body: [
               'Look at any calendar that has been running for two years and you will find meetings that exist because a decision was deferred once and the deferral got a recurrence rule.',
-              'They are cheap to create and almost impossible to kill, because killing one requires someone to make the decision that was avoided in the first place — and now with an audience.',
+              'They are cheap to create and almost impossible to kill, because killing one requires someone to make the decision that was avoided in the first place, and now with an audience.',
               'The practice is small: pick one recurring meeting a week and write down, in a sentence, the decision it is standing in for. You do not have to make the decision. Writing it down is usually enough to make the meeting look strange.',
             ],
             sourceRef: {
-              chapter: 'Ch. 3 — Deferred decisions accrue interest',
+              chapter: 'Ch. 3: Deferred decisions accrue interest',
               page: 63,
               quote: 'Every standing meeting is a monument to a decision somebody once declined to make.',
             },
@@ -181,7 +181,7 @@ const CORPORA = {
               'This is the same argument the habit literature makes about starting small, arriving from the other direction. Small is not a compromise on ambition. It is the fastest route to knowing whether the ambition was pointed at anything.',
             ],
             sourceRef: {
-              chapter: 'Ch. 5 — Information, not output',
+              chapter: 'Ch. 5: Information, not output',
               page: 98,
               quote: 'The elaborate version is comfortable precisely because it defers the moment you find out.',
             },
@@ -221,7 +221,7 @@ const CORPORA = {
               'Ten minutes, once a day, spent moving one answer from your head to the place it will be looked for, changes the shape of a year.',
             ],
             sourceRef: {
-              chapter: 'Ch. 7 — The findable answer',
+              chapter: 'Ch. 7: The findable answer',
               page: 141,
               quote: 'A document nobody can find is a document nobody wrote.',
             },
@@ -255,7 +255,7 @@ const CORPORA = {
               'Note the shape of that argument. It is the anchor rule from habit formation, applied to a calendar rather than a behaviour.',
             ],
             sourceRef: {
-              chapter: 'Ch. 8 — The undefended hour',
+              chapter: 'Ch. 8: The undefended hour',
               page: 166,
               quote: 'Anything you decide about daily, you will eventually decide against.',
             },
@@ -288,7 +288,7 @@ const CORPORA = {
               'Two minutes spent writing down where you got to and what you would do next is the cheapest thing in this book. It is also the thing that makes tomorrow morning start at full speed instead of spending twenty minutes reconstructing yesterday.',
             ],
             sourceRef: {
-              chapter: 'Ch. 9 — Handover to yourself',
+              chapter: 'Ch. 9: Handover to yourself',
               page: 189,
               quote: 'You are the next person, and you will not remember.',
             },
@@ -329,7 +329,7 @@ const CORPORA = {
               'The daily version of this is small: once a day, take one thing on your roadmap and write the outcome it is supposed to move. If you cannot, you have found the week’s most useful conversation.',
             ],
             sourceRef: {
-              chapter: 'Module 1 — Units of analysis',
+              chapter: 'Module 1: Units of analysis',
               page: 12,
               quote: 'Solutions churn. The job does not. Plan against the part that holds still.',
             },
@@ -358,12 +358,12 @@ const CORPORA = {
             minutes: 3,
             standfirst: '"Faster" is a feeling. "Minutes from intake to decision" is a target.',
             body: [
-              'Interviews fill up with adjectives — easier, faster, cleaner — and adjectives cannot be prioritised against each other because they have no units.',
+              'Interviews fill up with adjectives, easier, faster, cleaner, and adjectives cannot be prioritised against each other because they have no units.',
               'The discipline is to convert each one, in the room, into a direction and a measure. Not later, in the write-up, when the person is gone and you are guessing.',
               'One conversion a day is enough to change how you listen within a fortnight.',
             ],
             sourceRef: {
-              chapter: 'Module 2 — Statement structure',
+              chapter: 'Module 2: Statement structure',
               page: 34,
               quote: 'Direction, unit, object of control. An adjective is none of those.',
             },
@@ -389,11 +389,11 @@ const CORPORA = {
             standfirst: 'Importance and satisfaction are two axes. Opportunity lives in one corner.',
             body: [
               'The reason the method survives contact with a room full of stakeholders is that it replaces argument with a coordinate: how important is this outcome, and how satisfied are people with it today.',
-              'Both numbers come from the same people, on the same scale, which is what makes the corner meaningful — high importance, low satisfaction — rather than two separate opinions being compared by volume.',
+              'Both numbers come from the same people, on the same scale, which is what makes the corner meaningful, high importance and low satisfaction, rather than two separate opinions being compared by volume.',
               'The practice is to plot one outcome a day. Twenty in a month is a map.',
             ],
             sourceRef: {
-              chapter: 'Module 4 — The opportunity corner',
+              chapter: 'Module 4: The opportunity corner',
               page: 71,
               quote: 'You are not looking for the loudest complaint. You are looking for the widest gap.',
             },
@@ -505,15 +505,15 @@ export const SAMPLE_UPLOADS = [
     kind: 'pdf',
     pages: 246,
     corpus: 'longgame',
-    blurb: 'A behavioural business book — the shape of source E1 is built for.',
+    blurb: 'A behavioural business book. The shape of source E1 is built for.',
   },
   {
-    title: 'Outcome-Led Discovery — the practitioner canon',
+    title: 'Outcome-Led Discovery: the practitioner canon',
     author: 'Northbeam Institute',
     kind: 'library',
     pages: 118,
     corpus: 'northbeam',
-    blurb: 'A community’s method, licensed by its operator — the E2 shape.',
+    blurb: 'A community’s method, licensed by its operator. The E2 shape.',
   },
 ];
 
@@ -527,7 +527,7 @@ export const practices = [
   {
     id: 'prc-longgame',
     sourceId: 'src-longgame',
-    title: 'The Long Game — the practice',
+    title: 'The Long Game: the practice',
     author: 'R. Halloran',
     code: 'LONGGAME',
     status: 'published',
@@ -540,7 +540,7 @@ export const practices = [
   {
     id: 'prc-northbeam',
     sourceId: 'src-northbeam',
-    title: 'Outcome-Led Discovery — daily practice',
+    title: 'Outcome-Led Discovery: daily practice',
     author: 'Northbeam Institute',
     code: 'NORTHBEAM',
     status: 'published',
@@ -626,7 +626,7 @@ export const spaces = [
     seats: 0,
     joined: false,
     roster: 'csv',
-    plan: 'Invited — not joined',
+    plan: 'Invited, not joined',
     cohort: [],
   },
 ];

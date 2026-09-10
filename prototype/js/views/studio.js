@@ -69,7 +69,7 @@ function chart(series) {
       </svg>
       <figcaption class="t-body-sm t-muted">
         Take rate by the week a reader joined. Readers who have not yet reached
-        day 14 are not counted — a practice published last week would otherwise
+        day 14 are not counted. A practice published last week would otherwise
         report near zero on launch day.
       </figcaption>
     </figure>`;
@@ -141,7 +141,7 @@ function draftRow(p) {
         <span class="t-label draft-flag">Draft</span>
         <span class="t-h3">${p.title}</span>
         <span class="t-body-sm t-muted">
-          ${ready ? 'Every week read — ready to publish' : 'Unread weeks remain'}
+          ${ready ? 'Every week read, ready to publish' : 'Unread weeks remain'}
         </span>
         ${icon('chev-right', 'icon--sm')}
       </a>
