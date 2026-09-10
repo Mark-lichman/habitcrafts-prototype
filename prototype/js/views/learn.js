@@ -131,8 +131,8 @@ function stepFound() {
          a confident, wrong practice. Saying so is a moment of earned trust. -->
     <p class="t-body-lg t-muted" style="max-inline-size:54ch">
       Your pages are scans, so we read them as images. The text layer is only
-      the annotations over the top — ${JA.source.ingest.textLayerChars}
-      characters across ${JA.source.pages} pages — and building from that alone
+      the annotations over the top: ${JA.source.ingest.textLayerChars}
+      characters across ${JA.source.pages} pages. Building from that alone
       would have produced something confident and wrong.
     </p>
 
@@ -150,8 +150,8 @@ function stepFound() {
 
       <p class="t-label" style="margin-block-start:var(--space-16)">What it changes</p>
       <p class="t-body t-muted">
-        Checks will be ${k.exercises.map((x) => EXERCISES[x].label.toLowerCase()).join(', ')} —
-        making the form, not picking it from a list. ${k.cadence.blurb}
+        Checks will be ${k.exercises.map((x) => EXERCISES[x].label.toLowerCase()).join(', ')}.
+        Making the form, not picking it from a list. ${k.cadence.blurb}
       </p>
 
       <!-- Detection is allowed to be wrong. It is not allowed to be wrong
@@ -231,7 +231,7 @@ function stepQuestions() {
             const n = (answers[q.id] || []).length;
             return html`<p class="t-body t-muted" style="margin-block-start:var(--space-8)">
               ${n ? `${n} of ${q.options.length} dropped from drilling, kept for review.`
-                  : 'Nothing ticked — everything gets drilled.'}
+                  : 'Nothing ticked, so everything gets drilled.'}
             </p>`;
           }
           const sel = q.options.find((o) => (answers[q.id] ? o.id === answers[q.id] : o.default));
@@ -255,7 +255,7 @@ function stepLessons() {
     <h1 class="t-h1">Your lessons</h1>
     <p class="t-body-lg t-muted" style="max-inline-size:52ch">
       ${JA.lessons.length} lessons and one drill, ${total} minutes in total.
-      Ordered by what depends on what — your deck introduces nationality before
+      Ordered by what depends on what. Your deck introduces nationality before
       the sentence that uses it, so we moved the frame first.
     </p>
 

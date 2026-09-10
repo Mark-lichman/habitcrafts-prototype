@@ -26,7 +26,7 @@
 
 export const source = {
   id: 'src-minna-1',
-  title: 'みんなの日本語 — 第1課',
+  title: 'みんなの日本語 第1課',
   subtitle: 'Minna no Nihongo, Lesson 1',
   author: 'Class deck',
   kind: 'pdf',
@@ -57,8 +57,8 @@ export const detected = {
   confidence: 'high',
   evidence: [
     'Title matches a numbered lesson unit (第1課)',
-    '22 mapping marks (→ and ＝) across the deck — a drill sheet, not prose',
-    'A closed term list with a counter series (1–10)',
+    '22 mapping marks (→ and ＝) across the deck. A drill sheet, not prose',
+    'A closed term list with a counter series (1 to 10)',
     'Slides pair a picture with a sentence, which is a describe-the-image drill',
   ],
   rejected: [
@@ -101,11 +101,11 @@ export const questions = [
       { id: 'none', label: 'No romaji',
         consequence: 'Hiragana and katakana only. Harder now, faster later.' },
       { id: 'katakana-only', label: 'On katakana only',
-        consequence: 'Romaji under the foreign names (ミラーさん, ドイツ) and nothing else — the usual gap at this stage.', default: true },
+        consequence: 'Romaji under the foreign names (ミラーさん, ドイツ) and nothing else. That is the usual gap at this stage.', default: true },
       { id: 'all', label: 'On everything',
         consequence: 'Romaji under every Japanese line, hiragana included.' },
       { id: 'romaji-only', label: 'Romaji instead',
-        consequence: 'No Japanese script at all. Speaking practice only — reading will not develop.' },
+        consequence: 'No Japanese script at all. Speaking practice only. Reading will not develop.' },
     ],
   },
   {
@@ -151,7 +151,7 @@ export const questions = [
       { id: 'self',    label: 'No class',        consequence: 'Even load across the week. Nothing to prepare for or revise.', default: true },
       { id: 'class-1', label: 'Once a week',     consequence: 'Heavier the day before, light the day after.' },
       { id: 'class-2', label: 'Twice a week',    consequence: 'Two short prep days and two light revision days. The gap between classes is where the drill goes.' },
-      { id: 'class-3', label: 'Three or more',   consequence: 'Revision only — the class is already carrying the new material.' },
+      { id: 'class-3', label: 'Three or more',   consequence: 'Revision only. The class is already carrying the new material.' },
       { id: 'class-daily', label: 'Daily / intensive', consequence: 'Consolidation only, kept under five minutes. You do not need more input.' },
     ],
   },
@@ -162,7 +162,7 @@ export const questions = [
        a practice gets abandoned in week two. */
     id: 'q-duration',
     ask: 'How long do you want to practise each day?',
-    why: 'This is a budget, not a target. Everything above is cut to fit it — fewer cards per session, not a longer backlog.',
+    why: 'This is a budget, not a target. Everything above is cut to fit it: fewer cards per session, not a longer backlog.',
     affects: 'How much of the corpus appears in any one session',
     options: [
       /* Below the shortest lesson (3 min) on purpose. At two minutes you get
@@ -200,7 +200,7 @@ export const rules = [
     name: 'X is not Y',
     frame: 'N1 は N2 じゃ ありません',
     romaji: 'N1 wa N2 ja arimasen',
-    gloss: 'The negative of です. Replaces です entirely — it is not added to it.',
+    gloss: 'The negative of です. Replaces です entirely. It is not added to it.',
     example: { ja: 'やまださん は にほんじん じゃ ありません', romaji: 'Yamada-san wa nihonjin ja arimasen', en: 'Ms. Yamada is not Japanese.' },
     page: 5,
     quote: 'やまださん は にほんじんじゃ ありません',
@@ -211,7 +211,7 @@ export const rules = [
     name: 'Is X Y?',
     frame: 'N1 は N2 ですか',
     romaji: 'N1 wa N2 desu ka',
-    gloss: 'Add か to the end. Word order does not change — nothing moves.',
+    gloss: 'Add か to the end. Word order does not change. Nothing moves.',
     example: { ja: 'やまださん は にほんじん ですか', romaji: 'Yamada-san wa nihonjin desu ka', en: 'Is Ms. Yamada Japanese?' },
     page: 9,
     quote: 'ヤマダさん は にほんじん ですか。',
@@ -252,7 +252,7 @@ export const rules = [
     name: 'Saying an age',
     frame: 'Number + さい',
     romaji: 'Number + sai',
-    gloss: 'Attach さい to the number. Three of the first ten change sound — see the irregulars.',
+    gloss: 'Attach さい to the number. Three of the first ten change sound. See the irregulars.',
     example: { ja: 'カイ は さんさい です', romaji: 'Kai wa san-sai desu', en: 'Kai is three years old.' },
     page: 14,
     quote: 'kai wa san sai desu  Year old',
@@ -369,10 +369,10 @@ export const lessons = [
     minutes: 3,
     rules: ['r-question'],
     items: [],
-    standfirst: 'か on the end. Nothing else changes — and that is the surprising part.',
+    standfirst: 'か on the end. Nothing else changes, and that is the surprising part.',
     body: [
       'English reorders to ask a question. Japanese does not: the statement stays intact and か is added. There is no inversion to remember and no auxiliary to find.',
-      'Because nothing moves, the question form is the cheapest thing in Lesson 1 to make automatic — which makes it the fastest route to an actual exchange with somebody.',
+      'Because nothing moves, the question form is the cheapest thing in Lesson 1 to make automatic, which makes it the fastest route to an actual exchange with somebody.',
     ],
     exercises: [
       { type: 'transform', prompt: 'Make a question: やまださん は にほんじん です', answer: 'やまださん は にほんじん ですか', romaji: 'Yamada-san wa nihonjin desu ka', page: 9 },
@@ -392,7 +392,7 @@ export const lessons = [
     minutes: 4,
     rules: ['r-affiliation', 'r-also'],
     items: ['i-shain', 'i-sensei'],
-    standfirst: 'の narrows a noun. も replaces は — it does not join it.',
+    standfirst: 'の narrows a noun. も replaces は. It does not join it.',
     body: [
       'の puts one noun in front of another to narrow it: the company, then the employee. Once it is there, any noun can be specified by another noun, which is a large amount of new expressive range for one character.',
       'も is the first particle that displaces another. Learners keep は and add も, producing さん は も, because in English "too" is an addition rather than a substitution.',
@@ -401,7 +401,7 @@ export const lessons = [
       { type: 'produce',   prompt: 'Say: "Mr. Kim is a SAMSUNG employee."', answer: 'キムさん は SAMSUNG の しゃいん です', romaji: 'Kim-san wa SAMSUNG no shain desu', page: 11 },
       /* The picture drill the deck is actually built on: slide 11 is a photo
          of Mr. Kim with no sentence under it. The image is the prompt. */
-      { type: 'describe',  prompt: 'Slide 11 — describe this person in one sentence.', image: 'p11', answer: 'キムさん は SAMSUNG の しゃいん です', romaji: 'Kim-san wa SAMSUNG no shain desu', page: 11 },
+      { type: 'describe',  prompt: 'Slide 11: describe this person in one sentence.', image: 'p11', answer: 'キムさん は SAMSUNG の しゃいん です', romaji: 'Kim-san wa SAMSUNG no shain desu', page: 11 },
       { type: 'discern',   prompt: 'Ms. Sofia is a teacher as well. Which is right?', options: ['ソフィアさん は も せんせい です', 'ソフィアさん も せんせい です'], answer: 1, because: 'も takes the place of は.', page: 12 },
       { type: 'transform', prompt: 'わたし は せんせい です → say that Sofia is one too', answer: 'ソフィアさん も せんせい です', romaji: 'Sofia-san mo sensei desu', page: 12 },
     ],
@@ -429,7 +429,7 @@ export const lessons = [
       { type: 'produce',   prompt: 'Say: "Kai is three years old."', answer: 'カイ は さんさい です', romaji: 'Kai wa san-sai desu', page: 14 },
       { type: 'recall',    prompt: 'How do you say eight years old?', answer: 'はっさい', romaji: 'hassai', page: 13 },
       { type: 'discern',   prompt: 'Which is the real form for 10?', options: ['じゅうさい', 'じゅっさい'], answer: 1, because: 'じゅう shortens to じゅっ before さい.', page: 13 },
-      { type: 'recall',    prompt: 'Which three of 1–10 are irregular?', answer: '1, 8 and 10', page: 13 },
+      { type: 'recall',    prompt: 'Which three of 1 to 10 are irregular?', answer: '1, 8 and 10', page: 13 },
     ],
     habitSuggestion: {
       behavior: 'Say the ages of three people I know, including one irregular',

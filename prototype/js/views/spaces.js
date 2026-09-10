@@ -146,7 +146,7 @@ function invitation(space) {
         <span class="t-label">${space.operator}</span>
         <span class="t-h3">${space.name}</span>
         <span class="t-body-sm t-muted">
-          Invited by email. No account to make — the link is the login.
+          Invited by email. No account to make. The link is the login.
         </span>
       </span>
       <button class="btn btn--primary btn--sm" type="button" data-join-space="${space.id}">
@@ -177,7 +177,7 @@ function frontDoor(invited) {
       <h2 id="door-h" class="t-h3">Join your community</h2>
       <p class="t-body space-door__lede">
         The method you already learned, turned into something that shows up on a
-        Tuesday. Your community sends the link — there is no account to make.
+        Tuesday. Your community sends the link. There is no account to make.
       </p>
 
       ${invited.length ? html`

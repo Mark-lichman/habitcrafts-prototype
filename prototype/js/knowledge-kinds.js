@@ -169,7 +169,7 @@ export function detect(text, meta) {
   const arrows = (hay.match(/[→＝=]/g) || []).length;
   if (arrows >= 5) {
     id = 'language';
-    evidence.push(`${arrows} mapping marks (→ or ＝) — a drill sheet rather than prose`);
+    evidence.push(`${arrows} mapping marks (→ or ＝). A drill sheet rather than prose`);
   }
 
   if (!evidence.length) evidence.push('Continuous prose with no drill or step structure');

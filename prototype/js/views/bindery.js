@@ -156,7 +156,7 @@ const OUTPUTS = [
   {
     key: 'habits',
     label: 'Habits',
-    help: 'A suggested daily behaviour per lesson — the only output that reaches the habit layer.',
+    help: 'A suggested daily behaviour per lesson. The only output that reaches the habit layer.',
   },
 ];
 
@@ -209,7 +209,7 @@ function stepOptions() {
           <textarea class="textarea" id="bind-prompt" rows="3" data-prompt
                     placeholder="Keep the language for a team-lead audience, one habit per chapter, no meditation.">${draft.prompt}</textarea>
           <p class="field__help t-body-sm">
-            This changes the output, not just the tone — it sets the angle carried on
+            This changes the output, not just the tone. It sets the angle carried on
             every card, and it can anchor the suggested habits to a time of day.
           </p>
         </div>
@@ -294,7 +294,7 @@ function wall() {
         <h1 class="bind-wall__title">Your first practice is free. This is your second.</h1>
         <p class="bind-wall__body t-body">
           Checking in, streaks, progress and everything you have already built stay
-          free forever — this wall is on turning new sources into practices, and
+          free forever. This wall is on turning new sources into practices, and
           nowhere near the ring.
         </p>
         <p class="bind-wall__price">$6.99<span class="t-body-sm">/month</span>
