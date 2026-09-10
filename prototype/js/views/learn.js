@@ -45,6 +45,7 @@ let practice = {};      /* lessonKey -> reading is put away, exercises showing *
 let anchors = {};       /* lessonKey -> { on, prompt, time } */
 let covered = null;     /* which lessons the one reminder covers; null = all */
 let logged = {};        /* lessonKey -> this visit's completion already counted */
+let appliedKey = null;  /* the deep-link key already consumed, so it applies once */
 let created = [];       /* habit ids, once the bridge has fired */
 
 export function resetFlow() {
@@ -65,12 +66,17 @@ function isChosen(q, o) {
   return a === o.id || (a === undefined && !!o.default);
 }
 
+/* NEVER INTERPOLATE AN ATTRIBUTE. `html` escapes every value it substitutes,
+   so `${cond ? 'aria-current="step"' : ''}` renders the quotes as &quot; and
+   the whole thing lands as TEXT inside the element. The stepper had no
+   aria-current at all: no current step for a screen reader, and no hook for
+   the styling that marks where you are. Branch on the whole tag instead. */
 function stepper(n) {
   return html`
     <ol class="bind-steps" aria-label="Progress">
-      ${STEPS.map((label, i) => html`
-        <li class="${cls('bind-steps__step', i + 1 < n && 'is-done')}"
-            ${i + 1 === n ? 'aria-current="step"' : ''}>${label}</li>`)}
+      ${STEPS.map((label, i) => (i + 1 === n
+        ? html`<li class="bind-steps__step is-current" aria-current="step">${label}</li>`
+        : html`<li class="${cls('bind-steps__step', i + 1 < n && 'is-done')}">${label}</li>`))}
     </ol>`;
 }
 
@@ -582,10 +588,17 @@ const RENDERERS = [stepUpload, stepFound, stepQuestions, stepLessons, stepWhen];
 export function render(params) {
   /* Deep link: /learn/<lessonKey> opens that lesson directly. The reminder
      uses it, and so does the Library, so neither has to replay the flow. */
-  if (params && params.key && JA.lessons.some((l) => l.key === params.key)) {
+  const key = params && params.key;
+  /* Applied ONCE per arrival, not on every render. render() runs again after
+     every click, so re-reading the param each time meant closing the lesson
+     set openLesson to null and the next render put it straight back - the
+     back button looked dead while working perfectly. */
+  if (key && key !== appliedKey && JA.lessons.some((l) => l.key === key)) {
     step = 4;
-    openLesson = params.key;
+    openLesson = key;
+    appliedKey = key;
   }
+  if (!key) appliedKey = null;
   return String(html`
     <div class="page">
       ${stepper(step)}
@@ -630,7 +643,14 @@ export function mount(root) {
   });
   on(root, 'click', '[data-close-lesson]', () => {
     openLesson = null;
-    router.refresh();
+    /* Arrived by deep link? Leave the keyed route, or the URL still names a
+       lesson and a reload would reopen it. Otherwise a refresh is enough.
+
+       appliedKey is NOT cleared here on purpose: it is cleared by render()
+       once a keyless route arrives. Clearing it now would let a render that
+       still carries the old param re-open the lesson we are closing. */
+    if (router.current() !== '/learn') router.go('/learn');
+    else router.refresh();
   });
   on(root, 'click', '[data-practise]', (e, el) => {
     practice[el.getAttribute('data-practise')] = true;
