@@ -79,6 +79,7 @@ const ROUTES = [
      Keeping the table constant means a link into an experiment surface always
      resolves — it explains itself instead of silently falling back to Home,
      which is what a route table that changed shape would do. */
+  { path: '/learn',              load: () => import('./views/learn.js') },
   { path: '/bindery',            load: () => import('./views/bindery.js') },
   { path: '/bindery/:id/review', load: () => import('./views/bindery-review.js') },
   { path: '/practice/:id',       load: () => import('./views/practice.js') },

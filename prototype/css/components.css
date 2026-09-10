@@ -1261,6 +1261,30 @@ button.chip[aria-pressed="true"] { background: var(--c-brand-100); color: var(--
 .app-shell[data-chrome="none"] { padding: 0; }
 
 
+/* ---------------------------------------------------------------------------
+   JAPANESE (and any CJK run) inside Latin body text.
+
+   The type ramp is set for Latin. At --fs-body (15px) the kana are genuinely
+   hard to tell apart - the difference between the small tsu in issai and a
+   full-size one is sub-pixel at that size, and the whole point of the language
+   kind is that the learner reads the form exactly. So CJK takes a step up and
+   more leading, expressed in `em` so it tracks whatever it is nested in rather
+   than fighting it.
+
+   Not a new type scale. A correction applied to one script.
+--------------------------------------------------------------------------- */
+.ja {
+  font-size: 1.2em;
+  line-height: 1.8;
+  letter-spacing: 0.03em;
+  font-feature-settings: "palt" 1;   /* proportional kana spacing where present */
+}
+
+/* Inside a run of body text the step-up would push the line box around; take
+   the size but keep the parent's leading. */
+.t-body .ja,
+.t-body-sm .ja { line-height: inherit; }
+
 /* ############################################################################
    20. PROTOTYPE-ONLY CHROME
    The reviewer's control bar (theme, hour simulation, motion). Not part of the
