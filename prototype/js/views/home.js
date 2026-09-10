@@ -44,9 +44,11 @@
    wants the re-render.
    ========================================================================= */
 
+import * as router from '../router.js';
 import * as store from '../store.js';
 import { longDate, today, WEEKDAY, MONTH, todaysLessonId } from '../data.js';
 import { html, icon, cls, plural, on, restoreRings } from '../ui.js';
+import { dueLessons, sinceLabel, studyHabits } from '../study.js';
 
 export const meta = {
   title: 'Today',
@@ -222,6 +224,69 @@ function doneState(total) {
    RENDER
 -------------------------------------------------------------------------- */
 
+/* Which reminder is on screen. View-local: a fired reminder is a moment, not
+   state worth persisting, and it must not survive a reload. */
+let firedReminder = null;
+
+/* ---------------------------------------------------------------------------
+   THE REMINDER, AS IT WOULD ARRIVE.
+
+   A mock of the notification: what it says, what it offers, and what it knows
+   about you. The three lines under each lesson are the point - a reminder that
+   cannot say "you have not touched this in nine days, and you have run it
+   three times" is just an alarm, and an alarm gets dismissed.
+
+   Ordered by neglect (see study.js), so the lesson you keep skipping is the
+   one at the top rather than the one you already know.
+--------------------------------------------------------------------------- */
+function reminderSheet() {
+  if (!firedReminder) return '';
+  const h = store.habitById(firedReminder);
+  if (!h) return '';
+  const due = dueLessons(h);
+
+  return html`
+    <div class="rem-scrim" data-close-reminder></div>
+    <section class="rem-sheet card card--roomy" role="dialog" aria-modal="true"
+             aria-labelledby="rem-h">
+      <div class="section-head">
+        <div>
+          <p class="t-label t-muted">Reminder · ${h.time}</p>
+          <h2 id="rem-h" class="t-h2">${h.behavior}</h2>
+        </div>
+        <button class="icon-btn" type="button" data-close-reminder aria-label="Dismiss">
+          ${icon('close')}
+        </button>
+      </div>
+      <p class="t-body t-muted">${h.prompt}</p>
+
+      <p class="t-label" style="margin-block-start:var(--space-24)">
+        Pick one. ${due.length} in this practice.
+      </p>
+      <ul class="u-stack" style="gap:var(--space-8);margin-block-start:var(--space-8)">
+        ${due.map((l) => html`
+          <li>
+            <a class="card card--interactive" href="#/learn/${l.key}"
+               style="display:block" data-close-reminder>
+              <div class="section-head">
+                <span class="t-body"><strong>${l.n}. ${l.title}</strong></span>
+                <span class="t-body-sm t-muted">${l.minutes} min</span>
+              </div>
+              <p class="t-body-sm t-muted">
+                ${l.stat.count
+                  ? 'Practised ' + plural(l.stat.count, 'time') + ' · last ' + sinceLabel(l.stat.lastAt)
+                  : 'Never practised'}
+              </p>
+            </a>
+          </li>`)}
+      </ul>
+
+      <div class="u-row" style="gap:var(--space-12);margin-block-start:var(--space-24)">
+        <button class="btn btn--ghost" type="button" data-close-reminder>Not now</button>
+      </div>
+    </section>`;
+}
+
 export function render() {
   const due = store.todayHabits();
   const anyHabits = store.activeHabits().length > 0;
@@ -239,6 +304,7 @@ export function render() {
 
   return String(html`
     <div class="page">
+      ${reminderSheet()}
     <!-- THE GREETING BLOCK — the hero on mobile. [D §3.1]
          data-greeting + data-name hand the copy to HC: it picks morning /
          afternoon / evening from the simulated hour, and crossfades to the
@@ -333,6 +399,16 @@ export function render() {
             <h2 id="next-h" class="t-label t-muted">Next reminder</h2>
             <p class="t-body" style="margin-block-start:var(--space-4)">${next.behavior}</p>
             <p class="t-body-sm t-muted">${next.prompt} · around ${next.time}</p>
+            ${studyHabits().length ? html`
+              <!-- Firing is offered for the STUDY habit, not for whichever
+                   habit happens to be next. The two are usually different, and
+                   gating on next.lessons meant the control vanished whenever
+                   an ordinary habit sorted earlier. -->
+              <button class="btn btn--ghost btn--sm" type="button"
+                      data-fire-reminder="${studyHabits()[0].id}"
+                      style="margin-block-start:var(--space-12)">
+                Show me my practice reminder
+              </button>` : ''}
           </section>` : ''}
       </aside>
 
@@ -365,6 +441,15 @@ export function render() {
 -------------------------------------------------------------------------- */
 
 export function mount(root) {
+  on(root, 'click', '[data-fire-reminder]', (e, el) => {
+    firedReminder = el.getAttribute('data-fire-reminder');
+    router.refresh();
+  });
+  on(root, 'click', '[data-close-reminder]', () => {
+    firedReminder = null;
+    router.refresh();
+  });
+
   /* 1. Re-paint any card that rendered already-complete. See ui.js for why
         this has to happen after HC.init rather than in the markup. This is what
         makes a check-in survive a trip to Progress and back. */

@@ -32,8 +32,16 @@ export const source = {
   kind: 'pdf',
   filename: '_みん日_第1課.pdf',
   pages: 14,
-  addedAt: null,          /* set at upload time */
+  addedAt: '2026-09-08',
   rightsConfirmed: true,
+
+  /* How a source is FOUND again, months later, when the flow that made it is a
+     distant memory. A filename is not a label - _みん日_第1課.pdf tells you
+     nothing at a glance unless you already know. Date says when it entered;
+     subject and unit say what it is; topics say what is inside it. */
+  subject: 'Japanese',
+  unit: 'Lesson 1',
+  topics: ['Identity sentence', 'Negatives', 'Questions', 'Affiliation', 'Age counter'],
   blurb: 'A 14-page class slide deck: the identity sentence, its negative and question forms, affiliation, "also", and the age counter.',
 
   /* What extraction had to cope with. Surfaced in the UI because it is the

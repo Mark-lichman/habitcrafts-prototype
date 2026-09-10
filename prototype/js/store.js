@@ -176,6 +176,11 @@ export function createHabit(fields = {}) {
     category: fields.category || 'c-health',
     archived: false,
     history: [],
+    /* A habit made from a source carries what it covers, so the reminder can
+       offer a lesson instead of only a sentence, and the Library can show what
+       a source actually produced. Empty for a hand-made habit. */
+    lessons: fields.lessons || [],
+    sourceId: fields.sourceId || null,
   };
   state.habits.push(h);
   commit({ type: 'create', id: h.id, origin: fields.origin || 'app' });
@@ -223,6 +228,56 @@ export function markLessonRead(id) {
 export function acceptInvitation(id) {
   state.invitations = state.invitations.filter((i) => i.id !== id);
   commit({ type: 'invitation', id });
+}
+
+/* --------------------------------------------------------------------------
+   STUDY LOG — how many times a lesson has been practised, and when last.
+
+   Kept in the store rather than in the view because three screens need it and
+   none of them owns it: the reminder decides what to offer next, the Library
+   shows what a source has actually produced, and the lesson itself shows
+   whether you have been here before.
+
+   REPETITION IS THE POINT. A lesson opened once is a lesson read; a lesson
+   opened eleven times over three weeks is a lesson learned, and the difference
+   is invisible without a count. `lastAt` is what makes "you have not touched
+   this in nine days" possible, which is the only honest thing a reminder can
+   say.
+
+   Lazily created so an existing saved state gains the key without a migration,
+   the same reason hydrate() shallow-merges.
+-------------------------------------------------------------------------- */
+
+function studyLog() {
+  if (!state.study) state.study = {};
+  return state.study;
+}
+
+/** Every recorded run of one lesson: { count, lastAt, history[] }. */
+export function lessonStat(key) {
+  return studyLog()[key] || { count: 0, lastAt: null, history: [] };
+}
+
+/** Record a completed run. Called when a lesson's exercises are all marked. */
+export function completeLesson(key) {
+  const log = studyLog();
+  const cur = log[key] || { count: 0, lastAt: null, history: [] };
+  const when = iso(today());
+  cur.count += 1;
+  cur.lastAt = when;
+  cur.history = (cur.history || []).concat(when);
+  log[key] = cur;
+  commit({ type: 'lesson-complete', id: key });
+  return cur;
+}
+
+/** Whole-corpus view, for the Library card and the reminder's summary. */
+export function studySummary(keys) {
+  const stats = keys.map((k) => lessonStat(k));
+  const runs = stats.reduce((n, s) => n + s.count, 0);
+  const started = stats.filter((s) => s.count > 0).length;
+  const last = stats.map((s) => s.lastAt).filter(Boolean).sort().pop() || null;
+  return { runs, started, of: keys.length, lastAt: last };
 }
 
 /* Theme and motion live in HC (it owns the <html> attributes and the

@@ -1273,6 +1273,40 @@ button.chip[aria-pressed="true"] { background: var(--c-brand-100); color: var(--
 
    Not a new type scale. A correction applied to one script.
 --------------------------------------------------------------------------- */
+/* ---------------------------------------------------------------------------
+   THE FIRED REMINDER - a mock of the notification, shown over the app.
+
+   Deliberately a sheet rather than a toast: a toast can only carry one line,
+   and the whole argument for this reminder is that it carries three per lesson
+   (what it is, how often you have run it, how long since). A toast would have
+   forced the design back into being an alarm.
+--------------------------------------------------------------------------- */
+.rem-scrim {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--c-ink) 42%, transparent);
+  z-index: 40;
+}
+
+.rem-sheet {
+  position: fixed;
+  z-index: 41;
+  inset-block-end: 0;
+  inset-inline: 0;
+  max-block-size: 82vh;
+  overflow-y: auto;
+}
+
+/* From the rail up it stops being a phone sheet and becomes a panel, centred
+   in the window rather than pinned to the bottom of it. */
+@media (min-width: 600px) {
+  .rem-sheet {
+    inset: 50% auto auto 50%;
+    translate: -50% -50%;
+    inline-size: min(52ch, calc(100vw - var(--space-48)));
+  }
+}
+
 .ja {
   font-size: 1.2em;
   line-height: 1.8;

@@ -18,6 +18,7 @@
    ========================================================================= */
 
 import * as store from '../store.js';
+import { allSources, corpusFor, sourceProgress, sinceLabel } from '../study.js';
 import { flag } from '../config.js';
 import { todaysLessonId } from '../data.js';
 import { html, icon, cls, plural, on, raw } from '../ui.js';
@@ -175,6 +176,74 @@ function emptyLibrary() {
    they are reading, and both can join someone else's with a code.
 -------------------------------------------------------------------------- */
 
+/* ---------------------------------------------------------------------------
+   WHAT YOU UPLOADED.
+
+   A source has to be findable months later, by someone who has forgotten the
+   flow that made it. A filename does not do that - _みん日_第1課.pdf means
+   nothing at a glance unless you already know. So each one is labelled with
+   the date it came in, its subject and unit, and what is actually inside it,
+   and it carries how much of it you have practised.
+
+   This is the answer to "I do not want to walk the whole flow again to reach
+   lesson 3": the lessons are here, permanently, one tap from the shelf.
+--------------------------------------------------------------------------- */
+function uploadsBand() {
+  const sources = allSources();
+  if (!sources.length) return '';
+
+  return html`
+    <section aria-labelledby="uploads-h" style="margin-block-start:var(--space-32)">
+      <h2 id="uploads-h" class="section-head t-label">What you uploaded</h2>
+
+      ${sources.map((src) => {
+        const c = corpusFor(src.id);
+        const p = sourceProgress(src.id);
+        return html`
+          <article class="card card--roomy" style="margin-block-start:var(--space-12)">
+            <div class="section-head">
+              <div>
+                <h3 class="t-h3">${src.subject} · ${src.unit}</h3>
+                <p class="t-body-sm t-muted">
+                  ${src.filename} · ${src.pages} pages · added ${src.addedAt}
+                </p>
+              </div>
+              <span class="chip">${p.runs ? plural(p.runs, 'run') : 'not started'}</span>
+            </div>
+
+            <div class="u-row" style="gap:var(--space-8);flex-wrap:wrap;margin-block-start:var(--space-12)">
+              ${(src.topics || []).map((t) => html`<span class="chip chip--sm">${t}</span>`)}
+            </div>
+
+            <p class="t-body t-muted" style="margin-block-start:var(--space-12)">
+              ${p.started} of ${p.of} lessons started${p.lastAt ? ' · last practised ' + sinceLabel(p.lastAt) : ''}
+            </p>
+
+            <p class="t-label" style="margin-block-start:var(--space-16)">Lessons</p>
+            <ul class="u-stack" style="gap:var(--space-8)">
+              ${c.lessons.map((l) => {
+                const st = store.lessonStat(l.key);
+                return html`
+                  <li>
+                    <a class="card card--interactive" href="#/learn/${l.key}" style="display:block">
+                      <div class="section-head">
+                        <span class="t-body"><strong>${l.n}. ${l.title}</strong></span>
+                        <span class="t-body-sm t-muted">${l.minutes} min</span>
+                      </div>
+                      <p class="t-body-sm t-muted">
+                        ${st.count
+                          ? 'Practised ' + plural(st.count, 'time') + ' · last ' + sinceLabel(st.lastAt)
+                          : 'Never practised'}
+                      </p>
+                    </a>
+                  </li>`;
+              })}
+            </ul>
+          </article>`;
+      })}
+    </section>`;
+}
+
 function practiceBand() {
   const mine = store.publishedPractices().filter((p) => store.hasJoined(p.id));
   const drafts = store.draftPractices();
@@ -305,6 +374,7 @@ export function render() {
            sees the Library exactly as it was, and a shipping configuration
            that keeps the Bindery keeps this with no edit. [#5] -->
       ${flag('bindery') ? practiceBand() : ''}
+      ${uploadsBand()}
 
       <div class="segmented" role="tablist" aria-label="Library sections" data-tabs
            style="margin-block:var(--space-24)">
