@@ -271,6 +271,51 @@ export function completeLesson(key) {
   return cur;
 }
 
+/* --------------------------------------------------------------------------
+   FINISHING A PRACTICE
+
+   A practice has to be able to END. Without this the Library only ever grows,
+   every reminder ever set keeps firing, and the shelf becomes a graveyard you
+   have to read past to reach the thing you are studying now.
+
+   WHAT FINISHING DOES, AND WHAT IT DELIBERATELY DOES NOT:
+   it archives the HABITS built from the source, so the reminders stop. It does
+   NOT delete the lessons or the study log. "I ran lesson 5 eleven times over
+   three weeks" is the most valuable thing this app knows about you, and losing
+   it because you tidied up would be the worst possible trade. The source moves
+   to a finished shelf with its record intact, and can be reopened.
+-------------------------------------------------------------------------- */
+
+function finishedMap() {
+  if (!state.finishedSources) state.finishedSources = {};
+  return state.finishedSources;
+}
+
+export function isSourceFinished(sourceId) {
+  return !!finishedMap()[sourceId];
+}
+
+export function finishedAt(sourceId) {
+  return finishedMap()[sourceId] || null;
+}
+
+/** Archive every habit built from this source and shelve it. Returns how many
+    reminders were stopped, so the UI can say it rather than guess. */
+export function finishSource(sourceId) {
+  const hit = state.habits.filter((h) => h.sourceId === sourceId && !h.archived);
+  hit.forEach((h) => { h.archived = true; });
+  finishedMap()[sourceId] = iso(today());
+  commit({ type: 'source-finish', id: sourceId });
+  return hit.length;
+}
+
+/** Put it back on the active shelf. The habits stay archived: restarting a
+    practice should be a deliberate act, not a side effect of un-tidying. */
+export function reopenSource(sourceId) {
+  delete finishedMap()[sourceId];
+  commit({ type: 'source-reopen', id: sourceId });
+}
+
 /** Whole-corpus view, for the Library card and the reminder's summary. */
 export function studySummary(keys) {
   const stats = keys.map((k) => lessonStat(k));

@@ -46,10 +46,12 @@ let anchors = {};       /* lessonKey -> { on, prompt, time } */
 let covered = null;     /* which lessons the one reminder covers; null = all */
 let logged = {};        /* lessonKey -> this visit's completion already counted */
 let appliedKey = null;  /* the deep-link key already consumed, so it applies once */
+let reached = 1;        /* the furthest step reached, so crumbs stay clickable */
 let created = [];       /* habit ids, once the bridge has fired */
 
 export function resetFlow() {
   step = 1; answers = {}; kindId = null; openLesson = null;
+  reached = 1;
   revealed = {}; results = {}; practice = {}; anchors = {};
   covered = null; logged = {}; created = [];
 }
@@ -70,14 +72,44 @@ function isChosen(q, o) {
    so `${cond ? 'aria-current="step"' : ''}` renders the quotes as &quot; and
    the whole thing lands as TEXT inside the element. The stepper had no
    aria-current at all: no current step for a screen reader, and no hook for
-   the styling that marks where you are. Branch on the whole tag instead. */
+   the styling that marks where you are. Branch on the whole tag instead.
+
+   THE STEPS ARE BREADCRUMBS, so anywhere you have already been is one click
+   away. A step you have NOT reached stays a plain span rather than a disabled
+   button: a focusable control that does nothing is worse than no control, and
+   jumping ahead to lessons that have not been generated would show an empty
+   screen and read as a bug.
+
+   The counter and the tick are drawn by the li's ::before, so the button
+   carries only the label and inherits everything else. */
 function stepper(n) {
   return html`
-    <ol class="bind-steps" aria-label="Progress">
-      ${STEPS.map((label, i) => (i + 1 === n
-        ? html`<li class="bind-steps__step is-current" aria-current="step">${label}</li>`
-        : html`<li class="${cls('bind-steps__step', i + 1 < n && 'is-done')}">${label}</li>`))}
-    </ol>`;
+    <div class="learn-crumbs">
+      <ol class="bind-steps" aria-label="Progress">
+        ${STEPS.map((label, i) => {
+          const num = i + 1;
+          const done = num < n;
+          const current = num === n;
+          const reachable = num <= reached && !current;
+          const inner = reachable
+            ? html`<button type="button" data-goto-step="${num}">${label}</button>`
+            : html`<span>${label}</span>`;
+          if (current) {
+            return html`<li class="bind-steps__step is-current" aria-current="step">${inner}</li>`;
+          }
+          return html`<li class="${cls('bind-steps__step', done && 'is-done')}">${inner}</li>`;
+        })}
+      </ol>
+
+      <!-- Start over returns to the upload, which is the only way back to a
+           different source. It clears the flow, NOT the habits: a reminder you
+           already set is a real thing you made, and deleting it quietly
+           because you clicked "start over" would be a nasty surprise. -->
+      ${reached > 1 ? html`
+        <button class="btn btn--ghost btn--sm" type="button" data-restart>
+          Start over
+        </button>` : ''}
+    </div>`;
 }
 
 /* `action` names the attribute the primary button carries. Every step but the
@@ -595,6 +627,7 @@ export function render(params) {
      back button looked dead while working perfectly. */
   if (key && key !== appliedKey && JA.lessons.some((l) => l.key === key)) {
     step = 4;
+    reached = Math.max(reached, 4);
     openLesson = key;
     appliedKey = key;
   }
@@ -610,8 +643,23 @@ export function render(params) {
 
 export function mount(root) {
   on(root, 'click', '[data-next]', () => {
-    if (step < STEPS.length) { step += 1; router.refresh(); }
+    if (step < STEPS.length) { step += 1; reached = Math.max(reached, step); router.refresh(); }
   });
+  on(root, 'click', '[data-goto-step]', (e, el) => {
+    const n = Number(el.getAttribute('data-goto-step'));
+    if (!n || n > reached) return;
+    step = n;
+    openLesson = null;          /* a crumb leaves whatever lesson was open */
+    if (router.current() !== '/learn') router.go('/learn');
+    else router.refresh();
+  });
+
+  on(root, 'click', '[data-restart]', () => {
+    resetFlow();
+    if (router.current() !== '/learn') router.go('/learn');
+    else router.refresh();
+  });
+
   on(root, 'click', '[data-back]', () => {
     if (step > 1) { step -= 1; router.refresh(); }
   });

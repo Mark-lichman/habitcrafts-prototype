@@ -4657,6 +4657,43 @@ body:has(.devbar) .page { padding-block-end: 128px; }
   list-style: none;
 }
 
+/* ---------------------------------------------------------------------------
+   THE LEARN CRUMBS - the stepper, plus a way out of the flow.
+
+   Steps already visited are buttons; steps not yet reached stay spans. A
+   disabled button would be focusable and do nothing, which is worse than not
+   being a control at all.
+
+   The button carries only the label: the numeral and the tick are the li's
+   ::before, so it must inherit type and colour rather than bring its own.
+--------------------------------------------------------------------------- */
+.learn-crumbs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  flex-wrap: wrap;
+}
+
+.bind-steps__step > button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: start;
+  border-radius: var(--radius-4, 4px);
+}
+
+.bind-steps__step > button:hover { text-decoration: underline; }
+
+.bind-steps__step > button:focus-visible {
+  outline: var(--stroke-focus, 2px) solid var(--c-border-focus);
+  outline-offset: 3px;
+}
+
+
 .bind-steps__step {
   counter-increment: bindstep;
   font-size: var(--fs-body-sm);

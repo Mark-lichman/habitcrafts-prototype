@@ -199,8 +199,10 @@ function uploadsBand() {
       ${sources.map((src) => {
         const c = corpusFor(src.id);
         const p = sourceProgress(src.id);
+        const done = store.isSourceFinished(src.id);
         return html`
-          <article class="card card--roomy" style="margin-block-start:var(--space-12)">
+          <article class="${cls('card', 'card--roomy', done && 'is-finished')}"
+                   style="margin-block-start:var(--space-12)">
             <div class="section-head">
               <div>
                 <h3 class="t-h3">${src.subject} · ${src.unit}</h3>
@@ -208,7 +210,10 @@ function uploadsBand() {
                   ${src.filename} · ${src.pages} pages · added ${src.addedAt}
                 </p>
               </div>
-              <span class="chip">${p.runs ? plural(p.runs, 'run') : 'not started'}</span>
+              <span class="chip">
+                ${done ? 'Finished ' + store.finishedAt(src.id)
+                       : p.runs ? plural(p.runs, 'run') : 'not started'}
+              </span>
             </div>
 
             <div class="u-row" style="gap:var(--space-8);flex-wrap:wrap;margin-block-start:var(--space-12)">
@@ -239,8 +244,28 @@ function uploadsBand() {
                   </li>`;
               })}
             </ul>
+
+            <!-- Closing a practice archives the HABITS so the reminders stop,
+                 and keeps the lessons and the study log. "I ran this eleven
+                 times" is the most valuable thing here; losing it because you
+                 tidied up would be the worst possible trade. -->
+            <div class="u-row" style="gap:var(--space-12);margin-block-start:var(--space-24)">
+              ${done
+                ? html`<button class="btn btn--ghost btn--sm" type="button"
+                               data-reopen="${src.id}">Put back on the shelf</button>`
+                : html`<button class="btn btn--ghost btn--sm" type="button"
+                               data-finish="${src.id}">Finish this practice</button>`}
+            </div>
+            ${done ? html`
+              <p class="t-body-sm t-muted" style="margin-block-start:var(--space-8)">
+                Reminders stopped. ${p.runs ? plural(p.runs, 'run') + ' kept in your record.' : ''}
+              </p>` : ''}
           </article>`;
       })}
+
+      <div class="bind-actions" style="margin-block-start:var(--space-24)">
+        <a class="btn btn--primary" href="#/learn">Upload something new</a>
+      </div>
     </section>`;
 }
 
@@ -462,6 +487,16 @@ export function render() {
 -------------------------------------------------------------------------- */
 
 export function mount(root) {
+  /* Closing out a practice. The store archives the habits and shelves the
+     source; the view only has to ask, and the re-render comes for free
+     because app.js re-renders every mounted view on a store change. */
+  on(root, 'click', '[data-finish]', (e, el) => {
+    store.finishSource(el.getAttribute('data-finish'));
+  });
+  on(root, 'click', '[data-reopen]', (e, el) => {
+    store.reopenSource(el.getAttribute('data-reopen'));
+  });
+
   /* Record which segment is showing. prototype.js's [data-tabs] handler owns
      the ARIA and the panels; this only remembers, so the next render declares
      the same tab and the choice survives a store change. */
