@@ -20,7 +20,8 @@
    ========================================================================= */
 
 import * as router from '../router.js';
-import { html, icon, cls, on } from '../ui.js';
+import * as store from '../store.js';
+import { html, icon, cls, on, plural } from '../ui.js';
 import { KINDS, kind, EXERCISES } from '../knowledge-kinds.js';
 import JA from '../data-japanese.js';
 
@@ -37,8 +38,17 @@ const STEPS = ['Upload', 'What we found', 'A few questions', 'Your lessons', 'Wh
 let step = 1;
 let answers = {};
 let kindId = null;      /* null until the extract step confirms it */
+let openLesson = null;  /* a lesson key while one is open */
+let revealed = {};      /* exerciseId -> answer has been shown */
+let results = {};       /* exerciseId -> 'got' | 'again' */
+let practice = {};      /* lessonKey -> reading is put away, exercises showing */
+let anchors = {};       /* lessonKey -> { on, prompt, time } */
+let created = [];       /* habit ids, once the bridge has fired */
 
-export function resetFlow() { step = 1; answers = {}; kindId = null; }
+export function resetFlow() {
+  step = 1; answers = {}; kindId = null; openLesson = null;
+  revealed = {}; results = {}; practice = {}; anchors = {}; created = [];
+}
 
 /* -------------------------------------------------------------------------
    PIECES
@@ -61,11 +71,15 @@ function stepper(n) {
     </ol>`;
 }
 
-function foot(back, next, nextLabel) {
+/* `action` names the attribute the primary button carries. Every step but the
+   last advances; the last one writes to the store instead, so it must not also
+   be a Next or the flow would step past its own result. */
+function foot(back, next, nextLabel, action) {
+  const attr = action || 'data-next';
   return html`
     <div class="u-row" style="gap:var(--space-12);margin-block-start:var(--space-32)">
       ${back ? html`<button class="btn btn--ghost" type="button" data-back>${icon('arrow-back', 'icon--sm')} Back</button>` : ''}
-      ${next ? html`<button class="btn btn--primary" type="button" data-next>${nextLabel || 'Continue'} ${icon('arrow', 'icon--sm')}</button>` : ''}
+      ${next ? html`<button class="btn btn--primary" type="button" ${attr}>${nextLabel || 'Continue'} ${icon('arrow', 'icon--sm')}</button>` : ''}
     </div>`;
 }
 
@@ -248,7 +262,116 @@ function stepQuestions() {
    4. LESSONS
 ------------------------------------------------------------------------- */
 
+/* One exercise, mid-practice. The answer is HIDDEN until asked for, which is
+   the whole difference between practice and reading: retrieval only counts if
+   you attempted it first. Every card carries its page, so the answer is always
+   checkable against the deck. */
+function exerciseCard(l, e, i) {
+  const id = l.key + ':' + i;
+  const shown = revealed[id];
+  const mark = results[id];
+
+  return html`
+    <section class="card card--roomy" style="margin-block-start:var(--space-16)">
+      <div class="section-head">
+        <span class="chip chip--sm">${EXERCISES[e.type].label}</span>
+        <span class="t-body-sm t-muted">${i + 1} of ${l.exercises.length} · p${e.page}</span>
+      </div>
+
+      <p class="t-body-lg" style="margin-block-start:var(--space-8)">${e.prompt}</p>
+      <p class="t-body-sm t-muted">${EXERCISES[e.type].hint}</p>
+
+      ${Array.isArray(e.options) ? html`
+        <ul class="u-stack" style="gap:var(--space-8);margin-block-start:var(--space-12)">
+          ${e.options.map((o, oi) => html`
+            <li class="${cls('t-body', shown && oi === e.answer && 'u-strong')}">
+              <span class="ja">${o}</span>
+              ${shown && oi === e.answer ? html`<span class="t-muted"> correct</span>` : ''}
+            </li>`)}
+        </ul>` : ''}
+
+      ${shown ? html`
+        <div style="margin-block-start:var(--space-16);padding-block-start:var(--space-12);border-block-start:1px solid var(--c-border)">
+          <p class="t-label">Answer</p>
+          <p class="t-body-lg"><span class="ja">${Array.isArray(e.options) ? e.options[e.answer] : e.answer}</span></p>
+          ${e.romaji ? html`<p class="t-body t-muted">${e.romaji}</p>` : ''}
+          ${e.because ? html`<p class="t-body t-muted" style="margin-block-start:var(--space-8)">${e.because}</p>` : ''}
+          <div class="u-row" style="gap:var(--space-8);margin-block-start:var(--space-16)">
+            <button class="${cls('btn', 'btn--sm', mark === 'got' ? 'btn--primary' : 'btn--ghost')}"
+                    type="button" data-mark="${id}" data-result="got">Got it</button>
+            <button class="${cls('btn', 'btn--sm', mark === 'again' ? 'btn--primary' : 'btn--ghost')}"
+                    type="button" data-mark="${id}" data-result="again">Not yet</button>
+          </div>
+        </div>`
+      : html`
+        <button class="btn btn--ghost btn--sm" type="button" data-reveal="${id}"
+                style="margin-block-start:var(--space-16)">Show the answer</button>`}
+    </section>`;
+}
+
+/* A lesson, opened. TWO PHASES, and the split is not cosmetic.
+   Lesson 5 teaches いっさい, はっさい, じゅっさい in its body, and then asks
+   "how do you say eight years old?". With the reading still on screen that is
+   not retrieval, it is copying, and copying produces the feeling of knowing
+   without the knowing. So the reading is put away when practice starts, and it
+   can be fetched back deliberately at the cost of admitting you needed it. */
+function lessonDetail(l) {
+  const done = l.exercises.filter((_, i) => results[l.key + ':' + i]).length;
+  const practising = !!practice[l.key];
+
+  return html`
+    <button class="page-back" type="button" data-close-lesson>
+      ${icon('arrow-back', 'icon--sm')} All lessons
+    </button>
+
+    <h1 class="t-h1" style="margin-block-start:var(--space-12)">${l.n}. ${l.title}</h1>
+    <p class="t-body-lg t-muted" style="max-inline-size:52ch">${l.standfirst}</p>
+
+    ${!practising ? html`
+      <section class="card card--roomy" style="margin-block-start:var(--space-24)">
+        ${l.body.map((p) => html`<p class="t-body" style="margin-block-end:var(--space-12)">${p}</p>`)}
+
+        <p class="t-label" style="margin-block-start:var(--space-16)">From your deck</p>
+        <ul class="u-stack t-body" style="gap:var(--space-4)">
+          ${(l.rules || []).map((k) => {
+            const r = JA.rules.find((x) => x.key === k);
+            return r ? html`<li><strong class="ja">${r.frame}</strong> <span class="t-muted">p${r.page}</span></li>` : '';
+          })}
+        </ul>
+      </section>
+
+      <div class="u-row" style="gap:var(--space-12);margin-block-start:var(--space-24)">
+        <button class="btn btn--primary" type="button" data-practise="${l.key}">
+          Start practice ${icon('arrow', 'icon--sm')}
+        </button>
+      </div>
+      <p class="t-body-sm t-muted" style="margin-block-start:var(--space-8)">
+        The reading goes away while you practise. That is the point of it.
+      </p>`
+    : html`
+      <div class="section-head" style="margin-block-start:var(--space-24)">
+        <h2 class="t-h2">Practice</h2>
+        <span class="t-body-sm t-muted">${done} of ${l.exercises.length} marked</span>
+      </div>
+
+      ${l.exercises.map((e, i) => exerciseCard(l, e, i))}
+
+      <div class="u-row" style="gap:var(--space-12);margin-block-start:var(--space-32)">
+        <button class="btn btn--primary" type="button" data-close-lesson>
+          ${done === l.exercises.length ? 'Done' : 'Back to lessons'} ${icon('arrow', 'icon--sm')}
+        </button>
+        <button class="btn btn--ghost" type="button" data-unpractise="${l.key}">
+          Read it again
+        </button>
+      </div>`}`;
+}
+
 function stepLessons() {
+  if (openLesson) {
+    const l = JA.lessons.find((x) => x.key === openLesson);
+    if (l) return lessonDetail(l);
+  }
+
   const total = JA.lessons.reduce((n, l) => n + l.minutes, 0) + JA.irregularDrill.minutes;
 
   return html`
@@ -259,24 +382,26 @@ function stepLessons() {
       the sentence that uses it, so we moved the frame first.
     </p>
 
-    ${JA.lessons.map((l) => html`
-      <section class="card card--roomy" style="margin-block-start:var(--space-16)">
-        <div class="section-head">
-          <h3 class="t-h3">${l.n}. ${l.title}</h3>
-          <span class="t-body-sm t-muted">${l.minutes} min</span>
-        </div>
-        <p class="t-body-lg">${l.standfirst}</p>
-
-        <p class="t-label" style="margin-block-start:var(--space-16)">Practice</p>
-        <ul class="u-stack" style="gap:var(--space-8)">
-          ${l.exercises.map((e) => html`
-            <li class="t-body">
-              <span class="chip chip--sm">${EXERCISES[e.type].label}</span>
-              ${e.prompt}
-              <span class="t-muted"> · p${e.page}</span>
-            </li>`)}
-        </ul>
-      </section>`)}
+    ${JA.lessons.map((l) => {
+      const done = l.exercises.filter((_, i) => results[l.key + ':' + i]).length;
+      const all = done === l.exercises.length;
+      return html`
+        <section class="card card--roomy card--interactive" style="margin-block-start:var(--space-16)">
+          <button class="u-stretch" type="button" data-open-lesson="${l.key}"
+                  aria-label="Open lesson ${l.n}: ${l.title}"></button>
+          <div class="section-head">
+            <h3 class="t-h3">${l.n}. ${l.title}</h3>
+            <span class="t-body-sm t-muted">
+              ${all ? 'Done' : done ? done + ' of ' + l.exercises.length : l.minutes + ' min'}
+            </span>
+          </div>
+          <p class="t-body-lg">${l.standfirst}</p>
+          <p class="t-body t-muted" style="margin-block-start:var(--space-12)">
+            ${l.exercises.length} exercises ·
+            ${[...new Set(l.exercises.map((e) => EXERCISES[e.type].label))].join(', ')}
+          </p>
+        </section>`;
+    })}
 
     <section class="card card--roomy" style="margin-block-start:var(--space-16)">
       <div class="section-head">
@@ -325,23 +450,107 @@ function stepWhen() {
       })()}
     </section>
 
+    <!-- The daily practice habit. On by default, because it is the one the
+         cadence asks for; the per-lesson anchors below are the alternative for
+         someone who would rather attach each piece to its own moment. -->
     <section class="card card--roomy" style="margin-block-start:var(--space-16)">
-      <h3 class="t-h3">Your habit</h3>
-      <p class="t-body" style="margin-block-start:var(--space-8)"><strong>${h.behavior}</strong></p>
-      <p class="t-body t-muted">${h.prompt} · every day</p>
-      <p class="t-body t-muted" style="margin-block-start:var(--space-8)">${h.why}</p>
+      <div class="section-head">
+        <h3 class="t-h3">Your daily practice</h3>
+        ${anchorToggle('daily')}
+      </div>
+      <p class="t-body-lg"><strong>${h.behavior}</strong></p>
+      <p class="t-body t-muted">${h.why}</p>
+      ${anchorFields('daily', h.prompt, '07:00')}
     </section>
 
-    <p class="t-label" style="margin-block-start:var(--space-24)">Or anchor each lesson separately</p>
-    <ul class="u-stack" style="gap:var(--space-8)">
-      ${JA.lessons.map((l) => html`
-        <li class="t-body">
-          <strong>${l.habitSuggestion.behavior}</strong>
-          <span class="t-muted"> · ${l.habitSuggestion.prompt}</span>
-        </li>`)}
-    </ul>
+    <p class="t-label" style="margin-block-start:var(--space-24)">
+      Or anchor each lesson to its own moment
+    </p>
+    ${JA.lessons.map((l) => html`
+      <section class="card" style="margin-block-start:var(--space-8)">
+        <div class="section-head">
+          <p class="t-body"><strong>${l.habitSuggestion.behavior}</strong></p>
+          ${anchorToggle(l.key)}
+        </div>
+        ${anchorFields(l.key, l.habitSuggestion.prompt, DEFAULT_TIMES[l.n - 1] || '19:00')}
+      </section>`)}
 
-    ${foot(true, true, 'Start tomorrow')}`;
+    ${createdPanel()}
+
+    ${foot(true, !created.length && countOn() > 0,
+           'Create ' + plural(countOn(), 'reminder'),
+           'data-create-habits')}`;
+}
+
+/* Sensible clock times for the five lesson anchors, spread across a day rather
+   than stacked, because five reminders at once is one reminder. */
+const DEFAULT_TIMES = ['07:30', '12:30', '17:30', '13:00', '21:30'];
+
+function anchorState(key, promptText, time) {
+  const a = anchors[key] || {};
+  return {
+    on: a.on !== undefined ? a.on : key === 'daily',
+    prompt: a.prompt !== undefined ? a.prompt : promptText,
+    time: a.time !== undefined ? a.time : time,
+  };
+}
+
+function countOn() {
+  let n = anchorState('daily', '', '').on ? 1 : 0;
+  JA.lessons.forEach((l) => { if (anchorState(l.key, '', '').on) n += 1; });
+  return n;
+}
+
+function anchorToggle(key) {
+  const on = anchorState(key, '', '').on;
+  return html`
+    <button class="${cls('btn', 'btn--sm', on ? 'btn--primary' : 'btn--ghost')}"
+            type="button" data-anchor-toggle="${key}"
+            role="switch" aria-checked="${on ? 'true' : 'false'}">
+      ${on ? 'Reminder on' : 'Off'}
+    </button>`;
+}
+
+/* The anchor and the clock time are the SAME reminder expressed two ways. The
+   anchor is what makes it fire in your head; the time is what makes the phone
+   fire. Neither works alone, which is why they are edited together. */
+function anchorFields(key, promptText, time) {
+  const a = anchorState(key, promptText, time);
+  if (!a.on) return '';
+  return html`
+    <div class="u-row" style="gap:var(--space-12);flex-wrap:wrap;margin-block-start:var(--space-12)">
+      <label class="field" style="flex:1 1 22ch">
+        <span class="t-label">After I…</span>
+        <input class="input" type="text" value="${a.prompt}" data-anchor-prompt="${key}">
+      </label>
+      <label class="field">
+        <span class="t-label">Remind me at</span>
+        <input class="input" type="time" value="${a.time}" data-anchor-time="${key}">
+      </label>
+    </div>`;
+}
+
+/* What actually happened. Shown only after the bridge has fired, because a
+   confirmation before the fact is a promise, not a receipt. */
+function createdPanel() {
+  if (!created.length) return '';
+  const made = created.map((id) => store.habitById(id)).filter(Boolean);
+  return html`
+    <section class="card card--roomy" style="margin-block-start:var(--space-24)">
+      <h3 class="t-h3">${plural(made.length, 'reminder')} set</h3>
+      <p class="t-body t-muted">These are real habits now. They are on Home, and Progress counts them.</p>
+      <ul class="u-stack" style="gap:var(--space-8);margin-block-start:var(--space-12)">
+        ${made.map((m) => html`
+          <li class="t-body">
+            <strong>${m.behavior}</strong>
+            <span class="t-muted"> · ${m.prompt} · ${m.time} · every day</span>
+          </li>`)}
+      </ul>
+      <div class="u-row" style="gap:var(--space-12);margin-block-start:var(--space-16)">
+        <a class="btn btn--primary" href="#/home">Open Home ${icon('arrow', 'icon--sm')}</a>
+        <a class="btn btn--ghost" href="#/progress">See Progress</a>
+      </div>
+    </section>`;
 }
 
 /* -------------------------------------------------------------------------
@@ -385,6 +594,82 @@ export function mount(root) {
   on(root, 'click', '[data-own]', (e) => {
     e.preventDefault();
     kindId = 'own';
+    router.refresh();
+  });
+
+  /* --- lessons ------------------------------------------------------- */
+  on(root, 'click', '[data-open-lesson]', (e, el) => {
+    openLesson = el.getAttribute('data-open-lesson');
+    router.refresh();
+  });
+  on(root, 'click', '[data-close-lesson]', () => {
+    openLesson = null;
+    router.refresh();
+  });
+  on(root, 'click', '[data-practise]', (e, el) => {
+    practice[el.getAttribute('data-practise')] = true;
+    router.refresh();
+  });
+  on(root, 'click', '[data-unpractise]', (e, el) => {
+    practice[el.getAttribute('data-unpractise')] = false;
+    router.refresh();
+  });
+  on(root, 'click', '[data-reveal]', (e, el) => {
+    revealed[el.getAttribute('data-reveal')] = true;
+    router.refresh();
+  });
+  on(root, 'click', '[data-mark]', (e, el) => {
+    results[el.getAttribute('data-mark')] = el.getAttribute('data-result');
+    router.refresh();
+  });
+
+  /* --- anchors and reminders ------------------------------------------ */
+  on(root, 'click', '[data-anchor-toggle]', (e, el) => {
+    const k = el.getAttribute('data-anchor-toggle');
+    const cur = anchorState(k, '', '');
+    anchors[k] = { ...cur, on: !cur.on };
+    router.refresh();
+  });
+
+  /* Typed values are captured on `input` and NOT re-rendered: a refresh on
+     every keystroke would rebuild the field and throw the caret to the end.
+     The value is already in the DOM; the store only needs it at submit. */
+  on(root, 'input', '[data-anchor-prompt]', (e, el) => {
+    const k = el.getAttribute('data-anchor-prompt');
+    anchors[k] = { ...anchorState(k, '', ''), prompt: el.value };
+  });
+  on(root, 'input', '[data-anchor-time]', (e, el) => {
+    const k = el.getAttribute('data-anchor-time');
+    anchors[k] = { ...anchorState(k, '', ''), time: el.value };
+  });
+
+  /* THE BRIDGE. The only place this flow writes to the store, and the moment
+     a practice stops being a document and becomes something that will
+     interrupt your Tuesday. */
+  on(root, 'click', '[data-create-habits]', () => {
+    if (created.length) return;                    /* fire once */
+    const h = JA.proposedHabit;
+
+    const daily = anchorState('daily', h.prompt, '07:00');
+    if (daily.on) {
+      created.push(store.createHabit({
+        behavior: h.behavior, prompt: daily.prompt, celebration: h.celebration,
+        why: h.why, time: daily.time, days: h.days, category: 'c-mind',
+        origin: 'learn',
+      }).id);
+    }
+
+    JA.lessons.forEach((l, i) => {
+      const a = anchorState(l.key, l.habitSuggestion.prompt, DEFAULT_TIMES[i] || '19:00');
+      if (!a.on) return;
+      created.push(store.createHabit({
+        behavior: l.habitSuggestion.behavior, prompt: a.prompt,
+        celebration: l.habitSuggestion.celebration, why: l.habitSuggestion.why,
+        time: a.time, days: [0, 1, 2, 3, 4, 5, 6], category: 'c-mind',
+        origin: 'learn',
+      }).id);
+    });
+
     router.refresh();
   });
 }
