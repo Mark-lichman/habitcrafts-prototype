@@ -82,6 +82,36 @@ Still no build step and no dependencies; the server uses only Node built-ins, no
 `npm install`. GitHub Pages serves it over `http://` too, so the served path is the real
 one.
 
+## How to check it
+
+Four suites, no dependencies, no `npm install`. The three browser ones launch
+and clean up their own headless Chrome; they need a server running, and take
+`--url=` or `HC_URL` if it is not on the default port.
+
+```sh
+node scripts/smoke.mjs     # the data layer obeys its own rules
+node scripts/evals.mjs     # a generated practice is fit to hand to someone
+node scripts/drive.mjs     # the flow does what it claims, clicked through
+node scripts/nav.mjs       # you can actually get around, forwards and back
+node scripts/a11y.mjs      # every width, every target, and Nightfall
+```
+
+**Why three of them drive a real browser.** Twice in this repo a screen
+rendered perfectly and was dead on click; once a whole route rendered an empty
+`<main>` because a backtick closed a template literal. `node --check` passed all
+three, because it parses `.js` as a script rather than a module. Rendering
+proves a page parses. Only clicking proves it works.
+
+The most recent example: the lesson cards used a `u-stretch` utility that does
+not exist, so their click target was a zero-size button. Nobody could open a
+lesson with a mouse, and the two click-through suites missed it because
+`el.click()` works on a 0x0 element. `a11y.mjs` caught it by measuring.
+
+**What is deliberately NOT here.** A design-system gate (hard-coded colour,
+off-scale radii) waits until the design system is settled by real feedback, and
+a model-graded judge for content quality waits until there is feedback to judge
+against. Both are worth building; neither is worth building yet.
+
 The data layer runs without a browser at all:
 
 ```sh
