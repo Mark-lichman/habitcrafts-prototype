@@ -427,9 +427,14 @@ function stepLessons() {
       const done = l.exercises.filter((_, i) => results[l.key + ':' + i]).length;
       const all = done === l.exercises.length;
       return html`
-        <section class="card card--roomy card--interactive" style="margin-block-start:var(--space-16)">
-          <button class="u-stretch" type="button" data-open-lesson="${l.key}"
-                  aria-label="Open lesson ${l.n}: ${l.title}"></button>
+        <!-- A REAL LINK, not a card with an invisible button stretched over it.
+             The first version used a .u-stretch utility that does not exist,
+             so the button had no size and the card was unclickable with a
+             mouse - the suites missed it because el.click() works on a 0x0
+             element. An anchor to the lesson's own route is keyboard- and
+             middle-click-friendly for free, and the deep link already exists. -->
+        <a class="card card--roomy card--interactive" href="#/learn/${l.key}"
+           data-open-lesson="${l.key}" style="display:block;margin-block-start:var(--space-16)">
           <div class="section-head">
             <h3 class="t-h3">${l.n}. ${l.title}</h3>
             <span class="t-body-sm t-muted">
@@ -441,7 +446,7 @@ function stepLessons() {
             ${l.exercises.length} exercises ·
             ${[...new Set(l.exercises.map((e) => EXERCISES[e.type].label))].join(', ')}
           </p>
-        </section>`;
+        </a>`;
     })}
 
     <section class="card card--roomy" style="margin-block-start:var(--space-16)">
