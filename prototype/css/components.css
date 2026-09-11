@@ -4680,10 +4680,19 @@ body:has(.devbar) .page { padding-block-end: 128px; }
   color: inherit;
   background: none;
   border: 0;
-  padding: 0;
   cursor: pointer;
   text-align: start;
-  border-radius: var(--radius-4, 4px);
+  border-radius: var(--radius-xs);
+  /* WCAG 2.5.8 floor is 24px and the bare text box is 19. The system's
+     --target-min (48) is for primary controls; an inline breadcrumb at 48
+     would dominate the row, so this takes the accessible minimum and no
+     less. Padding rather than height, so the row stays compact. */
+  min-block-size: 24px;
+  display: inline-flex;
+  align-items: center;
+  padding-block: var(--space-4);
+  padding-inline: 2px;
+  margin-inline: -2px;
 }
 
 .bind-steps__step > button:hover { text-decoration: underline; }
