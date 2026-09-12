@@ -37,6 +37,7 @@ nothing in the app.** If you are editing a screen, you want `js/views/`.
 ```
 js/
   app.js              bootstrap: shell, the prototype.js bridge, state to view
+  components.js       shared view components: markup AND their behaviour
   router.js           hash routing and the page transitions; the route table
   store.js            state, mutations, derived selectors
   config.js           which product is running: experiments as feature flags
@@ -55,6 +56,7 @@ css/
 ```sh
 node ../scripts/serve.js        # http://localhost:5173
 node ../scripts/smoke.mjs       # the data layer, no browser, no dependencies
+node ../scripts/duplication.mjs # the don't-solve-it-twice ratchet
 ```
 
 **It needs the local server.** Double-clicking will not work: the app is hand-written ES modules

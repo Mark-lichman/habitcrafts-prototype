@@ -25,7 +25,7 @@
 import * as store from '../store.js';
 import * as router from '../router.js';
 import { prefillFrom } from './create.js';
-import { provenance } from './bindery-review.js';
+import { provenance, mountProvenance, emptyPage } from '../components.js';
 import { html, icon, on, plural } from '../ui.js';
 
 export const meta = {
@@ -106,7 +106,12 @@ function lesson(practice, l, n) {
 
 export function render(params) {
   const p = store.practiceById(params.id);
-  if (!p) return String(notFound());
+  if (!p) return String(emptyPage({
+    back: { href: '#/library', label: 'Library' },
+    title: 'That practice is not here',
+    body: 'It may have been a draft in another session.',
+    action: { href: '#/library', label: 'Back to the Library' },
+  }));
 
   const joined = store.hasJoined(p.id);
   const lessons = store.practiceLessons(p);
@@ -156,17 +161,6 @@ export function render(params) {
     </div>`);
 }
 
-function notFound() {
-  return html`
-    <div class="page">
-      <a class="page-back" href="#/library">${icon('arrow-back', 'icon--sm')} Library</a>
-      <div class="empty-state">
-        <p class="empty-state__title">That practice is not here</p>
-        <p class="empty-state__body t-body">It may have been a draft in another session.</p>
-        <a class="btn btn--primary" href="#/library">Back to the Library</a>
-      </div>
-    </div>`;
-}
 
 /* --------------------------------------------------------------------------
    MOUNT
@@ -181,15 +175,7 @@ export function mount(root, params) {
   });
 
   /* Provenance reveal — local DOM only, same as in review. [#8] */
-  on(root, 'click', '[data-prov]', (e, el) => {
-    const q = el.parentElement.querySelector('.prov__quote');
-    if (!q) return;
-    const open = el.getAttribute('aria-expanded') === 'true';
-    el.setAttribute('aria-expanded', String(!open));
-    q.hidden = open;
-    const cue = el.querySelector('.prov__cue');
-    if (cue) cue.textContent = open ? 'show passage' : 'hide passage';
-  });
+  mountProvenance(root);
 
   /* Recall checks answer in place. No score, no streak, no penalty: this is a
      retrieval prompt, not an exam, and turning it into one would make skipping

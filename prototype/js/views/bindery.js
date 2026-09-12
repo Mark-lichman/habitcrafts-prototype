@@ -34,6 +34,7 @@ import * as router from '../router.js';
 import { flag } from '../config.js';
 import { SAMPLE_UPLOADS } from '../data-practices.js';
 import { html, icon, on, cls } from '../ui.js';
+import { unavailableIn } from '../components.js';
 
 export const meta = {
   title: 'Bindery',
@@ -312,7 +313,7 @@ function wall() {
 -------------------------------------------------------------------------- */
 
 export function render() {
-  if (!flag('bindery')) return String(unavailable());
+  if (!flag('bindery')) return String(unavailableIn('The Bindery is off in this configuration'));
   if (draft.stage === 'pick' && store.needsPlusToBind()) return String(page(wall(), 'Plus'));
 
   const body =
@@ -353,19 +354,6 @@ function page(body, title, sub) {
     </div>`;
 }
 
-function unavailable() {
-  return html`
-    <div class="page">
-      <div class="empty-state">
-        <p class="empty-state__title">The Bindery is off in this configuration</p>
-        <p class="empty-state__body t-body">
-          Switch to an experiment that turns it on using the control at the top
-          of the screen.
-        </p>
-        <a class="btn btn--primary" href="#/home">Back to today</a>
-      </div>
-    </div>`;
-}
 
 /* --------------------------------------------------------------------------
    MOUNT

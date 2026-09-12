@@ -32,6 +32,7 @@ import * as store from '../store.js';
 import * as router from '../router.js';
 import { flag } from '../config.js';
 import { html, icon, on, cls, plural } from '../ui.js';
+import { provenance, mountProvenance, emptyPage } from '../components.js';
 
 export const meta = {
   title: 'Review',
@@ -51,23 +52,6 @@ export const meta = {
    reachable by keyboard, and it carries its own expanded state.
 -------------------------------------------------------------------------- */
 
-export function provenance(ref, id) {
-  if (!ref) return '';
-  const q = ref.quote;
-  return html`
-    <div class="prov-wrap">
-      <button class="prov" type="button" data-prov="${id}"
-              aria-expanded="false" ${q ? '' : 'disabled'}>
-        ${icon('doc', 'icon--sm prov__icon')}
-        <span class="prov__ref">${ref.chapter} · p.&nbsp;${ref.page}</span>
-        ${q ? html`<span class="prov__cue t-body-sm">show passage</span>` : ''}
-      </button>
-      ${q ? html`
-        <blockquote class="prov__quote" id="prov-q-${id}" hidden>
-          ${q}
-        </blockquote>` : ''}
-    </div>`;
-}
 
 /* --------------------------------------------------------------------------
    A DRAFT CARD
@@ -176,7 +160,12 @@ function publishPanel(practice) {
 
 export function render(params) {
   const p = store.practiceById(params.id);
-  if (!p) return String(notFound());
+  if (!p) return String(emptyPage({
+    back: { href: '#/library', label: 'Library' },
+    title: 'That draft is gone',
+    body: 'Drafts live in the session. Bind the source again to pick it back up.',
+    action: { href: '#/bindery', label: 'Open the Bindery' },
+  }));
 
   const reviewed = p.reviewedWeeks || [];
   const lessons = store.practiceLessons(p);
@@ -233,17 +222,6 @@ export function render(params) {
     </div>`);
 }
 
-function notFound() {
-  return html`
-    <div class="page">
-      <a class="page-back" href="#/library">${icon('arrow-back', 'icon--sm')} Library</a>
-      <div class="empty-state">
-        <p class="empty-state__title">That draft is gone</p>
-        <p class="empty-state__body t-body">Drafts live in the session. Bind the source again to pick it back up.</p>
-        <a class="btn btn--primary" href="#/bindery">Open the Bindery</a>
-      </div>
-    </div>`;
-}
 
 /* --------------------------------------------------------------------------
    MOUNT
@@ -264,15 +242,7 @@ export function mount(root, params) {
   /* The provenance reveal. A local DOM toggle, not a store change: checking a
      citation is not an edit and must not re-render the page underneath the
      person doing it. [#8] */
-  on(root, 'click', '[data-prov]', (e, el) => {
-    const q = el.parentElement.querySelector('.prov__quote');
-    if (!q) return;
-    const open = el.getAttribute('aria-expanded') === 'true';
-    el.setAttribute('aria-expanded', String(!open));
-    q.hidden = open;
-    const cue = el.querySelector('.prov__cue');
-    if (cue) cue.textContent = open ? 'show passage' : 'hide passage';
-  });
+  mountProvenance(root);
 
   /* Edits commit on blur rather than on input: a store commit per keystroke
      would re-render the field and send the caret to the end of it. */

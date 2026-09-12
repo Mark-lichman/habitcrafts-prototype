@@ -23,6 +23,7 @@
 import * as store from '../store.js';
 import { flag } from '../config.js';
 import { html, icon, on, plural } from '../ui.js';
+import { unavailableIn } from '../components.js';
 
 export const meta = {
   title: 'Studio',
@@ -153,7 +154,7 @@ function draftRow(p) {
 -------------------------------------------------------------------------- */
 
 export function render() {
-  if (!flag('studio')) return String(unavailable());
+  if (!flag('studio')) return String(unavailableIn('The Studio belongs to Experiment 1', 'E1 · Creators'));
 
   const published = store.publishedPractices();
   const drafts = store.draftPractices();
@@ -195,18 +196,6 @@ export function render() {
     </div>`);
 }
 
-function unavailable() {
-  return html`
-    <div class="page">
-      <div class="empty-state">
-        <p class="empty-state__title">The Studio belongs to Experiment 1</p>
-        <p class="empty-state__body t-body">
-          Switch to <strong>E1 · Creators</strong> at the top of the screen to see it.
-        </p>
-        <a class="btn btn--primary" href="#/home">Back to today</a>
-      </div>
-    </div>`;
-}
 
 export function mount(root) {
   /* Nothing to wire — every action on this screen is a link. That is not an
