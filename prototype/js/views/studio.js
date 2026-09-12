@@ -168,7 +168,7 @@ export function render() {
             What happened to your readers after they closed the book.
           </p>
         </div>
-        <a class="btn btn--primary" href="#/bindery">Bind a source</a>
+        <a class="btn btn--primary" href="#/bindery">Upload new lesson source</a>
       </header>
 
       ${drafts.length ? html`
@@ -188,7 +188,7 @@ export function render() {
             </svg>
             <p class="empty-state__title">Nothing published yet</p>
             <p class="empty-state__body t-body">
-              Bind a source, read every week of it, and publish. The numbers
+              Upload a lesson source, read every week of it, and publish. The numbers
               start the day your first reader joins.
             </p>
             <a class="btn btn--primary" href="#/bindery">Open the Bindery</a>

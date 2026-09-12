@@ -207,7 +207,7 @@ function practiceBand() {
 
       <div class="bind-actions">
         <a class="btn btn--primary" href="#/bindery">
-          ${flag('bringYourOwn') ? 'What are you reading?' : 'Bind a source'}
+          ${flag('bringYourOwn') ? 'What are you reading?' : 'Upload new lesson source'}
         </a>
         <a class="btn btn--ghost" href="#/join">Join with a code</a>
       </div>
