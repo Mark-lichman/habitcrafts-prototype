@@ -37,6 +37,7 @@
 import * as store from '../store.js';
 import { flag } from '../config.js';
 import { html, on, plural } from '../ui.js';
+import { unavailableIn } from '../components.js';
 
 export const meta = {
   title: 'Spaces',
@@ -204,7 +205,7 @@ function frontDoor(invited) {
 -------------------------------------------------------------------------- */
 
 export function render() {
-  if (!flag('spaces')) return String(unavailable());
+  if (!flag('spaces')) return String(unavailableIn('Spaces belong to Experiment 2', 'E2 · Communities'));
 
   const joined = store.joinedSpaces();
   const invited = store.state.spaces.filter((s) => !s.joined);
@@ -229,18 +230,6 @@ export function render() {
     </div>`);
 }
 
-function unavailable() {
-  return html`
-    <div class="page">
-      <div class="empty-state">
-        <p class="empty-state__title">Spaces belong to Experiment 2</p>
-        <p class="empty-state__body t-body">
-          Switch to <strong>E2 · Communities</strong> at the top of the screen to see it.
-        </p>
-        <a class="btn btn--primary" href="#/home">Back to today</a>
-      </div>
-    </div>`;
-}
 
 /* --------------------------------------------------------------------------
    MOUNT

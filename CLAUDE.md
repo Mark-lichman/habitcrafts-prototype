@@ -13,6 +13,11 @@ which remain the authority where there is more detail.
 - **Run `node scripts/smoke.mjs`** after touching anything in the data layer. It needs no browser
   and no dependencies. If it stops being runnable, a production seam has been breached — see
   below.
+- **Run `node scripts/duplication.mjs`** after adding or moving view code. It enforces one rule:
+  *do not solve the same problem twice where a parameter will do.* It is a ratchet — it passes at
+  or under the recorded budgets and fails when duplication grows. Lowering a budget after a
+  cleanup is the intended move. **Raising one requires writing the reason into the file**, where
+  the next person will read it.
 
 ## The data layer
 
@@ -25,6 +30,20 @@ which remain the authority where there is more detail.
   definition anywhere makes the segments incomparable, which is the only reason the metric exists.
 - **Selectors are memoised per commit.** If you read one between a hand mutation and its commit,
   call `memo.clear()` first.
+
+## Shared code
+
+- **Anything used by two or more views goes in `prototype/js/components.js`.** One caller is not a
+  component; it is a function that belongs in its own view.
+- **A component owns its behaviour, not just its markup.** The provenance line was once
+  half-shared — markup imported from another view, reveal handler re-implemented byte-identically
+  in both. That is worse than duplicating both, because the copies look connected and drift
+  silently.
+- **Keep grammar out of components.** `${surface} belongs to ${where}` produced "Spaces belongs
+  to E2". A shell takes the finished sentence; the caller writes it.
+- **Comments and docs are deliverables, not overhead.** The ladder applies to code. Long file
+  headers, the 1,260-line buildnotes and the design docs are the reasoning that makes this
+  codebase maintainable — a minimalism pass that cuts explanation is cutting the asset.
 
 ## The view layer
 
