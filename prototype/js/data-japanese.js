@@ -41,6 +41,16 @@ export const source = {
      subject and unit say what it is; topics say what is inside it. */
   subject: 'Japanese',
   unit: 'Lesson 1',
+
+  /* Learner-spaced: やまださん は にほんじん です rather than the unspaced
+     Japanese a native reader sees. It is a teaching decision with a cost, since
+     it has to be unlearned later, so it is declared rather than left to emerge
+     from whatever the extractor happened to do on the day.
+
+     It is also load-bearing for `scripts/lib/kana.mjs`, which reads a
+     STANDALONE は as the particle `wa` and は inside a word as `ha`. Nothing but
+     the spacing distinguishes them. */
+  spacing: 'learner-spaced',
   topics: ['Identity sentence', 'Negatives', 'Questions', 'Affiliation', 'Age counter'],
   blurb: 'A 14-page class slide deck: the identity sentence, its negative and question forms, affiliation, "also", and the age counter.',
 
@@ -274,22 +284,55 @@ export const rules = [
    there is no way to honour that answer. Every item in this lesson happens to
    be hiragana; the katakana in the deck is all proper nouns, below. */
 export const items = [
-  { key: 'i-san',       ja: 'さん',         romaji: 'san',        en: 'Mr. / Ms. (never used about yourself)', script: 'hiragana', page: 2,  quote: 'Name + さん san ＝Mr. Ms.' },
+  /* `trap` rather than only prose in `en`: the distractor check (evals.mjs §11)
+     requires every wrong option to trace to an error somebody wrote down, and
+     the さん-about-yourself error was stated only inside this gloss, where
+     nothing could reach it. An item can carry a misuse trap exactly as a rule
+     can, and this one is the error a beginner makes in their first real
+     conversation. */
+  { key: 'i-san',       ja: 'さん',         romaji: 'san',        en: 'Mr. / Ms. (never used about yourself)', script: 'hiragana', page: 2,  quote: 'Name + さん san ＝Mr. Ms.',
+    trap: 'さん is never used about yourself: ✗ わたし は ミラーさん です.' },
   { key: 'i-nihonjin',  ja: 'にほんじん',   romaji: 'nihonjin',   en: 'Japanese person',                       script: 'hiragana', page: 1,  quote: 'Country + じん JIN ＝nationality' },
   { key: 'i-sensei',    ja: 'せんせい',     romaji: 'sensei',     en: 'teacher',                               script: 'hiragana', page: 12, quote: 'Watashi wa sensei desu' },
   { key: 'i-ginkouin',  ja: 'ぎんこういん', romaji: 'ginkōin',    en: 'bank employee',                         script: 'hiragana', page: 7,  quote: 'ミラーさん は ぎんこういんじゃ ありません' },
   { key: 'i-shain',     ja: 'しゃいん',     romaji: 'shain',      en: 'company employee',                      script: 'hiragana', page: 11, quote: 'Kimsan wa SUMSUNG no shain desu' },
+
+  /* ADDED after the closed-world check (evals.mjs §10) found it. わたし is
+     produced in two exercises and offered as a discern option, and it was in
+     no bucket: the extraction demanded a word it never taught. It is in the
+     deck, on the same slide that introduces も. */
+  { key: 'i-watashi',   ja: 'わたし',       romaji: 'watashi',    en: 'I / me',                                script: 'hiragana', page: 12, quote: 'Watashi wa sensei desu' },
 ];
 
-/* The katakana in this deck, which is entirely proper nouns. Separated because
-   it is what "romaji on katakana only" actually targets, and because a learner
-   at Lesson 1 typically reads hiragana comfortably and is still slow here. */
-export const katakanaTerms = [
+/* Proper nouns. This bucket was called `katakanaTerms` on the premise that the
+   deck's proper nouns are all katakana. The closed-world check disproved that:
+   やまださん is produced in three exercises and the deck writes it in HIRAGANA
+   on page 5. The name was renamed rather than the term forced into the wrong
+   script, because a bucket whose name is a lie is the thing that makes the next
+   extraction wrong in the same way.
+
+   🚩 ONE FOR MARK: the deck is internally inconsistent about this name.
+   Page 5 quotes やまださん (hiragana); page 9 quotes ヤマダさん (katakana).
+   The extraction picked hiragana everywhere. Which the deck means is a question
+   about the deck, not about the code, so it is flagged rather than decided. */
+export const properNouns = [
+
+/* The katakana ones are what "romaji on katakana only" actually targets, and a
+   learner at Lesson 1 typically reads hiragana comfortably and is still slow
+   here. `script` is what selects them, which is why it was already load-bearing
+   and why widening this bucket costs nothing.
+
+   `romajiIsSourceSpelling` marks a name that romanises to the spelling it came
+   from rather than to the reading of its kana: キム is Kim, not kimu. The
+   reading check (evals.mjs §9) would otherwise call that an error. It has to be
+   DECLARED per term rather than inferred from "it did not match", or a
+   genuinely wrong reading hides behind the same exemption. */
   { key: 'k-mira',   ja: 'ミラーさん',   romaji: 'Mirā-san',   en: 'Mr. Miller',  script: 'katakana', page: 7 },
-  { key: 'k-kim',    ja: 'キムさん',     romaji: 'Kim-san',    en: 'Mr. Kim',     script: 'katakana', page: 11 },
+  { key: 'k-kim',    ja: 'キムさん',     romaji: 'Kim-san',    en: 'Mr. Kim',     script: 'katakana', page: 11, romajiIsSourceSpelling: true },
   { key: 'k-sofia',  ja: 'ソフィアさん', romaji: 'Sofia-san',  en: 'Ms. Sofia',   script: 'katakana', page: 12 },
   { key: 'k-kai',    ja: 'カイ',         romaji: 'Kai',        en: 'Kai',         script: 'katakana', page: 14 },
   { key: 'k-doitsu', ja: 'ドイツ',       romaji: 'Doitsu',     en: 'Germany',     script: 'katakana', page: 1 },
+  { key: 'k-yamada', ja: 'やまださん',   romaji: 'Yamada-san', en: 'Ms. Yamada',  script: 'hiragana', page: 5, quote: 'やまださん は にほんじんじゃ ありません' },
 ];
 
 /* IRREGULARS: the expensive part. Their own bucket because the kind declares
@@ -480,6 +523,6 @@ export const proposedHabit = {
 };
 
 export default {
-  source, detected, questions, rules, items, katakanaTerms, irregulars, regularAges,
+  source, detected, questions, rules, items, properNouns, irregulars, regularAges,
   lessons, irregularDrill, proposedHabit,
 };

@@ -17,3 +17,13 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 prototype/build.json
+
+# Secrets. This repository is PUBLIC and pushing main is the deploy, so a key
+# committed here is a key published. The eval tiers that call a model read
+# ANTHROPIC_API_KEY from the environment and never from a file in the tree;
+# these patterns exist so that a key cannot arrive by accident either.
+.env
+.env.*
+*.key
+*api*key*.txt
+!.env.example
