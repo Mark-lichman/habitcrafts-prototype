@@ -29,11 +29,22 @@
      order, the emphasis rule. These fail loudly and cost nothing, so they run
      on every change.
 
+   TIER 1.5 — DOMAIN, BUT STILL DETERMINISTIC (sections 9 to 12)
+     The line between tier 1 and tier 2 was drawn once and drawn too high.
+     "Is this reading correct?" looks like a judge question and is not: a kana
+     string determines its own reading, so `lib/kana.mjs` settles it for free.
+     So does "did we teach this word before asking for it", which is a set
+     difference. Every check that can be moved down from tier 2 should be,
+     because tier 2 costs money, needs a network, and has to be validated
+     against hand labels before anyone may believe it.
+
    TIER 2 — JUDGE (not implemented; see the stub at the bottom)
-     "Is this correct Japanese?" "Does this option set cover the real answers?"
-     A model call with a rubric. It is NOT written yet, and the stub SAYS SO
-     rather than passing, because a green check that asserted nothing would be
-     worse than no check. Same principle as ci.yml's empty-test guard.
+     What is genuinely left after 1.5: grammaticality of a sentence nobody
+     wrote down, whether an option set covers the answers a real learner would
+     give, and whether a claim came from this deck or from the model's memory
+     of みんなの日本語. A model call with a rubric. It is NOT written yet, and
+     the stub SAYS SO rather than passing, because a green check that asserted
+     nothing would be worse than no check.
 
    No dependencies, same as everything else here.
    ========================================================================= */
@@ -60,6 +71,7 @@ function check(cond, msg, detail) { cond ? ok(msg) : bad(msg, detail); }
 
 const JA = (await load('prototype/js/data-japanese.js')).default;
 const KINDS = await load('prototype/js/knowledge-kinds.js');
+const KANA = await load('scripts/lib/kana.mjs');
 
 const kind = KINDS.kind(JA.detected.id);
 
@@ -278,7 +290,7 @@ for (const { term, instead } of BANNED) {
 const scriptQ = JA.questions.find((q) => q.id === 'q-script');
 const perScript = scriptQ && scriptQ.options.some((o) => /katakana|hiragana/i.test(o.label));
 if (perScript) {
-  const termsNeedingScript = [...JA.items, ...(JA.katakanaTerms || []), ...JA.irregulars];
+  const termsNeedingScript = [...JA.items, ...(JA.properNouns || []), ...JA.irregulars];
   check(termsNeedingScript.every((t) => t.script === 'hiragana' || t.script === 'katakana'),
     'every term declares its script, so a per-script answer is implementable',
     termsNeedingScript.filter((t) => !t.script).map((t) => t.ja).join(', '));
@@ -382,17 +394,273 @@ check(tickOffenders.length === 0,
   tickOffenders.join(', '));
 
 /* ==========================================================================
+   9. THE READING IS THE ONE THE KANA SAYS
+
+   The highest-value check in a Japanese practice, and it needs no judge and no
+   dictionary: kana determines its own reading. `lib/kana.mjs` declares the
+   scheme (modified Hepburn with macrons) once, so `ginkouin` and `ginkōin`
+   cannot both be on screen. A learner types what they read.
+
+   Kanji is skipped rather than guessed, and the skip is COUNTED, so the day
+   this corpus stops being pre-kanji the coverage drop is visible instead of
+   being a quietly shrinking check.
+   ====================================================================== */
+section('reading and script');
+
+/* Proper nouns from other languages romanise to their SOURCE spelling, not to
+   their kana reading: キム is Kim, not kimu. That is correct and it is also
+   exactly the hole a genuinely wrong reading would hide in, so it has to be
+   declared per term rather than inferred from "it did not match". */
+const sourceSpelled = new Map(
+  [...JA.items, ...(JA.properNouns || []), ...JA.irregulars]
+    .filter((t) => t.romajiIsSourceSpelling)
+    .map((t) => [t.ja, t.romaji]));
+
+const readingPairs = [
+  ...JA.items.map((t) => ({ where: `item ${t.key}`, key: t.key, ja: t.ja, romaji: t.romaji })),
+  ...(JA.properNouns || []).map((t) => ({ where: `name ${t.key}`, key: t.key, ja: t.ja, romaji: t.romaji })),
+  ...JA.irregulars.map((t) => ({ where: `exception ${t.key}`, key: t.key, ja: t.ja, romaji: t.romaji })),
+  ...JA.rules.map((r) => ({ where: `rule ${r.key} example`, key: r.key, ja: r.example.ja, romaji: r.example.romaji })),
+  ...JA.lessons.flatMap((l) => l.exercises
+    .filter((e) => typeof e.answer === 'string' && e.romaji)
+    .map((e) => ({ where: `${l.key} ${e.type}`, key: l.key, ja: e.answer, romaji: e.romaji }))),
+].filter((p) => p.ja && p.romaji);
+
+const misread = [];
+let unreadable = 0;
+for (const p of readingPairs) {
+  const v = KANA.romajiAgrees(p.ja, p.romaji, sourceSpelled);
+  if (!v.applicable) { unreadable++; continue; }
+  if (!v.ok) misread.push(`${p.where}: "${p.romaji}" but ${p.ja} reads "${v.expected}"`);
+}
+check(misread.length === 0,
+  `every romaji matches the reading of its kana (${readingPairs.length - unreadable} pairs checked)`,
+  misread.join('\n       '));
+
+check(unreadable === 0,
+  'no pair is unreadable without a dictionary',
+  `${unreadable} pair(s) contain kanji. Kanji has no reading without a dictionary, `
+  + 'so these are UNCHECKED, not passing. See evals/ for the dictionary-backed tier.');
+
+/* A `script` field that says hiragana about a katakana string is worse than no
+   field: the romaji question offers a per-script answer and would apply it to
+   the wrong terms. §6b already asserts the field is PRESENT. */
+/* The honorific is stripped before judging the script, because ミラーさん is a
+   katakana NAME with a hiragana suffix and calling it "mixed" would be true and
+   useless. Stripping must not empty the string, or the item さん judges itself
+   as nothing — which is what the first run of this check said, in as many
+   words: "さん declared hiragana, is hiragana". */
+const stem = (s) => s.replace(/さん$/, '') || s;
+const misdeclared = [...JA.items, ...(JA.properNouns || []), ...JA.irregulars]
+  .filter((t) => t.script && KANA.scriptOf(stem(t.ja)) !== t.script);
+check(misdeclared.length === 0,
+  'every declared script is the script the term is actually written in',
+  misdeclared.map((t) => `${t.ja} declared ${t.script}, is ${KANA.scriptOf(t.ja)}`).join(', '));
+
+/* Latin letters inside a field the learner reads as Japanese. This is the
+   commonest structured-output failure for Japanese — the model answers in
+   romaji when the slot wanted kana — and it is one regex. Real Latin does
+   occur (a company name on a slide), so it is declared, not guessed. */
+const LATIN_OK = new Set(['SAMSUNG']);
+const latinLeaks = [];
+for (const l of JA.lessons) {
+  for (const e of l.exercises) {
+    if (typeof e.answer !== 'string') continue;
+    /* An English answer to an English question is not a Japanese field. "Which
+       three of 1 to 10 are irregular?" answers "1, 8 and 10", and reading that
+       as romaji leaking into kana is the check misunderstanding the exercise. */
+    if (!/[ぁ-ゖァ-ヺ]/.test(e.answer)) continue;
+    for (const run of e.answer.match(/[A-Za-z]+/g) || []) {
+      if (!LATIN_OK.has(run)) latinLeaks.push(`${l.key} ${e.type}: "${run}" in ${e.answer}`);
+    }
+  }
+}
+check(latinLeaks.length === 0,
+  'no undeclared Latin text sits in an answer the learner reads as Japanese',
+  latinLeaks.join('; '));
+
+/* ==========================================================================
+   10. NOTHING IS ASKED FOR THAT WAS NEVER TAUGHT
+
+   A closed deck is a closed world: every word in an answer should be one the
+   practice put there. This is the check that needed no tokeniser — longest
+   match over the taught set is enough when the set is closed, and JMdict only
+   becomes necessary once the app generates sentences rather than extracting
+   them.
+
+   THE SCOPE IS DELIBERATE AND IT IS THE WHOLE SPECIFICATION. It applies to
+   what a learner must PRODUCE, not to what they are SHOWN. A rule's example
+   may introduce a word with a gloss beside it; an exercise may not demand one.
+   The first draft of this check ignored that and fired 14 times, of which half
+   were the exposition doing its job.
+   ====================================================================== */
+section('closed-world vocabulary');
+
+const taught = new Set();
+for (const b of [JA.items, JA.properNouns || [], JA.irregulars, JA.regularAges]) {
+  b.forEach((t) => {
+    taught.add(KANA.normaliseJa(t.ja));
+    /* A name taught as ミラーさん licenses ミラー, because さん is itself a
+       taught item and the deck drills dropping it. */
+    if (/さん$/.test(t.ja)) taught.add(KANA.normaliseJa(t.ja.replace(/さん$/, '')));
+  });
+}
+/* Grammar comes from the rules, read off their frames rather than hardcoded.
+   A hardcoded list is a second definition of what the deck teaches. */
+JA.rules.forEach((r) => (r.frame.match(/[ぁ-ゖァ-ヺー]+/g) || [])
+  .forEach((run) => taught.add(KANA.normaliseJa(run))));
+
+const taughtByLength = [...taught].filter(Boolean).sort((a, b) => b.length - a.length);
+
+function untaught(s) {
+  /* ー is NOT stripped. It is a letter, not punctuation: ミラー without it is
+     ミラ, which matches no taught form and reports a word the deck teaches as
+     one it never taught. The first run of this check did exactly that. */
+  let rest = KANA.normaliseJa(s).replace(/[A-Za-z0-9\s、。→＝+]/g, '');
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const t of taughtByLength) {
+      if (rest.includes(t)) { rest = rest.replace(t, ''); changed = true; }
+    }
+  }
+  return rest;
+}
+
+const demanded = [];
+JA.lessons.forEach((l) => l.exercises.forEach((e) => {
+  /* For a discern the answer is an index, and the WRONG options are wrong on
+     purpose — §11 checks those. Only the correct option is demanded. */
+  const produced = e.type === 'discern' ? e.options[e.answer] : e.answer;
+  if (typeof produced !== 'string') return;
+  if (!/[ぁ-ゖァ-ヺ]/.test(produced)) return;      /* an English answer to an English question */
+  const left = untaught(produced);
+  if (left) demanded.push(`${l.key} ${e.type}: "${left}" in ${produced}`);
+}));
+check(demanded.length === 0,
+  `every word a learner must produce was taught first (${taughtByLength.length} forms taught)`,
+  demanded.join('\n       '));
+
+/* ==========================================================================
+   11. A WRONG OPTION IS WRONG FOR A REASON SOMEBODY WROTE DOWN
+
+   §5 already asserts a discern explains why the wrong one is wrong. That
+   catches an empty `because`; it does not catch a distractor invented on the
+   spot. A distractor that corresponds to no real learner error is noise: it
+   teaches nothing and it makes the exercise easier, which is worse.
+
+   The declared errors live in `rule.trap` and `irregular.expected`. If a
+   distractor traces to neither, either the distractor is arbitrary or the
+   trap it exploits was never written down. Both are defects, and the second
+   one is the more common.
+   ====================================================================== */
+section('distractor provenance');
+
+/* Items carry traps too, and for the same reason rules do. さん is never used
+   about yourself, and that is a misuse of an ITEM rather than of a pattern, so
+   `item.trap` is read here alongside `rule.trap`. */
+const declaredWrong = [
+  ...JA.rules.filter((r) => r.trap).map((r) => ({ from: `${r.key}.trap`, text: r.trap })),
+  ...JA.items.filter((i) => i.trap).map((i) => ({ from: `${i.key}.trap`, text: i.trap })),
+  ...JA.irregulars.map((x) => ({ from: `${x.key}.expected`, text: x.expected })),
+];
+
+const arbitrary = [];
+JA.lessons.forEach((l) => l.exercises.filter((e) => e.type === 'discern').forEach((e) => {
+  e.options.forEach((opt, i) => {
+    if (i === e.answer) return;
+    const norm = KANA.normaliseJa(opt);
+    const traced = declaredWrong.some(({ text }) => KANA.normaliseJa(text).includes(norm));
+    if (!traced) arbitrary.push(`${l.key}: "${opt}" traces to no declared trap`);
+  });
+}));
+check(arbitrary.length === 0,
+  'every distractor traces to a trap or an expected-but-wrong form in the data',
+  `${arbitrary.join('; ')}\n       A distractor with no declared trap means the error it `
+  + 'exploits was never written down, so nothing else can drill it.');
+
+/* ==========================================================================
+   12. ONE SPELLING OF THE SAME SENTENCE
+
+   This corpus writes learner-spaced Japanese (やまださん は にほんじん です).
+   Real Japanese is unspaced, so the convention is a teaching decision with a
+   cost attached: it has to be unlearned later. That makes it exactly the kind
+   of decision that must be DECLARED rather than emergent, and consistent, or
+   the learner is unlearning two things.
+
+   It is also load-bearing for `lib/kana.mjs`: a standalone は is read `wa`,
+   and nothing but the spacing says so.
+   ====================================================================== */
+section('spacing convention');
+
+check(typeof JA.source.spacing === 'string',
+  'the source declares its spacing convention',
+  'lib/kana.mjs reads a standalone は as the particle `wa`. That is only sound '
+  + 'while the convention holds, so the convention has to be stated.');
+
+const spacingOffenders = [];
+JA.lessons.forEach((l) => l.exercises.forEach((e) => {
+  const s = typeof e.answer === 'string' ? e.answer : null;
+  if (!s) return;
+  if (/\s{2,}/.test(s)) spacingOffenders.push(`${l.key} ${e.type}: double space`);
+  if (s !== s.trim()) spacingOffenders.push(`${l.key} ${e.type}: leading or trailing space`);
+  if (/[　]/.test(s)) spacingOffenders.push(`${l.key} ${e.type}: full-width space`);
+}));
+check(spacingOffenders.length === 0, 'answers use single half-width spaces only',
+  spacingOffenders.join('; '));
+
+/* ==========================================================================
+   13. GROUNDING — DECLARED, BLOCKED ON DATA, AND SAYING SO
+
+   §1 asserts every card carries a page. It does NOT assert the quote is on
+   that page, which is the assertion that actually makes a card verifiable.
+   B4 of docs/authorization-and-taxonomy.md calls this a TEST — a deterministic
+   string search, no judge needed — and it is right. It cannot run yet because
+   the source text is not in the repo: the deck is 14 page IMAGES with a
+   519-character text layer that is the teacher's annotation rather than the
+   content (data-japanese.js:50).
+
+   When it does run it must match EXACTLY, after NFKC and nothing else. The
+   quote on r-affiliation is "Kimsan wa SUMSUNG no shain desu", carrying the
+   deck's own typo. That is grounding working. A fuzzy match would forgive the
+   typo and, in forgiving it, would stop being able to detect invention at all.
+   ====================================================================== */
+section('grounding');
+
+const pagesWithText = (JA.source.pageText && Object.keys(JA.source.pageText).length) || 0;
+if (pagesWithText) {
+  const ungrounded = [...JA.rules, ...JA.items].filter((c) => {
+    const page = JA.source.pageText[c.page];
+    return c.quote && page && !KANA.normaliseJa(page).includes(KANA.normaliseJa(c.quote));
+  });
+  check(ungrounded.length === 0, 'every quote appears verbatim on the page it cites',
+    ungrounded.map((c) => `${c.key} p${c.page}: "${c.quote}"`).join('; '));
+} else {
+  console.log(`  SKIP the quote-appears-on-the-page test cannot run: source.pageText is absent.
+       ${JA.source.pages} pages, ${JA.source.ingest.textLayerChars} chars of text layer, and that
+       layer is ${JA.source.ingest.textLayerIs}. Storing the vision-read text per
+       page is the prerequisite, and it is the cheapest remaining win here:
+       it converts the taxonomy's check 1 from an intention into an assertion.`);
+}
+
+/* ==========================================================================
    TIER 2 — THE JUDGE. Declared, not implemented, and it says so.
    ====================================================================== */
 section('tier 2 — model-graded (NOT IMPLEMENTED)');
-console.log(`  SKIP domain truth needs a judge, not an assertion. Unchecked today:
-         · Is every answer correct in the target language?
+console.log(`  SKIP domain truth needs a judge, not an assertion. Still unchecked:
+         · Is a sentence nobody wrote down grammatical? (§9 settles the READING
+           of every kana string, which is a different question)
          · Does each option set cover the answers a real learner would give?
-           (this is the "2x a week" gap — coverage, not correctness)
-         · Does the quote actually appear on the page it cites?
-         · Is the terminology right? (script names, part-of-speech labels)
-       See the header for the intended shape. This SKIP is deliberate: a
-       vacuous pass here would be worse than no check at all.`);
+           (the "2x a week" gap: coverage, not correctness)
+         · Did this rule come from THIS deck, or from the model's memory of
+           みんなの日本語? The taxonomy's check 2, and the worst failure here.
+         · Is the terminology right beyond the banned list in §6b?
+       What this list NO LONGER claims, because tier 1.5 took it:
+         readings (§9), taught-before-asked (§10), distractor provenance (§11).
+       And "does the quote appear on the page" is a TEST, not a judge call.
+       It is blocked on source.pageText, and §13 says so rather than skipping
+       it silently. This SKIP is deliberate: a vacuous pass here would be
+       worse than no check at all.`);
 
 /* ========================================================================== */
 console.log(`\n${failures ? `${failures} of ${checks} checks FAILED` : `all ${checks} checks passed`}`);
