@@ -57,11 +57,30 @@ export const source = {
   /* What extraction had to cope with. Surfaced in the UI because it is the
      honest reason this took a moment, and because it is the failure mode a
      reviewer should know about. */
+  /* CORRECTED 2026-09-14, by extracting the text layer and matching every quote
+     below against the page it cites (`evals/ground.mjs`). 14 of 14 land.
+
+     This field used to say the text layer was "annotation over slide images,
+     not the content", and that a text-layer-only extraction "would have
+     produced a confident, wrong practice". That was false, and it was repeated
+     in production-path.md and had an ablation experiment designed around it.
+     Every quote below is verbatim FROM the text layer, because that is where
+     they came from: these are the deck's own PowerPoint text boxes.
+
+     The true claim is narrower and still load-bearing: the text layer is SPARSE.
+     475 characters over 14 slides, and the picture-only slides carry meaning
+     that is not in it at all - slide 11 is a photograph of Mr. Kim with no
+     sentence under it, which is the describe-drill the deck is built on. So the
+     images are still necessary. They are not necessary for the reason that was
+     written down, and one text extraction settled in a second what an
+     experiment had been scheduled to answer. */
   ingest: {
-    textLayerChars: 519,
-    textLayerIs: 'annotation over slide images, not the content',
+    textLayerChars: 475,
+    textLayerIs: 'the slides’ own text boxes: real content, but sparse',
     pagesAreImages: true,
-    note: 'Read as images. A text-layer-only extraction would have produced a confident, wrong practice.',
+    picturesCarryMeaning: true,
+    note: 'Text alone gives the rules and the vocabulary and misses the picture drills. '
+      + 'Verified: every quote in this file is on the page it cites.',
   },
 };
 
