@@ -1,0 +1,14 @@
+{
+  "name": "habitcrafts-evals",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The tier of eval work that needs dependencies. Deliberately a separate workspace: the prototype and scripts/ have no package.json and no npm install, and production-path.md records that as a decision rather than an accident.",
+  "scripts": {
+    "extract": "node extract.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.70.0",
+    "zod": "^4.6.5"
+  }
+}
