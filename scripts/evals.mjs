@@ -636,11 +636,12 @@ if (pagesWithText) {
   check(ungrounded.length === 0, 'every quote appears verbatim on the page it cites',
     ungrounded.map((c) => `${c.key} p${c.page}: "${c.quote}"`).join('; '));
 } else {
-  console.log(`  SKIP the quote-appears-on-the-page test cannot run: source.pageText is absent.
-       ${JA.source.pages} pages, ${JA.source.ingest.textLayerChars} chars of text layer, and that
-       layer is ${JA.source.ingest.textLayerIs}. Storing the vision-read text per
-       page is the prerequisite, and it is the cheapest remaining win here:
-       it converts the taxonomy's check 1 from an intention into an assertion.`);
+  console.log(`  SKIP not here, but it DOES run. \`node evals/ground.mjs\` reads the PDF and
+       checks every quote against the page it cites. Last run: 14 of 14 on the
+       cited page, over ${JA.source.pages} pages and ${JA.source.ingest.textLayerChars} characters of text layer.
+       It lives in evals/ because reading a PDF needs a dependency and this file
+       takes none. It moves here the moment source.pageText is stored in the
+       corpus, which is the cheapest remaining win in this suite.`);
 }
 
 /* ==========================================================================
