@@ -79,7 +79,18 @@ async function waitFor(fn, { tries = 60, every = 250, what = 'condition' } = {})
 
 export async function withBrowser(fn, opts = {}) {
   const url = opts.url || baseUrl();
-  const app = `${url}/app.html?solo=1`;
+
+  /* `demo=1` PUTS THE SUITES BACK ON sessionStorage, and it is load-bearing.
+     app.js now installs the localStorage adapter by default, because the reader
+     is someone practising rather than someone reviewing. For a test suite that
+     is poison: `goto()` clears sessionStorage to get a clean slate, so under
+     localStorage every run would inherit the last one's habits, check-ins and
+     review log, and the suites would drift from green to flaky to meaningless
+     without anything having changed in the app.
+
+     A suite that WANTS persistence (scripts/persist.mjs, which exists to prove
+     state survives a reload) passes its own query and does its own clearing. */
+  const app = `${url}/app.html?${opts.query || 'solo=1&demo=1'}`;
 
   /* Fail early and usefully rather than timing out inside the protocol. */
   await waitFor(async () => (await fetch(`${url}/app.html`)).ok, {

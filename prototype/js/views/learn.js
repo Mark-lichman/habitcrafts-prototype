@@ -34,6 +34,7 @@ import { KINDS, kind, EXERCISES } from '../knowledge-kinds.js';
    the default so the three browser suites keep driving what they were written
    against. */
 import { corpusFor, allSources } from '../study.js';
+import * as srs from '../srs.js';
 import PILOT from '../data-japanese.js';
 
 let JA = PILOT;
@@ -783,7 +784,24 @@ export function mount(root) {
   });
   on(root, 'click', '[data-mark]', (e, el) => {
     const id = el.getAttribute('data-mark');
-    results[id] = el.getAttribute('data-result');
+    const grade = el.getAttribute('data-result');
+    results[id] = grade;
+
+    /* THE ANSWER GOES TO THE STORE, not only to `results`.
+       `results` is module state: it drives the button's pressed look and is
+       wiped by resetFlow(). Until this line existed that was the ONLY place the
+       verdict went, so "Got it" and "Not yet" were indistinguishable the moment
+       the view was rebuilt, and no schedule could be derived from them. The
+       study log knew a lesson had been run; nothing knew which card kept being
+       missed.
+
+       Keyed by content rather than by position: `id` here is
+       `lessonKey:index`, and both halves move when a corpus is re-extracted.
+       See js/srs.js for why that matters. */
+    const idx = Number(id.split(':')[1]);
+    const lesson = JA.lessons.find((x) => x.key === id.split(':')[0]);
+    const ex = lesson && lesson.exercises[idx];
+    if (ex) store.recordReview(srs.cardId(JA.source.id, ex), grade);
 
     /* A lesson counts as run once every exercise in it has been marked. The
        count is what separates "read once" from "practised eleven times", and

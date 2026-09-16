@@ -14,6 +14,7 @@
    ========================================================================= */
 
 import * as store from './store.js';
+import { localAdapter, fixtureAdapter } from './persistence.js';
 import * as router from './router.js';
 import * as config from './config.js';
 import { longDate, today } from './data.js';
@@ -248,6 +249,19 @@ router.afterRender((meta) => {
 -------------------------------------------------------------------------- */
 
 function boot() {
+  /* WHERE THE DATA LIVES, decided once, here, before anything reads it.
+     This is the single call js/persistence.js was written for, and until now it
+     was missing: `configure` appeared nowhere in this file, so store.js's
+     default won by omission and the app ran on sessionStorage everywhere.
+
+     `?demo=1` keeps the prototype's throwaway behaviour for a reviewer, which
+     is what sessionStorage was chosen for and is still right for that job. The
+     default is now the other one, because the default reader is a person
+     practising rather than a person reviewing, and on Android dismissing an
+     installed app from the recents tray ends the session. */
+  const demo = new URLSearchParams(location.search).has('demo');
+  store.configure(demo ? fixtureAdapter : localAdapter);
+
   /* The nav has to exist before the first render — paintShell moves
      aria-current onto an item it expects to already be in the document. */
   paintNav();
