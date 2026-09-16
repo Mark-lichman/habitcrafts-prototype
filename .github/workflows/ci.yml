@@ -1,0 +1,109 @@
+# =============================================================================
+# HabitCrafts — CI
+#
+# Runs the nine suites on every push and pull request. Until now nothing ran
+# them but a person remembering to, and `scripts/evals.mjs` has cited
+# "ci.yml's empty-test guard" as its precedent since the day it was written
+# while pointing at a file in a different repository.
+#
+# -----------------------------------------------------------------------------
+# CI SEES A DIFFERENT APP THAN MARK DOES, AND THAT IS THE POINT
+# -----------------------------------------------------------------------------
+# `prototype/js/corpus/` is gitignored: the decks carry the verbatim text of
+# みんなの日本語 class decks and ©Langoal worksheets, and this repository is
+# public. So a checkout has the pilot fixture and nothing else.
+#
+# Every suite is written to pass in that state. `corpora.mjs` reads the registry
+# rather than a hardcoded list; `persist` and `pwa --installed` take whatever
+# card is due first and the pilot always has some; `evals-all` globs whatever
+# corpora exist. The suites therefore assert the same things against one deck
+# here and four on Mark's machine, which is the property that makes this worth
+# running at all.
+#
+# -----------------------------------------------------------------------------
+# NO EMPTY-TEST GUARD, BECAUSE THERE ARE TESTS
+# -----------------------------------------------------------------------------
+# The Flutter repo's ci.yml prints a warning and exits 0 when no tests exist,
+# on the argument that "a green check that asserted nothing would be worse than
+# no check". Right there, and unnecessary here: this fails if a suite is missing
+# rather than passing quietly, which is the same principle pointed the other
+# way round.
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+# A second push supersedes the first. Nine browser suites is not a thing to run
+# twice on a branch somebody is iterating on.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # Pinned to a full commit SHA, not a tag. Tags are mutable.
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af  # v4.1.0
+        with:
+          node-version: '22'
+
+      # The suites need no dependencies. They drive Chrome over the DevTools
+      # protocol using Node's own global WebSocket, which is the whole reason
+      # scripts/ has no package.json and nothing to install.
+      - name: State the ground rules
+        run: |
+          echo "node $(node --version)"
+          echo "zero dependencies: scripts/ has no package.json by design"
+          test ! -f package.json || (echo "a package.json appeared at the root" && exit 1)
+
+      - name: The decks are not in this checkout
+        run: |
+          if [ -d prototype/js/corpus ] && [ -n "$(ls -A prototype/js/corpus 2>/dev/null)" ]; then
+            echo "::error::prototype/js/corpus/ is not empty. The decks carry verbatim"
+            echo "::error::text from copyrighted teaching material and must not be committed."
+            exit 1
+          fi
+          echo "corpus/ is absent, as it should be. CI runs against the pilot fixture."
+
+      - uses: browser-actions/setup-chrome@facf10a55b9caf92e0cc749b4f82bf8220989148  # v1.7.2
+        id: chrome
+        with:
+          chrome-version: stable
+
+      - name: Run every suite
+        env:
+          CHROME: ${{ steps.chrome.outputs.chrome-path }}
+        run: node scripts/verify.mjs
+
+      # `verify` exits non-zero when the eval tier finds something, and the eval
+      # tier grades model output rather than code. On a checkout with only the
+      # pilot fixture that tier is green, so a red here is a real regression and
+      # the job should fail. If that ever stops being true, the honest fix is to
+      # split the tiers into two jobs, not to stop looking.
+
+      - name: Screenshots, for a pull request nobody can run locally
+        if: github.event_name == 'pull_request'
+        run: |
+          node scripts/serve.js &
+          sleep 3
+          node scripts/shot.mjs --width 390 --x japanese
+          node scripts/shot.mjs --width 390 --x japanese --dark
+        env:
+          CHROME: ${{ steps.chrome.outputs.chrome-path }}
+
+      - uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b  # v4.5.0
+        if: github.event_name == 'pull_request'
+        with:
+          name: screens
+          path: shots/
+          retention-days: 7

@@ -16,13 +16,14 @@
    running last week's build.
    ========================================================================= */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { withBrowser } from './lib/browser.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const app = resolve(root, 'prototype');
+const corpusDir = resolve(app, 'js/corpus');
 const swManifest = readFileSync(resolve(app, 'sw-manifest.js'), 'utf8');
 const PRECACHE = JSON.parse(swManifest.match(/PRECACHE = (\[[\s\S]*?\]);/)[1]);
 
@@ -164,8 +165,21 @@ else await withBrowser(async (b) => {
     `${JSON.stringify(PRECACHE.includes('app.html'))}`, true);
   await b.check('every view is in it, so no route needs signal',
     `${JSON.stringify(PRECACHE.filter((f) => f.includes('/views/')).length >= 19)}`, true);
-  await b.check('the corpora are in it, since they are the content',
-    `${JSON.stringify(PRECACHE.some((f) => f.includes('corpus/')))}`, true);
+  /* EVERY CORPUS THAT EXISTS, not "at least one corpus". The decks are
+     gitignored, so a fresh clone and CI have none, and asserting that some are
+     cached fails there for a reason that is not a defect. Asserting that none
+     are MISSING is true in both states and is the thing actually worth knowing:
+     a deck left out of the precache list is a deck that needs signal. */
+  const onDisk = existsSync(corpusDir)
+    ? readdirSync(corpusDir).filter((f) => f.endsWith('.js') && f !== 'index.js')
+    : [];
+  const uncached = onDisk.filter((f) => !PRECACHE.includes(`js/corpus/${f}`));
+  await b.check(
+    onDisk.length
+      ? `all ${onDisk.length} decks are cached, since they are the content`
+      : 'no decks in this checkout, so none to cache (CI runs here)',
+    'true',
+    () => { if (uncached.length) console.log(`        missing: ${uncached.join(', ')}`); return !uncached.length; });
 
   b.section('the worker stays out of the prototype');
   await b.check('no service worker registered without x=japanese',

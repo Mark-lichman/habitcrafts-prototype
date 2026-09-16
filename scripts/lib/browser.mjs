@@ -231,9 +231,36 @@ export async function withBrowser(fn, opts = {}) {
 
     await fn(b);
   } finally {
+    /* TEARDOWN IN ORDER, AND WAITED ON.
+       This used to close the socket, fire kill(), delete the profile and exit,
+       all without waiting for any of it. Run one suite at a time that is fine.
+       Run nine back to back, as scripts/verify.mjs does, and it is not: Chrome
+       is still holding the profile directory when rmSync runs, kill() has not
+       been reaped when the next suite launches, and Node aborts on Windows with
+       `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)` from a socket
+       torn down during shutdown.
+
+       The symptom was worse than the crash. The suite that ran NEXT inherited a
+       loaded machine, booted slower than its wait allowed, and reported six
+       real-looking failures about missing controls. Two green suites became a
+       red build with a plausible wrong explanation. */
     try { ws?.close(); } catch (e) { /* already gone */ }
-    chrome.kill();
-    try { rmSync(profile, { recursive: true, force: true }); } catch (e) { /* best effort */ }
+
+    await new Promise((done) => {
+      let settled = false;
+      const finish = () => { if (!settled) { settled = true; done(); } };
+      chrome.once('exit', finish);
+      chrome.kill();
+      /* Never hang the suite on a browser that will not die. */
+      setTimeout(finish, 3000).unref?.();
+    });
+
+    /* Now the profile is nobody's. Retried because Windows can still hold a
+       handle for a moment after the process is gone. */
+    for (let i = 0; i < 3; i++) {
+      try { rmSync(profile, { recursive: true, force: true }); break; }
+      catch (e) { await wait(150); }
+    }
   }
 
   console.log(`\nconsole errors: ${state.errors.length}`);
