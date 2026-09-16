@@ -1,0 +1,14 @@
+{
+  "name": "habitcrafts-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Build-time tools that need dependencies: icon generation and the service-worker precache list. Kept out of prototype/ and out of scripts/, both of which are deliberately install-free. Nothing here runs in a browser and nothing here ships.",
+  "scripts": {
+    "icons": "node icons.mjs",
+    "precache": "node precache.mjs"
+  },
+  "dependencies": {
+    "sharp": "^0.34.0"
+  }
+}
