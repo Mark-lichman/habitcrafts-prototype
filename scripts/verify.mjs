@@ -112,9 +112,20 @@ for (const suite of wanted) {
   const verdict = verdictLine || errorLine || lines[lines.length - 1] || '(no output)';
 
   if (!ok) {
-    /* Named failures if the suite ran; the crash if it did not. */
-    const detail = lines.filter((l) => /^\s*FAIL /.test(l));
-    for (const l of (detail.length ? detail : lines.slice(-6))) console.log(`  ${l}`);
+    /* FAIL LINES PLUS THE DETAIL THAT EXPLAINS THEM.
+       Every suite here prints its evidence as a deeply indented line - the
+       overflowing element, the untaught word, the offending page - and the
+       first version of this filter kept only the `FAIL` lines and threw all of
+       it away. CI reported "no sideways scroll (got true)" ten times and
+       dropped the one line that said WHICH element and by how many pixels,
+       which is the entire content of the failure. Two round trips to the raw
+       log later, this now keeps both.
+
+       Section headers are NOT kept: printing every one of them buried nine
+       failures under forty headings on the first attempt. The detail lines
+       already name the screen and the corpus. */
+    const keep = lines.filter((l) => /^\s*FAIL /.test(l) || /^\s{6,}\S/.test(l));
+    for (const l of (keep.length ? keep : lines.slice(-6))) console.log(`  ${l}`);
   }
   console.log(`  ${ok ? 'PASS' : 'FAIL'}  ${verdict}\n`);
   results.push({ ...suite, ok, verdict });
