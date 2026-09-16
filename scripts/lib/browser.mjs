@@ -99,11 +99,27 @@ export async function withBrowser(fn, opts = {}) {
 
   const port = 9222 + Math.floor(Math.random() * 400);
   const profile = mkdtempSync(resolve(tmpdir(), 'hc-cdp-'));
+  /* CI NEEDS TWO MORE FLAGS, AND THE FAILURE WITHOUT THEM IS UNREADABLE.
+     On a GitHub runner Chrome's sandbox cannot start, so the browser exits
+     immediately and never opens a debugging port. What you see is every browser
+     suite dying after exactly fifteen seconds with "Timed out waiting for
+     Chrome to expose a page target", which reads like a slow machine rather
+     than like a browser that never ran.
+
+     --disable-dev-shm-usage goes with it: the runner's /dev/shm is 64MB and
+     Chrome crashes part-way through a long run when it fills, which is worse
+     than not starting because it looks like a flaky test.
+
+     Gated on CI rather than set always: --no-sandbox is a real relaxation, and
+     a throwaway profile on a build agent is a different risk from a developer's
+     machine. */
+  const ci = !!process.env.CI;
   const chrome = spawn(findChrome(), [
     '--headless=new',
     '--disable-gpu',
     '--no-first-run',
     '--no-default-browser-check',
+    ...(ci ? ['--no-sandbox', '--disable-dev-shm-usage'] : []),
     `--remote-debugging-port=${port}`,
     `--user-data-dir=${profile}`,
     app + '#/learn',
