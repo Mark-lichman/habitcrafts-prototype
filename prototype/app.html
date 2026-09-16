@@ -7,6 +7,16 @@
 <meta name="description" content="HabitCrafts redesign prototype. The working app preview. Fixture data, in-session state, no backend.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="assets/images/favicon.png">
+
+<!-- INSTALLABILITY. Without a manifest Chrome offers "Add to Home screen",
+     which is a bookmark: no standalone window, no splash, still a browser
+     session. With it, Android builds a WebAPK and this becomes an app.
+     theme-color paints the status bar; Apple ignores the manifest and wants
+     its own link, which costs one line. -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#F7F5F1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F151B" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <!-- Order matters: tokens → base → components. -->
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/base.css">
@@ -150,6 +160,32 @@
     q.delete('solo');
     var s = q.toString();
     location.replace('index.html' + (s ? '?' + s : '') + location.hash);
+  }());
+</script>
+
+<!-- =========================================================================
+     THE SERVICE WORKER — registered ONLY for the installed configuration.
+
+     `x=japanese` is the shipping build, and it is the only one that wants a
+     worker. Registering unconditionally would put every browser suite behind a
+     cache: `drive`, `nav`, `a11y`, `corpora` and `shot` all reload constantly,
+     and a stale worker answering from an old cache is the most confusing
+     possible test failure — the code on disk is right, the assertion is right,
+     and the browser is running last week's app. The same trap would catch
+     anyone iterating on the prototype with devtools open.
+
+     It also means the check is honest in the other direction: if the worker is
+     registered, this really is the build meant for a phone.
+     ====================================================================== -->
+<script type="module">
+  (function () {
+    var q = new URLSearchParams(location.search);
+    if (q.get('x') !== 'japanese') return;
+    if (!('serviceWorker' in navigator)) return;
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js', { type: 'module' })
+        .catch(function (e) { console.warn('service worker did not register:', e.message); });
+    });
   }());
 </script>
 
