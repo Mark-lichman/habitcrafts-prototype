@@ -38,6 +38,7 @@
 
 import { readFileSync } from 'node:fs';
 import { basename } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 /* `betaZodOutputFormat`, not `zodOutputFormat`, and `client.beta.messages.parse`,
@@ -52,7 +53,7 @@ import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
    actually exists on this machine, but the path is read here, at the last
    moment, and never echoed.
 -------------------------------------------------------------------------- */
-function apiKey() {
+export function apiKey() {
   if (process.env.ANTHROPIC_API_KEY) return process.env.ANTHROPIC_API_KEY;
   const file = process.env.ANTHROPIC_API_KEY_FILE;
   if (file) return readFileSync(file, 'utf8').trim();
@@ -66,7 +67,7 @@ never appears in a shell history.`);
 
 const SECTIONS = ['文型', '語彙', '例文', '会話', '練習A', '練習B', '練習C', '問題'];
 
-const Schema = z.object({
+export const Schema = z.object({
   sectionsPresent: z.array(z.enum(SECTIONS))
     .describe('Which canonical みんなの日本語 sections this document actually contains. '
       + 'Judge by what is on the pages, not by what a lesson of this number usually has.'),
@@ -119,12 +120,43 @@ may contain none of them; say so rather than forcing a fit.
 Read the pages as images where they are images. Many class decks are scans whose selectable
 text is the teacher's annotation over slide pictures, not the content. Report that in ingest.`;
 
-const client = new Anthropic({ apiKey: apiKey() });
+/**
+ * Classify one document. Takes an already-built PDF content block so the caller
+ * that also extracts does not base64 the same file twice.
+ * Throws rather than returning null: a caller that cannot classify must not go
+ * on to extract, because the affordance is what bounds the extraction.
+ */
+export async function classify(client, pdfBlock) {
+  const response = await client.beta.messages.parse({
+    model: 'claude-opus-5',
+    max_tokens: 16000,
+    thinking: { type: 'adaptive' },
+    messages: [{ role: 'user', content: [pdfBlock, { type: 'text', text: PROMPT }] }],
+    output_format: betaZodOutputFormat(Schema),
+  });
+  if (!response.parsed_output) {
+    throw new Error(`classification did not parse (stop_reason: ${response.stop_reason})`);
+  }
+  return response.parsed_output;
+}
 
-const files = process.argv.slice(2);
-if (!files.length) { console.error('usage: node classify.mjs <file.pdf> [...]'); process.exit(2); }
+export const pdfBlockFor = (path) => ({
+  type: 'document',
+  source: {
+    type: 'base64',
+    media_type: 'application/pdf',
+    data: readFileSync(path).toString('base64'),
+  },
+});
 
-for (const path of files) {
+/* -------------------------------------------------------------------------- */
+
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const client = new Anthropic({ apiKey: apiKey() });
+  const files = process.argv.slice(2);
+  if (!files.length) { console.error('usage: node classify.mjs <file.pdf> [...]'); process.exit(2); }
+
+  for (const path of files) {
   const name = basename(path);
   process.stderr.write(`\n--- ${name} ---\n`);
   try {
@@ -132,20 +164,7 @@ for (const path of files) {
       model: 'claude-opus-5',
       max_tokens: 16000,
       thinking: { type: 'adaptive' },
-      messages: [{
-        role: 'user',
-        content: [
-          {
-            type: 'document',
-            source: {
-              type: 'base64',
-              media_type: 'application/pdf',
-              data: readFileSync(path).toString('base64'),
-            },
-          },
-          { type: 'text', text: PROMPT },
-        ],
-      }],
+      messages: [{ role: 'user', content: [pdfBlockFor(path), { type: 'text', text: PROMPT }] }],
       /* `output_format`, NOT `output_config.format`. Both are accepted by the
          API and both return clean JSON, but @anthropic-ai/sdk 0.70.1's
          auto-parser reads `params.output_format` (lib/beta-parser.mjs:3), so
@@ -188,5 +207,6 @@ for (const path of files) {
   } catch (err) {
     if (err instanceof Anthropic.APIError) console.error(`  API error ${err.status}: ${err.message}`);
     else console.error('  ', err.message);
+  }
   }
 }

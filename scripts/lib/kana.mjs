@@ -90,7 +90,15 @@ const MONOGRAPHS = {
   ゃ: 'ya', ゅ: 'yu', ょ: 'yo',
 };
 
+/* Long vowels written by DOUBLING a kana: おう/おお -> ō, but いい -> ii, which
+   is Hepburn's own exception and the reason this is a table rather than a rule. */
 const MACRON = { a: 'ā', i: 'ii', u: 'ū', e: 'ē', o: 'ō' };
+
+/* Long vowels written with the katakana length mark ー. Here long i IS ī:
+   ビール is bīru, not biiru. The first version of this file used one table for
+   both and called the model wrong about ビール and シーディー when the model was
+   right. Two ways of writing length, two conventions for spelling it. */
+const CHOONPU = { a: 'ā', i: 'ī', u: 'ū', e: 'ē', o: 'ō' };
 
 /* --------------------------------------------------------------------------
    CHARACTER CLASSES
@@ -112,6 +120,11 @@ export function scriptOf(s) {
   if (hira && kata) return 'mixed';
   if (hira) return 'hiragana';
   if (kata) return 'katakana';
+  /* A proper noun the deck writes in Latin: SEIKO, TOYOTA, Oxford. Calling it
+     'none' made the script check report "Oxford declared mixed, is none", which
+     is true and useless. A Japanese deck really does contain Latin-script
+     names, and they need a script of their own rather than an absence. */
+  if (/[A-Za-z]/.test(String(s))) return 'latin';
   return 'none';
 }
 
@@ -154,9 +167,8 @@ function transliterateWord(word) {
     if (one === 'ー') {
       /* Length mark. Lengthen whatever vowel came last. */
       const prev = pieces[pieces.length - 1];
-      if (prev && MACRON[prev.vowel]) {
-        prev.text = prev.text.slice(0, -1) + MACRON[prev.vowel];
-        prev.vowel = prev.vowel === 'i' ? 'i' : prev.vowel;
+      if (prev && CHOONPU[prev.vowel]) {
+        prev.text = prev.text.slice(0, -1) + CHOONPU[prev.vowel];
         prev.lengthened = true;
       }
       i += 1; continue;
@@ -235,15 +247,35 @@ export function normaliseRomaji(s) {
   return String(s)
     .normalize('NFKC')
     .toLowerCase()
+    /* 〜 (U+301C) and ~ (U+007E) are the same slot marker in a frame like 〜かい,
+       and NFKC does NOT fold one onto the other. Without this, "~kai" and
+       "〜kai" compare unequal and the reading check reports a defect whose
+       entire content is which tilde somebody typed. */
+    .replace(/[~〜～]/g, '')
     .replace(/[\s\-‐‑–—'’.·]/g, '');
 }
 
-/** For comparing two Japanese strings. Spacing is a display convention. */
+/**
+ * For comparing two Japanese strings. Spacing is a display convention.
+ *
+ * CONTROL CHARACTERS ARE STRIPPED, and that is not defensive tidying. The PDF
+ * encoder behind these decks emits U+0001 where a space belongs, so page 1
+ * reads "Country\u0001+\u0001じん". Without this, ten of the fourteen grounding
+ * checks failed against text that matched perfectly to a human eye, and the
+ * failure looked like invention rather than like an encoder artifact. Those are
+ * opposite verdicts, which is why this belongs in the shared normaliser and not
+ * in one caller: `evals/ground.mjs` had its own copy and the two disagreed.
+ */
 export function normaliseJa(s) {
   return String(s)
     .normalize('NFKC')
+    .replace(/[\u0000-\u001F]/g, '')
     .replace(/[\s　]/g, '')
-    .replace(/[。．]$/, '');
+    .replace(/[。．]$/, '')
+    /* Japanese has no case, but a quote off a deck does: "SUMSUNG", "Kimsan".
+       Folding it here is what keeps this the ONLY normaliser, which is the
+       entire point of the function. */
+    .toLowerCase();
 }
 
 /**

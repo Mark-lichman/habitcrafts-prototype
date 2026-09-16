@@ -69,9 +69,16 @@ function bad(msg, detail) {
 }
 function check(cond, msg, detail) { cond ? ok(msg) : bad(msg, detail); }
 
-const JA = (await load('prototype/js/data-japanese.js')).default;
+/* One corpus per run, named on the command line. `evals-all.mjs` is the loop.
+   Kept as one-corpus-per-process on purpose: a failure names the corpus it came
+   from, and a corpus that cannot even be imported takes down its own run rather
+   than the whole suite. */
+const corpusPath = process.argv[2] || 'prototype/js/data-japanese.js';
+const JA = (await load(corpusPath)).default;
 const KINDS = await load('prototype/js/knowledge-kinds.js');
 const KANA = await load('scripts/lib/kana.mjs');
+
+console.log(`\n=== ${corpusPath.split('/').pop()} — ${JA.source.title} ===`);
 
 const kind = KINDS.kind(JA.detected.id);
 
@@ -91,14 +98,33 @@ check(
   'every extracted rule, item and exception carries a page',
 );
 
-check(
-  allExercises.every((e) => Number.isInteger(e.page)),
-  'every exercise carries a page',
-  allExercises.filter((e) => !Number.isInteger(e.page)).map((e) => e.prompt).join('; '),
-);
+/* AN EXERCISE CARRIES NO PAGE, AND USED TO BE ASSERTED TO CARRY ONE.
+   Classification showed that eight of nine documents in this corpus contain no
+   drills at all, so nearly every exercise a learner sees was written rather
+   than found. A page on written content is a costume: it makes authored
+   material look sourced, which is the one thing the grounding rule exists to
+   prevent. Its provenance is TRANSITIVE instead, through the card it drills,
+   and that card carries the page and the quote. docs/lesson-standards.md §3. */
+const extractedKeys = new Set([
+  ...JA.rules.map((r) => r.key),
+  ...JA.items.map((i) => i.key),
+  ...(JA.properNouns || []).map((n) => n.key),
+  ...JA.irregulars.map((x) => x.key),
+]);
+
+const unsourced = allExercises.filter((e) => !extractedKeys.has(e.derivedFrom));
+check(unsourced.length === 0,
+  `every exercise names the extracted card it drills (${extractedKeys.size} cards available)`,
+  unsourced.map((e) => `${e.lesson}: derivedFrom=${JSON.stringify(e.derivedFrom)} — ${e.prompt}`)
+    .join('\n       '));
+
+check(allExercises.every((e) => e.page === undefined),
+  'no exercise claims a page of its own',
+  allExercises.filter((e) => e.page !== undefined).map((e) => `${e.lesson} p${e.page}`).join(', ')
+  + '\n       A generated exercise is not on any page. See docs/lesson-standards.md §3.');
 
 const maxPage = JA.source.pages;
-const strays = [...JA.rules, ...JA.items, ...JA.irregulars, ...allExercises]
+const strays = [...JA.rules, ...JA.items, ...JA.irregulars]
   .filter((x) => x.page < 1 || x.page > maxPage);
 check(strays.length === 0, `no page reference falls outside the source (1-${maxPage})`,
   strays.map((s) => `p${s.page}`).join(', '));
@@ -118,9 +144,38 @@ check(illegal.length === 0,
   `every exercise type is afforded by "${kind.label}"`,
   illegal.map((e) => `${e.lesson}: ${e.type}`).join(', '));
 
-check(kind.extracts.every((b) => Array.isArray(JA[bucketFor(b)]) && JA[bucketFor(b)].length > 0),
-  `every bucket the kind declares is populated (${kind.extracts.join(', ')})`,
-  'An empty bucket is the cheapest signal that detection was wrong.');
+/* THE KIND SAYS WHAT A PRACTICE MAY CONTAIN. THE DOCUMENT SAYS WHAT IT CAN.
+   This used to require every bucket the `language` kind declares, which is
+   right for a class deck and wrong for a word list: classification found that a
+   vocabulary sheet affords no grammar at all, so demanding a populated
+   `patterns` bucket from one demands invention. The affordance is the bound;
+   the kind is only the ceiling. Corpora extracted before affordance was
+   recorded fall back to the kind, which is what the old check did. */
+const affords = (JA.source.affords) || { rules: true, items: true };
+const required = kind.extracts.filter((b) => {
+  if (!JA.source.affords) return true;
+  if (b === 'patterns') return affords.rules;
+  if (b === 'vocabulary') return affords.items;
+  return false;              /* exceptions are never REQUIRED; most decks have none */
+});
+check(required.every((b) => Array.isArray(JA[bucketFor(b)]) && JA[bucketFor(b)].length > 0),
+  `every bucket this DOCUMENT affords is populated (${required.join(', ') || 'none required'})`,
+  'An empty bucket the document affords is the cheapest signal that detection was wrong. '
+  + 'A full bucket it does NOT afford is the model inventing, which §2b checks.');
+
+/* The inverse, and the sharper of the two: content in a bucket the document
+   cannot fill. A word list has no grammar section, so a rule extracted from one
+   came from the model's knowledge of Japanese rather than from the upload. That
+   is the taxonomy's check 2, mechanised. */
+if (JA.source.affords) {
+  const invented = [];
+  if (!affords.rules && JA.rules.length) invented.push(`${JA.rules.length} rules`);
+  check(invented.length === 0,
+    'nothing is extracted from a section the document does not have',
+    `${invented.join(', ')} from a ${JA.source.documentType}, which affords none. `
+    + 'This is the worst failure mode this product has: content published under '
+    + 'someone\'s name that they never wrote.');
+}
 
 function bucketFor(name) {
   return { patterns: 'rules', vocabulary: 'items', exceptions: 'irregulars' }[name] || name;
@@ -128,7 +183,12 @@ function bucketFor(name) {
 
 /* The emphasis rule. `emphasises: 'exceptions'` is a promise that the hard
    forms get disproportionate contact; without a check it is a comment. */
-if (kind.emphasises === 'exceptions') {
+/* Only where there ARE exceptions. A vocabulary sheet has no pattern for a form
+   to break, so it has none, and demanding a recurring drill of nothing is the
+   check insisting on a bucket the document cannot fill. The emphasis rule is
+   about giving hard forms disproportionate contact, not about manufacturing
+   hard forms. */
+if (kind.emphasises === 'exceptions' && JA.irregulars.length) {
   const drilled = new Set();
   JA.irregulars.forEach((x) => {
     /* `answer` is a string for produce/transform/recall and an INDEX for
@@ -291,7 +351,12 @@ const scriptQ = JA.questions.find((q) => q.id === 'q-script');
 const perScript = scriptQ && scriptQ.options.some((o) => /katakana|hiragana/i.test(o.label));
 if (perScript) {
   const termsNeedingScript = [...JA.items, ...(JA.properNouns || []), ...JA.irregulars];
-  check(termsNeedingScript.every((t) => t.script === 'hiragana' || t.script === 'katakana'),
+  /* `latin` counts. The romaji question offers "on katakana only", and to
+     honour it every term has to say which script it is in - including the ones
+     that are in neither syllabary. SAMSUNG is on the slide, and "hiragana or
+     katakana" as the only legal answers forced a term to lie about itself. */
+  const SCRIPTS = new Set(['hiragana', 'katakana', 'mixed', 'latin']);
+  check(termsNeedingScript.every((t) => SCRIPTS.has(t.script)),
     'every term declares its script, so a per-script answer is implementable',
     termsNeedingScript.filter((t) => !t.script).map((t) => t.ja).join(', '));
 }
@@ -421,9 +486,18 @@ const readingPairs = [
   ...(JA.properNouns || []).map((t) => ({ where: `name ${t.key}`, key: t.key, ja: t.ja, romaji: t.romaji })),
   ...JA.irregulars.map((t) => ({ where: `exception ${t.key}`, key: t.key, ja: t.ja, romaji: t.romaji })),
   ...JA.rules.map((r) => ({ where: `rule ${r.key} example`, key: r.key, ja: r.example.ja, romaji: r.example.romaji })),
+  /* For a discern the `answer` is an INDEX, so the Japanese being romanised is
+     the option it selects. Reading the index as a word produced "0 reads 0",
+     which is the check misunderstanding the exercise rather than a defect. */
   ...JA.lessons.flatMap((l) => l.exercises
-    .filter((e) => typeof e.answer === 'string' && e.romaji)
-    .map((e) => ({ where: `${l.key} ${e.type}`, key: l.key, ja: e.answer, romaji: e.romaji }))),
+    .filter((e) => e.romaji)
+    .map((e) => ({
+      where: `${l.key} ${e.type}`,
+      key: l.key,
+      ja: e.type === 'discern' ? (e.options || [])[e.answer] : e.answer,
+      romaji: e.romaji,
+    }))
+    .filter((p) => typeof p.ja === 'string')),
 ].filter((p) => p.ja && p.romaji);
 
 const misread = [];
@@ -450,7 +524,14 @@ check(unreadable === 0,
    useless. Stripping must not empty the string, or the item さん judges itself
    as nothing — which is what the first run of this check said, in as many
    words: "さん declared hiragana, is hiragana". */
-const stem = (s) => s.replace(/さん$/, '') || s;
+/* Strip the honorific before judging script, but only if something Japanese
+   survives. さん alone becomes "", and 〜さん becomes "〜": both then judge as
+   no-script-at-all, and the check reports "さん declared hiragana, is hiragana",
+   which is a sentence that tells you nothing. */
+const stem = (s) => {
+  const cut = s.replace(/さん$/, '');
+  return KANA.scriptOf(cut) === 'none' ? s : cut;
+};
 const misdeclared = [...JA.items, ...(JA.properNouns || []), ...JA.irregulars]
   .filter((t) => t.script && KANA.scriptOf(stem(t.ja)) !== t.script);
 check(misdeclared.length === 0,
@@ -461,7 +542,21 @@ check(misdeclared.length === 0,
    commonest structured-output failure for Japanese — the model answers in
    romaji when the slot wanted kana — and it is one regex. Real Latin does
    occur (a company name on a slide), so it is declared, not guessed. */
-const LATIN_OK = new Set(['SAMSUNG']);
+/* THE ALLOWLIST COMES FROM THE CORPUS, NOT FROM THIS FILE. A deck really does
+   contain Latin: SEIKO, TOYOTA, SAMSUNG are on the slides. Those are extracted
+   as proper nouns, so the corpus already says which Latin is legitimate, and
+   hardcoding a second list here would be a list that goes stale the first time
+   a new deck arrives. */
+const latinIn = (s) => [...String(s).matchAll(/[A-Za-z]+/g)].map((m) => m[0].toLowerCase());
+const LATIN_OK = new Set([
+  ...[...JA.items, ...(JA.properNouns || [])].flatMap((t) => latinIn(t.ja)),
+  /* And any Latin that is ON THE PAGES. SAMSUNG is on slide 11 of the pilot but
+     is not an extracted term, so a corpus-terms-only list called it a leak. The
+     honest rule is the grounding rule wearing a different hat: Latin a learner
+     reads is fine if the source contains it and is invention otherwise. */
+  ...Object.values(JA.source.pageText || {}).flatMap(latinIn),
+]);
+
 const latinLeaks = [];
 for (const l of JA.lessons) {
   for (const e of l.exercises) {
@@ -470,14 +565,18 @@ for (const l of JA.lessons) {
        three of 1 to 10 are irregular?" answers "1, 8 and 10", and reading that
        as romaji leaking into kana is the check misunderstanding the exercise. */
     if (!/[ぁ-ゖァ-ヺ]/.test(e.answer)) continue;
-    for (const run of e.answer.match(/[A-Za-z]+/g) || []) {
-      if (!LATIN_OK.has(run)) latinLeaks.push(`${l.key} ${e.type}: "${run}" in ${e.answer}`);
-    }
+    const bad = [...new Set((e.answer.match(/[A-Za-z]+/g) || [])
+      .filter((run) => !LATIN_OK.has(run.toLowerCase())))];
+    /* One line per EXERCISE, not per word. The first version printed every
+       English word of a sentence separately and buried the other four failures
+       under forty lines of "the", "is", "of". */
+    if (bad.length) latinLeaks.push(`${l.key} ${e.type}: ${bad.join(' ')} — "${e.answer.slice(0, 60)}…"`);
   }
 }
 check(latinLeaks.length === 0,
-  'no undeclared Latin text sits in an answer the learner reads as Japanese',
-  latinLeaks.join('; '));
+  `no undeclared Latin text sits in an answer the learner reads as Japanese`
+  + ` (${LATIN_OK.size} Latin forms declared by the corpus)`,
+  latinLeaks.join('\n       '));
 
 /* ==========================================================================
    10. NOTHING IS ASKED FOR THAT WAS NEVER TAUGHT
@@ -496,27 +595,33 @@ check(latinLeaks.length === 0,
    ====================================================================== */
 section('closed-world vocabulary');
 
+/* ONE reduction, applied to BOTH sides. A taught term written とります［しゃしんを］
+   and an answer written the same way have to reduce identically, or the check
+   reports a word the corpus teaches as one it never taught. Stripping only the
+   answer is exactly what made that happen.
+   ー is NOT stripped: it is a letter, not punctuation. ミラー without it is ミラ,
+   which matches no taught form. */
+const PUNCT = /[A-Za-z0-9\s、。・「」『』（）()［］\[\]〜~,.:;!?！？…—+=→＝-]/g;
+const bare = (s) => KANA.normaliseJa(s).replace(PUNCT, '');
+
 const taught = new Set();
 for (const b of [JA.items, JA.properNouns || [], JA.irregulars, JA.regularAges]) {
   b.forEach((t) => {
-    taught.add(KANA.normaliseJa(t.ja));
+    taught.add(bare(t.ja));
     /* A name taught as ミラーさん licenses ミラー, because さん is itself a
        taught item and the deck drills dropping it. */
-    if (/さん$/.test(t.ja)) taught.add(KANA.normaliseJa(t.ja.replace(/さん$/, '')));
+    if (/さん$/.test(t.ja)) taught.add(bare(t.ja.replace(/さん$/, '')));
   });
 }
 /* Grammar comes from the rules, read off their frames rather than hardcoded.
    A hardcoded list is a second definition of what the deck teaches. */
 JA.rules.forEach((r) => (r.frame.match(/[ぁ-ゖァ-ヺー]+/g) || [])
-  .forEach((run) => taught.add(KANA.normaliseJa(run))));
+  .forEach((run) => taught.add(bare(run))));
 
 const taughtByLength = [...taught].filter(Boolean).sort((a, b) => b.length - a.length);
 
 function untaught(s) {
-  /* ー is NOT stripped. It is a letter, not punctuation: ミラー without it is
-     ミラ, which matches no taught form and reports a word the deck teaches as
-     one it never taught. The first run of this check did exactly that. */
-  let rest = KANA.normaliseJa(s).replace(/[A-Za-z0-9\s、。→＝+]/g, '');
+  let rest = bare(s);
   let changed = true;
   while (changed) {
     changed = false;

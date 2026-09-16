@@ -1,164 +1,132 @@
 /* ============================================================================
    HabitCrafts — evals/schema.mjs
-   THE SHAPE OF AN EXTRACTION, AS THE MODEL MUST RETURN IT.
+   TWO SCHEMAS, BECAUSE EXTRACTION AND GENERATION ARE TWO DIFFERENT JOBS.
 
-   This mirrors the export shape of `prototype/js/data-japanese.js`, because the
-   hand-made pilot corpus IS the specification of what an extraction looks like
-   and a second shape would be a second definition.
+   This started as one schema covering the whole corpus, and the API refused it:
+   "the compiled grammar is too large". The split that fixed it is the split the
+   standard already called for, which is the useful kind of constraint.
 
-   TWO FIELDS EXIST ONLY FOR THE EVALS, AND BOTH EARN IT:
+     EXTRACTED   rules, items, properNouns, irregulars.
+                 On the page. Carries `page` and a verbatim `quote`.
+                 Grounding is DIRECT and testable by string search.
 
-   `ingest` is the PARSE verdict, and it is kept apart from everything else on
-   purpose. Upload-and-extract products fail at reading the file more often than
-   at reasoning about it, and an eval that scores only the final output blames
-   the model for a scanner. `pageText` is what makes the grounding test in
-   evals.mjs §13 runnable at all: without the text of the page, "does the quote
-   appear on the page it cites" is an intention rather than an assertion.
+     GENERATED   lessons, exercises, questions, the proposed habit.
+                 Not on any page. Carries `derivedFrom`, never a page.
+                 Grounding is TRANSITIVE, through the card it drills.
 
-   `romajiIsSourceSpelling` is the declared exemption for a name that romanises
-   to its source spelling rather than to its reading. Declared, never inferred:
-   inferring it from "the strings did not match" would let a genuinely wrong
-   reading hide in the same hole.
+   Eight of the nine documents in this corpus contain no drills at all, so
+   nearly every exercise a learner sees is written rather than found. Giving one
+   a `page` would make authored content look sourced, which is the single thing
+   the grounding rule exists to prevent. See docs/lesson-standards.md §3.
+
+   THE GENERATION CALL NEVER SEES THE PDF. It is handed the extracted cards and
+   nothing else, which makes "generated content may only use extracted material"
+   physically true instead of a sentence in a prompt that the model may ignore.
+
+   Descriptions are terse on purpose: they are part of the compiled grammar, and
+   that grammar has a size limit. The reasoning lives here in comments instead.
    ========================================================================= */
 
 import { z } from 'zod';
 
-const Page = z.number().int().describe('1-based page of the source this came from');
+/* `latin` is not a mistake: a Japanese deck contains SEIKO, TOYOTA, SAMSUNG,
+   Oxford. Without it the model has to call those "mixed", and the script check
+   then reports a defect whose real content is that the schema had no word for
+   what was on the slide. */
+const Script = z.enum(['hiragana', 'katakana', 'mixed', 'latin']);
 
-const PageRead = z.object({
-  page: Page,
-  readable: z.boolean().describe('false if the page could not be read at all'),
-  isImage: z.boolean().describe('true if the content is a picture rather than selectable text'),
-  text: z.string().describe('Everything readable on this page, verbatim, including typos. '
-    + 'This is what the grounding test matches quotes against, so a tidied version is worse '
-    + 'than a messy one.'),
-  note: z.string().describe('What was hard about this page. Empty string if nothing was.'),
-});
-
-const Example = z.object({
-  ja: z.string(),
-  romaji: z.string(),
-  en: z.string(),
-});
-
-const Rule = z.object({
-  key: z.string().describe('stable slug, e.g. r-negative'),
-  name: z.string(),
-  frame: z.string().describe('the pattern with slots, e.g. N1 は N2 じゃ ありません'),
-  romaji: z.string(),
-  gloss: z.string(),
-  example: Example,
-  page: Page,
-  quote: z.string(),
-  trap: z.string().describe('The error a learner actually makes, quoted with a ✗ if the deck '
-    + 'shows it. Empty string if the deck records none. Distractors trace to this.'),
-});
+/* -------------------------------------------------------------------------
+   EXTRACTED
+------------------------------------------------------------------------- */
 
 const Term = z.object({
   key: z.string(),
   ja: z.string(),
   romaji: z.string(),
   en: z.string(),
-  script: z.enum(['hiragana', 'katakana', 'mixed']),
-  page: Page,
-  quote: z.string(),
-  trap: z.string().describe('A misuse trap for this term, or empty string.'),
-  romajiIsSourceSpelling: z.boolean().describe('true only for a name romanised to its source '
-    + 'spelling rather than its kana reading, e.g. キム -> Kim'),
+  script: Script,
+  page: z.number().int(),
+  quote: z.string().describe('verbatim from that page, typos included'),
+  trap: z.string().describe('a misuse error, or empty'),
+  romajiIsSourceSpelling: z.boolean().describe('true only for a name spelled as in its source language, e.g. キム -> Kim'),
 });
 
-const Irregular = z.object({
-  key: z.string(),
-  n: z.number().int().describe('the number or index this form belongs to, 0 if not numeric'),
-  ja: z.string(),
-  romaji: z.string(),
-  expected: z.string().describe('the plausible WRONG form a learner produces'),
-  note: z.string(),
-  script: z.enum(['hiragana', 'katakana', 'mixed']),
-  page: Page,
-});
-
-const Exercise = z.object({
-  type: z.enum(['produce', 'transform', 'discern', 'describe', 'recall'])
-    .describe('only what the language kind affords in knowledge-kinds.js'),
-  prompt: z.string(),
-  answer: z.string().describe('For discern this is the 0-based INDEX of the correct option, '
-    + 'as a string. For everything else it is the answer itself.'),
-  romaji: z.string(),
-  options: z.array(z.string()).describe('discern only; empty otherwise'),
-  because: z.string().describe('discern only: why the wrong one is wrong'),
-  page: Page,
-});
-
-const HabitSuggestion = z.object({
-  behavior: z.string().describe('one observable behaviour, per taxonomy §B1'),
-  prompt: z.string().describe('the cue. If you cannot state it, it is not a habit.'),
-  celebration: z.string(),
-  why: z.string(),
-});
-
-const Lesson = z.object({
-  key: z.string(),
-  n: z.number().int(),
-  title: z.string(),
-  minutes: z.number().int(),
-  rules: z.array(z.string()).describe('rule keys'),
-  items: z.array(z.string()).describe('item keys'),
-  irregulars: z.array(z.string()).describe('irregular keys'),
-  standfirst: z.string(),
-  body: z.array(z.string()),
-  exercises: z.array(Exercise),
-  habitSuggestion: HabitSuggestion,
-});
-
-const Option = z.object({
-  id: z.string(),
-  label: z.string(),
-  consequence: z.string().describe('what this answer changes. Empty only for multi questions.'),
-  default: z.boolean(),
-});
-
-const Question = z.object({
-  id: z.string(),
-  ask: z.string(),
-  why: z.string(),
-  affects: z.string().describe('which part of the corpus this rewrites'),
-  kind: z.enum(['single', 'multi']),
-  options: z.array(Option),
-});
-
-export const ExtractionSchema = z.object({
+export const ExtractedSchema = z.object({
   source: z.object({
-    title: z.string().describe('the deck\'s own title, in its own script'),
+    title: z.string(),
     subtitle: z.string(),
     subject: z.string(),
     unit: z.string(),
     topics: z.array(z.string()),
     blurb: z.string(),
-    spacing: z.enum(['learner-spaced', 'natural'])
-      .describe('learner-spaced puts spaces between grammatical units. Read it off the deck.'),
+    spacing: z.enum(['learner-spaced', 'natural']),
   }),
-  ingest: z.object({
-    pagesAreImages: z.boolean(),
-    textLayerIs: z.string().describe('what the selectable text layer actually is, if any'),
+  rules: z.array(z.object({
+    key: z.string(),
+    name: z.string(),
+    frame: z.string().describe('the pattern with slots, e.g. N1 は N2 です'),
+    romaji: z.string(),
+    gloss: z.string(),
+    example: z.object({ ja: z.string(), romaji: z.string(), en: z.string() }),
+    page: z.number().int(),
+    quote: z.string().describe('verbatim from that page, typos included'),
+    trap: z.string().describe('the error a learner makes, or empty'),
+  })).describe('grammar patterns. EMPTY if the document has no grammar section.'),
+  items: z.array(Term).describe('vocabulary'),
+  properNouns: z.array(Term).describe('names and places'),
+  irregulars: z.array(z.object({
+    key: z.string(),
+    n: z.number().int().describe('the number it belongs to, or 0'),
+    ja: z.string(),
+    romaji: z.string(),
+    expected: z.string().describe('the plausible WRONG form'),
     note: z.string(),
-    pages: z.array(PageRead),
-  }),
-  detected: z.object({
-    id: z.literal('language'),
-    confidence: z.enum(['low', 'high']),
-    evidence: z.array(z.string()),
-  }),
-  rules: z.array(Rule),
-  items: z.array(Term),
-  properNouns: z.array(Term),
-  irregulars: z.array(Irregular),
-  regularAges: z.array(z.object({ n: z.number().int(), ja: z.string() }))
-    .describe('the well-behaved members of a counter series, if the deck has one. Empty otherwise.'),
-  lessons: z.array(Lesson),
-  questions: z.array(Question),
-  proposedHabit: HabitSuggestion.extend({
+    script: Script,
+    page: z.number().int(),
+    quote: z.string(),
+  })).describe('forms that break their pattern'),
+});
+
+/* -------------------------------------------------------------------------
+   GENERATED
+------------------------------------------------------------------------- */
+
+export const GeneratedSchema = z.object({
+  lessons: z.array(z.object({
+    key: z.string(),
+    n: z.number().int(),
+    title: z.string(),
     minutes: z.number().int(),
-    days: z.array(z.number().int()),
+    rules: z.array(z.string()).describe('extracted rule keys'),
+    items: z.array(z.string()).describe('extracted item keys'),
+    irregulars: z.array(z.string()),
+    standfirst: z.string(),
+    body: z.array(z.string()),
+    exercises: z.array(z.object({
+      type: z.enum(['produce', 'transform', 'discern', 'describe', 'recall']),
+      prompt: z.string(),
+      answer: z.string().describe('for discern, the 0-based index as a string'),
+      romaji: z.string(),
+      options: z.array(z.string()).describe('discern only, else empty'),
+      because: z.string().describe('discern only: why the wrong one is wrong'),
+      derivedFrom: z.string().describe('the extracted key this drills. Its only provenance.'),
+    })),
+    habitSuggestion: z.object({
+      behavior: z.string(), prompt: z.string(), celebration: z.string(), why: z.string(),
+    }),
+  })),
+  questions: z.array(z.object({
+    id: z.string(),
+    ask: z.string(),
+    why: z.string(),
+    affects: z.string(),
+    kind: z.enum(['single', 'multi']),
+    options: z.array(z.object({
+      id: z.string(), label: z.string(), consequence: z.string(), default: z.boolean(),
+    })),
+  })),
+  proposedHabit: z.object({
+    behavior: z.string(), prompt: z.string(), celebration: z.string(), why: z.string(),
+    minutes: z.number().int(), days: z.array(z.number().int()),
   }),
 });

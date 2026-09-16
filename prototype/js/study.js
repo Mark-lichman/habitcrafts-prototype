@@ -17,10 +17,27 @@
 
 import * as store from './store.js';
 import JA from './data-japanese.js';
+import JA3 from './corpus/ja3.js';
+import JA6 from './corpus/ja6.js';
+import VERBS from './corpus/verbs.js';
 
-/* Every corpus the app knows about, keyed by its source id. */
+/* Every corpus the app knows about, keyed by its source id.
+ *
+ * `data-japanese.js` is the hand-made pilot. Everything under `corpus/` was
+ * produced by `evals/extract.mjs` from a real upload and must not be hand
+ * edited: a correction made here is a number the evals would go on reporting as
+ * the model's. Re-extract instead.
+ *
+ * THE KEYS MUST NOT COLLIDE. `store.lessonStat(key)` is keyed by lesson key
+ * alone, with no source in it, so two corpora that both call a lesson `l-1`
+ * would share one study log and practising one would mark the other done.
+ * Extraction prefixes every key with the corpus id, and evals.mjs checks it.
+ */
 export const SOURCES = {
   [JA.source.id]: JA,
+  [JA3.source.id]: JA3,
+  [JA6.source.id]: JA6,
+  [VERBS.source.id]: VERBS,
 };
 
 export function corpusFor(sourceId) {
