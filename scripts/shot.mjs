@@ -46,6 +46,8 @@ const SCREENS = [
     note: 'a lesson from the verb-group deck' },
   { name: 'lesson-ja6', hash: '#/learn/ja6-verbs-daily',
     note: 'a lesson from the word list, which affords no grammar at all' },
+  { name: 'lessons-ja6', hash: '#/learn/ja6-verbs-daily', click: '[data-close-lesson]',
+    note: 'the list you reach with All lessons, which used to throw on a corpus with no drill' },
   { name: 'practice-ja3', hash: '#/learn/ja3-lesson-1-koko-soko-asoko', click: '[data-practise]',
     note: 'the drills, with the reading hidden so it is retrieval and not copying' },
   { name: 'home', hash: '#/home', note: 'habits, including the ones a practice created' },

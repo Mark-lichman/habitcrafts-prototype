@@ -5540,3 +5540,23 @@ body:has(.devbar) .page { padding-block-end: 128px; }
   max-width: 100%;
   overflow-wrap: anywhere;
 }
+
+/* ---------------------------------------------------------------------------
+   A CARD THAT IS A LINK IS STILL A CARD
+   Appended, modifying nothing above it.
+
+   The lesson cards are real anchors rather than a card with an invisible
+   button stretched over it, which is right: they are keyboard- and
+   middle-click-friendly for free. The cost nobody priced is that base.css
+   underlines links, so every word of the card came out underlined - title,
+   standfirst and the exercise line - and a list of six read as a wall of
+   underscores.
+
+   The card's own hover, lift and active states are what signal it is
+   interactive. The underline adds nothing and takes legibility away.
+--------------------------------------------------------------------------- */
+
+a.card {
+  text-decoration: none;
+  color: inherit;
+}
