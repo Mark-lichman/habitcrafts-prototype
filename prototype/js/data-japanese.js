@@ -89,26 +89,6 @@ export const source = {
       + 'Verified: every quote in this file is on the page it cites.',
   },
 
-  /* The text of each page, straight from the PDF and never from a model.
-     This is what lets scripts/evals.mjs §13 run the grounding test in the repo
-     with no dependencies: it is evidence, not more output needing checked. */
-  pageText: {
-    "1": "Country\u0001+\u0001じん\nJIN\n＝nationality",
-    "2": "Name\u0001+\u0001さん\nsan\n＝Mr.\u0001Ms.",
-    "3": "X\u0001=\u0001Y Ms. Yamada\n=\nN1\u0001wa\u0001N2\u0001desu",
-    "4": "X≠Y Ms. Yamada\n=",
-    "5": "やまださん \tは \tにほんじんじゃ \tありません\nyamadasan\u0001wa\u0001nihonnjin\u0001ja\u0001arimasen",
-    "6": "Mr.\u0001Miller",
-    "7": "ミラーさん・ぎんこういん\nミラーさん \tは \tぎんこういんじゃ \tありません\nmirāsan\u0001wa\u0001ginkōin\u0001ja\u0001arimasen",
-    "8": "X＝Y？Ms. Yamada\n=",
-    "9": "ヤマダさん \tは \tにほんじん \tですか。\nyamadasan\u0001wa\u0001nihonnjin\u0001desuka",
-    "10": "employee\ngakkou\nshain",
-    "11": "Kim\nKimsan\u0001wa\u0001SUMSUNG\u0001no\u0001shain\u0001desu",
-    "12": "Teacher\nも（mo）:also\nWatashi\u0001wa\u0001sensei\u0001desu\nSofiasan\u0001mo\u0001sensei\u0001desu",
-    "13": "１→いっさい\n２→にさい\n３→さんさい\n４→よんさい\n５→ごさい\n６→ろくさい\n７→ななさい\n８→はっさい\n９→きゅうさい\n１０→じゅっさい",
-    "14": "Kai\nkai\u0001wa\u0001san\u0001sai\u0001desu\nYear\u0001old"
-  },
-
 };
 
 /* --------------------------------------------------------------------------

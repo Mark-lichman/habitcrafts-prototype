@@ -24,6 +24,11 @@ await withBrowser(async (b) => {
   /* The registry, straight from the app. A list in this file would be a second
      definition of which corpora exist, and it would go stale silently. */
   const corpora = await b.evaluate(`(async () => {
+    /* Boot is async: the decks arrive by dynamic import before the first
+       render. Reading the registry without waiting for it saw only the pilot
+       fixture and reported "1 corpora registered" against a machine with four. */
+    while (!window.HCApp) await new Promise((r) => setTimeout(r, 50));
+    await window.HCApp.ready;
     const s = await import('/js/study.js');
     return s.allSources().map((src) => {
       const c = s.corpusFor(src.id);

@@ -30,3 +30,19 @@ prototype/build.json
 
 # Screenshots are for looking at, not for keeping.
 shots/
+
+# The decks are not in this repository.
+#
+# prototype/js/corpus/ carries the verbatim text of みんなの日本語 class decks
+# and ©Langoal worksheets: every `quote`, and `source.pageText` in full.
+# Grounding needs that text EXACT - a fuzzy match would forgive a typo and,
+# in forgiving it, stop being able to detect a quote the model invented - so
+# it cannot be summarised away.
+#
+# This repo is public and pushing main is the deploy. Keeping a few thousand
+# characters of somebody else's teaching material out of it is the difference
+# between practising with your own deck and republishing a textbook. The code
+# is committed; the decks are deployed.
+#
+# Regenerate with: node evals/extract.mjs <pdf> --id <slug>
+prototype/js/corpus/
