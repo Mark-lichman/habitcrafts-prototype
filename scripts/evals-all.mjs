@@ -31,8 +31,13 @@ const corpusDir = resolve(root, 'prototype/js/corpus');
 
 const paths = [
   'prototype/js/data-japanese.js',
+  /* `index.js` is the registry the app loads, not a corpus: it has no default
+     export and reading `.default.source` off it threw. Every corpus is written
+     by evals/extract.mjs and every one of those exports a default; anything
+     else in this directory is plumbing. */
   ...(existsSync(corpusDir)
-    ? readdirSync(corpusDir).filter((f) => f.endsWith('.js')).sort()
+    ? readdirSync(corpusDir)
+      .filter((f) => f.endsWith('.js') && f !== 'index.js').sort()
       .map((f) => `prototype/js/corpus/${f}`)
     : []),
 ];
@@ -64,7 +69,16 @@ const check = (cond, msg, detail) => {
 
 const loaded = [];
 for (const p of paths) {
-  loaded.push({ path: p, c: (await import(pathToFileURL(resolve(root, p)).href)).default });
+  const mod = await import(pathToFileURL(resolve(root, p)).href);
+  /* Loudly, not silently. A file in corpus/ with no default export is either a
+     new piece of plumbing that belongs on the filter above, or a corpus that
+     failed to write properly - and both want saying out loud rather than
+     throwing a TypeError forty lines later about `undefined.source`. */
+  if (!mod.default || !mod.default.source) {
+    console.log(`  SKIP ${p} exports no corpus (no default with a \`source\`).`);
+    continue;
+  }
+  loaded.push({ path: p, c: mod.default });
 }
 
 /* Source ids key the registry in study.js. A duplicate does not collide
