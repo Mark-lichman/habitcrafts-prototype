@@ -468,14 +468,22 @@ function stepLessons() {
     if (l) return lessonDetail(l);
   }
 
-  const total = JA.lessons.reduce((n, l) => n + l.minutes, 0) + JA.irregularDrill.minutes;
+  /* A DRILL IS NOT GUARANTEED, AND ASSUMING ONE CRASHED THIS SCREEN.
+     The drill exists only where the deck has irregular forms, and a vocabulary
+     sheet has no pattern for a form to break. Reading `.minutes` off null threw
+     inside render(), which leaves the previous DOM standing: clicking
+     "All lessons" from a word-list lesson looked like a dead button and was
+     actually an uncaught TypeError. */
+  const drill = JA.irregularDrill;
+  const total = JA.lessons.reduce((n, l) => n + l.minutes, 0) + (drill ? drill.minutes : 0);
 
   return html`
     <h1 class="t-h1">Your lessons</h1>
     <p class="t-body-lg t-muted" style="max-inline-size:52ch">
-      ${JA.lessons.length} lessons and one drill, ${total} minutes in total.
-      Ordered by what depends on what. Your deck introduces nationality before
-      the sentence that uses it, so we moved the frame first.
+      ${plural(JA.lessons.length, 'lesson')}${drill ? ' and one drill' : ''},
+      ${total} minutes in total. Ordered by what depends on what: a deck
+      introduces a word before the sentence that needs it, so the frame moves
+      first.
     </p>
 
     ${JA.lessons.map((l) => {
@@ -504,16 +512,17 @@ function stepLessons() {
         </a>`;
     })}
 
+    ${drill ? html`
     <section class="card card--roomy" style="margin-block-start:var(--space-16)">
       <div class="section-head">
-        <h3 class="t-h3">${JA.irregularDrill.title}</h3>
-        <span class="t-body-sm t-muted">${JA.irregularDrill.minutes} min · recurring</span>
+        <h3 class="t-h3">${drill.title}</h3>
+        <span class="t-body-sm t-muted">${drill.minutes} min · recurring</span>
       </div>
-      <p class="t-body t-muted">${JA.irregularDrill.why}</p>
+      <p class="t-body t-muted">${drill.why}</p>
       <p class="t-body" style="margin-block-start:var(--space-12)">
-        <span class="ja">${JA.irregulars.map((x) => x.n + ' → ' + x.ja).join('　·　')}</span>
+        <span class="ja">${JA.irregulars.map((x) => (x.n ? x.n + ' → ' : '') + x.ja).join('　·　')}</span>
       </p>
-    </section>
+    </section>` : ''}
 
     ${foot(true, true, 'Set when')}`;
 }
