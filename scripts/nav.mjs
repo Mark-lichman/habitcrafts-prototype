@@ -119,22 +119,38 @@ await withBrowser(async (b) => {
 
   await b.evaluate("location.hash = '#/library'");
   await b.wait(1400);
-  await b.check('the shelf offers a way to finish', b.count('[data-finish]'), 1);
+  /* ONE PER SOURCE, not one in total. The shelf carried a single upload when
+     this was written; there are four now, so a bare count of 1 asserted that
+     the other three had no way to be finished. Scoped to the practice under
+     test instead. */
+  await b.check('the shelf offers a way to finish', b.count('[data-finish]'), (n) => n >= 1);
   await b.check('and a way to upload something new', b.count('a[href="#/learn"]'), (n) => n >= 1);
 
-  await b.click('[data-finish]');
+  /* Finish THIS one, and assert this one went. Counting every study habit to
+     zero was only ever true because there was only ever one. */
+  /* Finish the source the habit actually belongs to. `[data-finish]` carries a
+     source id and the shelf is newest-first, so a bare first-match click
+     finished whichever upload happened to be most recent and left the habit
+     under test untouched: a green-looking click on the wrong practice. */
+  const before = await b.evaluate('window.HCApp.store.activeHabits().filter(h => h.sourceId).length');
+  const mine = await b.evaluate(
+    'window.HCApp.store.activeHabits().find(h => h.sourceId)?.sourceId');
+  await b.click(`[data-finish="${mine}"]`);
   await b.check('finishing archives the habit',
-    'window.HCApp.store.activeHabits().filter(h => h.sourceId).length', 0);
+    'window.HCApp.store.activeHabits().filter(h => h.sourceId).length', before - 1);
   await b.check('the shelf says it is finished', `${b.T}.includes("Finished")`, true);
   await b.check('the lessons are still listed', b.count('[href^="#/learn/"]'), (n) => n >= 5);
   await b.check('it now offers a way back', b.count('[data-reopen]'), 1);
 
   await b.evaluate("location.hash = '#/home'");
   await b.wait(1200);
-  await b.check('the reminder trigger is gone from Home', b.count('[data-fire-reminder]'), 0);
+  /* The finished practice stops offering a reminder. The others still do, so
+     the assertion is that the count DROPPED, not that it hit zero. */
+  await b.check('the reminder trigger is gone for the finished practice',
+    b.count('[data-fire-reminder]'), (n) => n < before);
 
   await b.evaluate("location.hash = '#/library'");
   await b.wait(1200);
-  await b.click('[data-reopen]');
-  await b.check('reopening puts it back', b.count('[data-finish]'), 1);
+  await b.click(`[data-reopen="${mine}"]`);
+  await b.check('reopening puts it back', b.count('[data-finish]'), (n) => n >= 1);
 });

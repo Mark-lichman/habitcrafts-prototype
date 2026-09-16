@@ -121,6 +121,40 @@ regulars get one seventh of the contact, for the forms that decay fastest.
 
 ---
 
+## 4b. What the second and third corpora changed
+
+The standard above was written from one hand-made corpus. Running real extraction over three
+more uploads moved it, and recording how is the point of keeping this file.
+
+**Six checks failed on the first generated corpus, and half of them were the checks.** Three
+assumed every language document is a class deck: a vocabulary sheet was asked for grammar it
+does not contain, for an exceptions drill with no exceptions to drill, and had its discern
+answer *index* read as a word ("0 reads 0"). The affordance triple in §2 exists because of
+that, and so does its inverse: a full bucket the document cannot fill is the model inventing.
+
+**One was a real bug in the transliterator.** ビール is `bīru`. Long i written with the
+katakana length mark is `ī`; long i written いい is `ii`. One table was doing both jobs, and it
+called the model wrong when the model was right. A check that fails a correct answer does more
+damage than no check, because it trains you to stop reading the failures.
+
+**Extraction is two calls, and the constraint that forced it was a gift.** The combined schema
+was rejected as too large to compile. The split that fixed it is the split §3 already wanted:
+extract from the pages, then generate from the extracted cards **with the document out of
+context**. "Generated content may only use extracted material" stopped being a rule in a prompt
+and became a fact about what the model can see.
+
+**Two rules moved from memory into the suite**, because a rule held in memory lasts as long as
+the memory. No em or en dash in anything a learner reads: 58 were removed from this repository
+by hand, and the first generated corpus put one back in a shelf title. And a title is a name,
+not a summary: that same corpus came back called "koko / soko / asoko — kochira series, floors,
+dochira, ~no~, numbers and ikura", which is what `topics` is for.
+
+**One finding was in the hand-made pilot, which had been reviewed.** Slide 11 writes SUMSUNG,
+the deck's own typo, and the exercises quietly taught the correct SAMSUNG. Correcting a brand
+name for a learner is right. Doing it undeclared has the shape of an invention, because the
+corpus asserted Latin text the source does not contain. It is declared now, with the quote
+keeping the typo so grounding stays exact.
+
 ## 5. What is deliberately not in the standard
 
 **No confidence scores and no self-assessment.** A model's view of its own output is not

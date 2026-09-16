@@ -33,6 +33,7 @@ import { basename, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
+import { z } from 'zod';
 import { ExtractedSchema, GeneratedSchema } from './schema.mjs';
 import { classify } from './classify.mjs';
 import { pagesOf } from './ground.mjs';
@@ -155,6 +156,10 @@ async function ask(schema, content, label) {
 process.stderr.write('  extracting…\n');
 const ex = await ask(ExtractedSchema,
   [pdfBlock, { type: 'text', text: `${prompt}\n${bound}\n
+THE TITLE IS A NAME, NOT A SUMMARY. Use what the deck calls itself (第3課, 動詞のグループ分け),
+or a short noun phrase if it names nothing. A list of the topics inside it is what \`topics\` is
+for, and it reads terribly on a shelf. No em or en dashes in it.
+
 THIS CALL EXTRACTS ONLY. Return what is ON THE PAGES: rules, vocabulary, names, irregulars.
 Do not write lessons or exercises. A second call builds those from what you return here.
 
@@ -198,12 +203,18 @@ Every one of these is checked by scripts/evals.mjs, so a violation is a red buil
    A particle contrast you happen to know about Japanese is not a recorded trap: inventing
    one is the same failure as inventing a grammar rule, wearing a different hat.
 11. Include a question with id "q-duration" asking how long a daily session should be, with
-   options in minutes. It is the budget everything else is cut to fit, so it is not optional,
-   and the smallest option must fit some real unit of work you actually built.
+   options in minutes. It is the budget everything else is cut to fit, so it is not optional.
+   CHECK YOUR OWN NUMBERS BEFORE YOU ANSWER: the SMALLEST option you offer must be at least as
+   long as your SHORTEST lesson, or the person who picks it is promised a lesson and handed
+   nothing. If your shortest lesson is 7 minutes, do not offer 5. Either raise the smallest
+   option or write a shorter lesson; both are fine, offering a budget nothing fits is not.
 5. Order lessons by dependency. Never use a pattern a later lesson introduces.
 6. Prefix every lesson key with "${id}-".
 7. Modified Hepburn with macrons. Spacing is "${ex.out.source.spacing}".
 8. Name the script. Say hiragana or katakana, never "kana".
+12. NO EM OR EN DASHES (— –) in anything a learner reads: titles, blurbs, prompts, lesson
+   bodies, option labels. 58 were removed from this product by hand. Recast the sentence or
+   use a colon; do not swap in a hyphen and call it done.
 9. A clarifying question must change the output. If the practice is identical either way it is
    a survey question and does not belong.
 ${ex.out.rules.length ? '' : '10. There are NO rules above, so there is no grammar to drill. Build vocabulary lessons.\n'}` }],
@@ -219,6 +230,70 @@ for (const l of gen.out.lessons) {
     if (e.type === 'discern') e.answer = Number(e.answer);
     if (e.type !== 'discern') { delete e.options; delete e.because; }
   }
+}
+
+/* THE DASH REPAIR PASS.
+   Rule 12 tells the model not to use em or en dashes in anything a learner
+   reads, and it obeys most of the time, which is the worst of the three
+   possible outcomes: a rule that mostly works produces a red build on a
+   different corpus each run.
+
+   The fix is NOT a find-and-replace. CLAUDE.md is explicit that the sentence
+   gets recast, and swapping — for a hyphen leaves a sentence that was built
+   around a dash and now reads as though a character went missing. So the
+   offending strings go back to the model to be rewritten, and only those: a
+   whole-corpus regeneration would reroll forty exercises to fix four sentences.
+
+   One pass, not a loop. If it comes back still dashed, the eval says so and a
+   person decides, which is better than a script that retries until it gets an
+   answer it likes. */
+const DASH = /[—–]/;
+const facing = (g) => [
+  ...g.lessons.flatMap((l) => [l.title, l.standfirst, ...l.body,
+    ...l.exercises.flatMap((e) => [e.prompt, e.because]),
+    ...Object.values(l.habitSuggestion)]),
+  ...g.questions.flatMap((q) => [q.ask, q.why, q.affects,
+    ...q.options.flatMap((o) => [o.label, o.consequence])]),
+  ...Object.values(gen.out.proposedHabit).filter((v) => typeof v === 'string'),
+].filter((s) => typeof s === 'string');
+
+const dashed = [...new Set(facing(gen.out).filter((s) => DASH.test(s)))];
+if (dashed.length) {
+  process.stderr.write(`  ${dashed.length} string(s) use an em or en dash; asking for recasts…\n`);
+  const Recast = z.object({
+    recasts: z.array(z.object({ before: z.string(), after: z.string() })),
+  });
+  const fix = await ask(Recast, [{ type: 'text', text:
+`Rewrite each of these so it contains no em dash and no en dash. RECAST THE SENTENCE. Do not
+swap the dash for a hyphen, a comma or a semicolon and hand back the same clause structure: a
+sentence built around a dash reads as though a character fell out when you do that. Use a
+colon, a full stop, or a different construction. Keep the meaning, the Japanese, and roughly
+the length. Return every one, with \`before\` copied EXACTLY so it can be matched.
+
+${JSON.stringify(dashed, null, 1)}` }], 'recast');
+
+  let applied = 0;
+  const swap = (s) => {
+    if (typeof s !== 'string') return s;
+    const hit = fix.out.recasts.find((r) => r.before === s);
+    if (hit && !DASH.test(hit.after)) { applied++; return hit.after; }
+    return s;
+  };
+  for (const l of gen.out.lessons) {
+    l.title = swap(l.title); l.standfirst = swap(l.standfirst);
+    l.body = l.body.map(swap);
+    for (const e of l.exercises) { e.prompt = swap(e.prompt); e.because = swap(e.because); }
+    for (const k of Object.keys(l.habitSuggestion)) l.habitSuggestion[k] = swap(l.habitSuggestion[k]);
+  }
+  for (const q of gen.out.questions) {
+    q.ask = swap(q.ask); q.why = swap(q.why); q.affects = swap(q.affects);
+    for (const o of q.options) { o.label = swap(o.label); o.consequence = swap(o.consequence); }
+  }
+  for (const k of Object.keys(gen.out.proposedHabit)) {
+    gen.out.proposedHabit[k] = swap(gen.out.proposedHabit[k]);
+  }
+  const left = facing(gen.out).filter((s) => DASH.test(s)).length;
+  process.stderr.write(`  recast ${applied}, ${left} still dashed\n`);
 }
 
 const x = { ...ex.out, ...gen.out, regularAges: [] };

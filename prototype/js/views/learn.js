@@ -23,7 +23,30 @@ import * as router from '../router.js';
 import * as store from '../store.js';
 import { html, icon, cls, on, plural } from '../ui.js';
 import { KINDS, kind, EXERCISES } from '../knowledge-kinds.js';
-import JA from '../data-japanese.js';
+/* THE FLOW IS NO LONGER WELDED TO ONE CORPUS.
+   This imported `data-japanese.js` directly, which CLAUDE.md forbids for a view
+   and which had a visible cost once a second upload existed: the Library listed
+   lessons from four sources and every one of them opened the pilot, because the
+   only corpus this file could see was the pilot. `study.js` is the join module
+   the Library already goes through.
+   `JA` stays a single binding rather than becoming `JA()` at 31 call sites: it
+   is REBOUND when a lesson from another source is opened, and the pilot stays
+   the default so the three browser suites keep driving what they were written
+   against. */
+import { corpusFor, allSources } from '../study.js';
+import PILOT from '../data-japanese.js';
+
+let JA = PILOT;
+
+/** Point the flow at whichever corpus owns this lesson key. */
+function focusLesson(key) {
+  if (JA.lessons.some((l) => l.key === key)) return true;
+  for (const s of allSources()) {
+    const c = corpusFor(s.id);
+    if (c && c.lessons.some((l) => l.key === key)) { JA = c; return true; }
+  }
+  return false;
+}
 
 export const meta = {
   title: 'Learn',
@@ -50,6 +73,10 @@ let reached = 1;        /* the furthest step reached, so crumbs stay clickable *
 let created = [];       /* habit ids, once the bridge has fired */
 
 export function resetFlow() {
+  /* Back to the pilot, or "start over" would silently leave the flow pointed at
+     whichever corpus was last deep-linked, and step 1 would describe an upload
+     nobody just made. */
+  JA = PILOT;
   step = 1; answers = {}; kindId = null; openLesson = null;
   reached = 1;
   revealed = {}; results = {}; practice = {}; anchors = {};
@@ -316,7 +343,18 @@ function exerciseCard(l, e, i) {
     <section class="card card--roomy" style="margin-block-start:var(--space-16)">
       <div class="section-head">
         <span class="chip chip--sm">${EXERCISES[e.type].label}</span>
-        <span class="t-body-sm t-muted">${i + 1} of ${l.exercises.length} · p${e.page}</span>
+        ${/* An exercise has no page: nobody wrote it down, it was generated from
+              a card that does. This printed "p" followed by nothing once the
+              page came off, so it shows the page of the card it drills instead.
+              THE PAGE ONLY, never the card's text: the first version printed
+              はっさい beside the exercise asking for はっさい, which is copying
+              rather than retrieval and is the exact flaw drive.mjs exists to
+              catch. It caught it. */ ''}
+        <span class="t-body-sm t-muted">${i + 1} of ${l.exercises.length}${(() => {
+          const src = [...JA.rules, ...JA.items, ...JA.irregulars]
+            .find((x) => x.key === e.derivedFrom);
+          return src ? ` · from p${src.page}` : '';
+        })()}</span>
       </div>
 
       <p class="t-body-lg" style="margin-block-start:var(--space-8)">${e.prompt}</p>
@@ -372,13 +410,30 @@ function lessonDetail(l) {
       <section class="card card--roomy" style="margin-block-start:var(--space-24)">
         ${l.body.map((p) => html`<p class="t-body" style="margin-block-end:var(--space-12)">${p}</p>`)}
 
+        ${(() => {
+          /* WHAT THIS LESSON CAME FROM, WHICHEVER BUCKET IT CAME FROM.
+             This listed rule frames only. That is fine for a class deck and
+             empty for a word list, which has no grammar section and therefore
+             no rules: the panel rendered its heading over nothing, on exactly
+             the uploads where "where did this come from" is the live question.
+             Items and irregulars carry a page too. */
+          const cited = [
+            ...(l.rules || []).map((k) => JA.rules.find((x) => x.key === k))
+              .filter(Boolean).map((r) => ({ ja: r.frame, page: r.page })),
+            ...(l.items || []).map((k) => JA.items.find((x) => x.key === k))
+              .filter(Boolean).map((i) => ({ ja: i.ja, en: i.en, page: i.page })),
+            ...(l.irregulars || []).map((k) => JA.irregulars.find((x) => x.key === k))
+              .filter(Boolean).map((x) => ({ ja: x.ja, en: x.note, page: x.page })),
+          ];
+          if (!cited.length) return '';
+          return html`
         <p class="t-label" style="margin-block-start:var(--space-16)">From your deck</p>
         <ul class="u-stack t-body" style="gap:var(--space-4)">
-          ${(l.rules || []).map((k) => {
-            const r = JA.rules.find((x) => x.key === k);
-            return r ? html`<li><strong class="ja">${r.frame}</strong> <span class="t-muted">p${r.page}</span></li>` : '';
-          })}
-        </ul>
+          ${cited.map((c) => html`<li><strong class="ja">${c.ja}</strong>
+            ${c.en ? html`<span class="t-muted">${c.en}</span>` : ''}
+            <span class="t-muted">p${c.page}</span></li>`)}
+        </ul>`;
+        })()}
       </section>
 
       <div class="u-row" style="gap:var(--space-12);margin-block-start:var(--space-24)">
@@ -630,7 +685,7 @@ export function render(params) {
      every click, so re-reading the param each time meant closing the lesson
      set openLesson to null and the next render put it straight back - the
      back button looked dead while working perfectly. */
-  if (key && key !== appliedKey && JA.lessons.some((l) => l.key === key)) {
+  if (key && key !== appliedKey && focusLesson(key)) {
     step = 4;
     reached = Math.max(reached, 4);
     openLesson = key;
