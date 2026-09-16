@@ -15,11 +15,19 @@
    ------------------------------------------------------------------------
    PERSISTENCE
    ------------------------------------------------------------------------
-   sessionStorage, key `hc:proto:v1`, whole-state JSON. sessionStorage rather
-   than localStorage on purpose: a prototype that remembers yesterday's demo
-   is a prototype nobody can hand to the next reviewer. Close the tab and it is
-   the seed data again. Theme and motion are the exception — HC owns those and
-   keeps them in localStorage, because a reviewer sets dark mode once.
+   Whichever adapter `configure()` was handed; see js/persistence.js, which owns
+   the keys. Two ship:
+
+     fixtureAdapter  sessionStorage, `hc:proto:v2`. The prototype. Close the tab
+                     and it is the seed again, deliberately: a prototype that
+                     remembers yesterday's demo is one nobody can hand to the
+                     next reviewer.
+     localAdapter    localStorage, `hc:ja:v1`. The installed app, where the
+                     opposite is true and losing a week of practice to a swipe
+                     in the recents tray would be the worst bug it could have.
+
+   Theme and motion are outside both — HC owns those and keeps them in
+   localStorage either way, because a reviewer sets dark mode once.
 
    Bump STORAGE_KEY's version if you change the state shape; a stale blob from
    an older shape is dropped rather than migrated.
@@ -77,6 +85,16 @@ export const state = hydrate();
  *
  *     store.configure(firestoreAdapter({ uid }))   // js/adapters/firestore.js
  */
+/**
+ * Which adapter is installed. Exported so a test can assert it rather than
+ * assume it: the difference between sessionStorage and localStorage is
+ * invisible for a whole session and then loses a week of practice, so "are we
+ * on the right one" has to be answerable from outside.
+ */
+export function adapterName() {
+  return adapter && adapter.name;
+}
+
 export function configure(next) {
   adapter = next || fixtureAdapter;
   const fresh = hydrate();
@@ -269,6 +287,71 @@ export function completeLesson(key) {
   log[key] = cur;
   commit({ type: 'lesson-complete', id: key });
   return cur;
+}
+
+/* --------------------------------------------------------------------------
+   THE REVIEW LOG
+
+   One row per answered card: { card, at, grade }. Append-only, and that is the
+   whole design. Every schedule the app shows is COMPUTED from this by js/srs.js
+   and nothing is ever written back: no box, no interval, no due date. Those are
+   the second fact this file refuses to keep anywhere else, and a stored due
+   date that disagrees with the reviews behind it gives two answers to "is this
+   due" with no way to tell which is wrong.
+
+   WHY THIS EXISTS WHEN `completeLesson` ALREADY DID.
+   The study log records that a lesson was RUN. It cannot record that one card
+   inside it keeps being missed, because until now the per-exercise verdict was
+   a module-level `let` in learn.js that was thrown away on reload. "Got it" and
+   "Not yet" were indistinguishable by the time anything could read them, so no
+   schedule could be built at all. Both survive: the study log answers "have I
+   been coming back to this lesson", the review log answers "what should I look
+   at right now", and they are different questions.
+
+   `at` is a full ISO timestamp, unlike the study log's day strings, because box
+   0 means "again before you close the app" and a day is too coarse to express
+   that.
+
+   KNOWN LIMIT, STATED RATHER THAN DISCOVERED: the log is unbounded. Fifty
+   reviews a day is roughly a megabyte of JSON after a year, comfortable inside
+   localStorage's ~5MB, and wants compacting somewhere in year three. The fix
+   when it comes is to fold everything older than the top interval into one
+   summary row per card; it is not worth writing before the numbers ask for it.
+-------------------------------------------------------------------------- */
+
+function reviewLog() {
+  if (!state.reviews) state.reviews = [];
+  return state.reviews;
+}
+
+/** Every review of one card, oldest first. */
+export function reviewsOf(card) {
+  return cached('reviews:' + card, () => reviewLog().filter((r) => r.card === card));
+}
+
+/** Reviews grouped by card, for anything building a queue across every deck. */
+export function reviewsByCard() {
+  return cached('reviews:all', () => {
+    const by = new Map();
+    for (const r of reviewLog()) {
+      if (!by.has(r.card)) by.set(r.card, []);
+      by.get(r.card).push(r);
+    }
+    return by;
+  });
+}
+
+/**
+ * Record one answer. `grade` is 'got' or 'again' and nothing else: the practice
+ * screen offers two buttons, and a third value here would be a grade no part of
+ * the interface can produce.
+ */
+export function recordReview(card, grade) {
+  if (grade !== 'got' && grade !== 'again') {
+    throw new Error(`grade must be 'got' or 'again', got ${JSON.stringify(grade)}`);
+  }
+  reviewLog().push({ card, at: new Date().toISOString(), grade });
+  commit({ type: 'review', id: card });
 }
 
 /* --------------------------------------------------------------------------

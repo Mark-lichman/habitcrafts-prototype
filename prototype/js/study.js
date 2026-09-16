@@ -16,6 +16,7 @@
    ========================================================================= */
 
 import * as store from './store.js';
+import * as srs from './srs.js';
 import JA from './data-japanese.js';
 import JA3 from './corpus/ja3.js';
 import JA6 from './corpus/ja6.js';
@@ -102,6 +103,75 @@ export function sinceLabel(isoDate) {
   if (days < 7) return days + ' days ago';
   if (days < 14) return 'a week ago';
   return Math.floor(days / 7) + ' weeks ago';
+}
+
+/* --------------------------------------------------------------------------
+   THE DUE QUEUE
+
+   Every card that wants looking at today, from EVERY deck, in one list. This is
+   the screen the app exists for and the reason it lives here rather than in a
+   view: it is the join between three things that have no business knowing about
+   each other, which is what this module is for. The corpora say which cards
+   exist, `store.reviewsByCard()` says what has happened to them, and `srs.js`
+   says what that means.
+
+   ACROSS decks, not within one. A learner does not have a 第3課 morning and a
+   word-list afternoon; they have ten minutes on a train. Sorting each deck
+   separately would mean the deck you started most recently always wins, which
+   is the same failure `dueLessons()` was written to avoid one level up.
+-------------------------------------------------------------------------- */
+
+/** Every card in every registered corpus, with its schedule. */
+export function allCards() {
+  const by = store.reviewsByCard();
+  const out = [];
+  for (const src of allSources()) {
+    const c = corpusFor(src.id);
+    if (!c) continue;
+    for (const lesson of c.lessons) {
+      lesson.exercises.forEach((exercise, i) => {
+        const card = srs.cardId(src.id, exercise);
+        out.push({
+          card,
+          sourceId: src.id,
+          sourceName: `${src.subject} · ${src.unit}`,
+          lessonKey: lesson.key,
+          lessonTitle: lesson.title,
+          index: i,
+          exercise,
+          schedule: srs.scheduleFor(by.get(card) || []),
+        });
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * What to practise now, hardest-hit first.
+ *
+ * `limit` exists because a queue that says "148 due" on a Monday morning is a
+ * queue nobody starts. A session is as long as the person has, and the ordering
+ * already guarantees the top of it is the part that matters.
+ */
+export function dueCards({ onDay = srs.isoDay(Date.now()), limit = 0 } = {}) {
+  const due = allCards()
+    .filter((c) => srs.isDue(c.schedule, onDay))
+    .sort(srs.queueOrder);
+  return limit > 0 ? due.slice(0, limit) : due;
+}
+
+/** Counts for the Today screen, which needs to say why there is nothing to do. */
+export function dueSummary(onDay = srs.isoDay(Date.now())) {
+  const all = allCards();
+  const due = all.filter((c) => srs.isDue(c.schedule, onDay));
+  return {
+    due: due.length,
+    total: all.length,
+    fresh: due.filter((c) => !c.schedule.seen).length,
+    lapsed: due.filter((c) => c.schedule.lapses > 0).length,
+    sources: allSources().length,
+  };
 }
 
 /** How much of a source has been touched at all, for the Library card. */

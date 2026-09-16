@@ -82,6 +82,14 @@ export function seedState() {
        paid. Separate from `enrolments`, which is the whole cohort — this is
        the one row that belongs to the person holding the phone. */
     membership: { joined: [], plus: false },
+
+    /* --- the review log -----------------------------------------------
+       Append-only: { card, at, grade }. Every schedule the app shows is
+       COMPUTED from this and nothing is written back. A stored interval or a
+       stored due-date would be a second fact that can disagree with the
+       history it came from, which is the one thing this codebase refuses to
+       do anywhere else and will not start doing here. See js/srs.js. */
+    reviews: [],
   };
 }
 
@@ -101,37 +109,78 @@ export function seedState() {
 
 const STORAGE_KEY = 'hc:proto:v2';
 
-export const fixtureAdapter = {
-  name: 'fixtures',
+/**
+ * Both web-storage adapters differ in exactly two things: which Storage object
+ * and which key. Written once so they cannot drift, because the day one of them
+ * grows a try/catch the other does not is the day a quota error in one context
+ * loses data in the other.
+ *
+ * `storage` is read lazily, per call, rather than captured: a browser with site
+ * data blocked throws on the PROPERTY ACCESS, not on the method, so touching
+ * `window.localStorage` at module scope would take the whole app down at import
+ * time instead of degrading to in-memory.
+ */
+function webStorage(name, pick, key) {
+  return {
+    name,
+    seed: seedState,
 
-  seed: seedState,
+    load() {
+      try {
+        const raw = pick().getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) {
+        return null;
+      }
+    },
 
-  load() {
-    try {
-      const raw = sessionStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch (e) {
-      return null;
-    }
-  },
+    save(state) {
+      try {
+        pick().setItem(key, JSON.stringify(state));
+      } catch (e) {
+        /* private mode, quota. The app keeps working in memory, which is the
+           right failure: losing persistence must never lose the session. */
+      }
+    },
 
-  save(state) {
-    try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch (e) {
-      /* private mode, quota. The app keeps working in memory, which is the
-         right failure: losing persistence must never lose the session. */
-    }
-  },
+    clear() {
+      try { pick().removeItem(key); } catch (e) {}
+    },
 
-  clear() {
-    try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) {}
-  },
+    watch() {
+      return () => {};    /* nothing changes underneath us */
+    },
+  };
+}
 
-  watch() {
-    return () => {};    /* fixtures never change underneath us */
-  },
-};
+export const fixtureAdapter = webStorage(
+  'fixtures', () => window.sessionStorage, STORAGE_KEY);
+
+/* --------------------------------------------------------------------------
+   THE LOCAL ADAPTER — what the installed app runs on
+
+   The same contract, one word different, and the difference is the whole
+   product. sessionStorage is right for a prototype being handed to a reviewer
+   and wrong for an app somebody practises with: on Android, dismissing an
+   installed PWA from the recents tray ends the session, so every check-in,
+   every lesson run and the entire review log would be gone by the next
+   morning. store.js already argues that the study log is "the most valuable
+   thing this app knows about you" and refuses to let `finishSource()` delete
+   it. sessionStorage was quietly doing what that code refuses to do.
+
+   Its own key, not a bump of the prototype's: the two are different products
+   with different lifetimes and there is no reason a reviewer's throwaway
+   session and a year of real practice should ever be able to overwrite one
+   another.
+
+   STILL SYNCHRONOUS, which is why localStorage and not IndexedDB. The contract
+   at the top of this file is synchronous because `render()` is, and IndexedDB
+   would ripple into every view for a quota this app is nowhere near: a year of
+   daily practice is on the order of a megabyte of JSON against a 5MB ceiling.
+-------------------------------------------------------------------------- */
+
+export const localAdapter = webStorage(
+  'local', () => window.localStorage, 'hc:ja:v1');
 
 /* --------------------------------------------------------------------------
    THE MEMORY ADAPTER — for tests and for screenshots
