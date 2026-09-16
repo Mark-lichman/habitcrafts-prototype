@@ -16,6 +16,7 @@
 import * as store from './store.js';
 import { localAdapter, fixtureAdapter } from './persistence.js';
 import * as router from './router.js';
+import { loadCorpora } from './study.js';
 import * as config from './config.js';
 import { longDate, today } from './data.js';
 import { html, icon } from './ui.js';
@@ -255,7 +256,7 @@ router.afterRender((meta) => {
    Handlers fire in registration order and prototype.js registered first.
 -------------------------------------------------------------------------- */
 
-function boot() {
+async function boot() {
   /* WHERE THE DATA LIVES, decided once, here, before anything reads it.
      This is the single call js/persistence.js was written for, and until now it
      was missing: `configure` appeared nowhere in this file, so store.js's
@@ -269,6 +270,16 @@ function boot() {
   const demo = new URLSearchParams(location.search).has('demo');
   store.configure(demo ? fixtureAdapter : localAdapter);
 
+  /* THE DECKS LOAD BEFORE THE FIRST RENDER, NOT DURING IT.
+     They are not in the repository (see js/study.js), so they arrive by dynamic
+     import, and `render()` is a pure SYNCHRONOUS function of the store.
+     Everything it reads has to be in place before it runs the first time, which
+     is the same hydrate-before-boot rule production-path.md §3.1 sets out for a
+     network adapter. Awaiting here rather than inside a view is what keeps that
+     property intact: one await, at the boundary, and the view layer never
+     learns that anything was ever asynchronous. */
+  await loadCorpora();
+
   /* The nav has to exist before the first render — paintShell moves
      aria-current onto an item it expects to already be in the document. */
   paintNav();
@@ -277,8 +288,16 @@ function boot() {
   router.start(viewRoot);
 }
 
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
-else boot();
+/* BOOT IS ASYNC NOW, so it needs something to wait on.
+   The decks arrive by dynamic import before the first render, which makes boot
+   a promise. Anything that reads the app from outside - the harness, the
+   browser suites, a console - was previously safe to query the moment the page
+   existed, and now is not. `HCApp.ready` is that promise, exposed rather than
+   guessed at: the alternative is every caller sleeping for a duration that
+   works on a laptop and fails on a cold cache. */
+const ready = (document.readyState === 'loading')
+  ? new Promise((r) => document.addEventListener('DOMContentLoaded', () => r(boot())))
+  : boot();
 
 /* --------------------------------------------------------------------------
    5. THE HARNESS HANDLE
@@ -288,6 +307,8 @@ else boot();
 -------------------------------------------------------------------------- */
 
 window.HCApp = {
+  /** Resolves once the decks are loaded and the first render has run. */
+  ready,
   store,
   router,
   config,

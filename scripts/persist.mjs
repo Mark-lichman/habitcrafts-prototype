@@ -35,6 +35,7 @@ await withBrowser(async (b) => {
   await b.evaluate(`${app}.resetAll()`);
   await b.send('Page.reload', {});
   await b.wait(1800);
+  await b.ready();
 
   b.section('the adapter that is actually installed');
   await b.check('the app is on localStorage, not sessionStorage',
@@ -67,6 +68,7 @@ await withBrowser(async (b) => {
   /* THE RELOAD. New document, new module graph, nothing in memory. */
   await b.send('Page.reload', {});
   await b.wait(1800);
+  await b.ready();
 
   await b.check('the review is still there after a reload',
     `${app}.reviewsByCard().size`, before);
@@ -90,6 +92,7 @@ await withBrowser(async (b) => {
   await b.evaluate(`${app}.checkIn(${JSON.stringify(habit)})`);
   await b.send('Page.reload', {});
   await b.wait(1800);
+  await b.ready();
   await b.check('the check-in is still there',
     `${app}.habitById(${JSON.stringify(habit)}).history.length`, doneBefore + 1);
 

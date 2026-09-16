@@ -18,9 +18,6 @@
 import * as store from './store.js';
 import * as srs from './srs.js';
 import JA from './data-japanese.js';
-import JA3 from './corpus/ja3.js';
-import JA6 from './corpus/ja6.js';
-import VERBS from './corpus/verbs.js';
 
 /* Every corpus the app knows about, keyed by its source id.
  *
@@ -36,10 +33,55 @@ import VERBS from './corpus/verbs.js';
  */
 export const SOURCES = {
   [JA.source.id]: JA,
-  [JA3.source.id]: JA3,
-  [JA6.source.id]: JA6,
-  [VERBS.source.id]: VERBS,
 };
+
+/**
+ * Load the corpora that are not in the repository.
+ *
+ * THE DECKS ARE NOT COMMITTED, AND THAT IS DELIBERATE. This repository is
+ * public. The corpora carry the verbatim text of みんなの日本語 class decks and
+ * ©Langoal worksheets - `source.pageText` and every `quote` - because grounding
+ * needs it and a fuzzy match would stop detecting invention. Publishing a few
+ * thousand characters of somebody else's teaching material to a public GitHub
+ * site is a different act from keeping it on a phone, and it is not one worth
+ * doing by accident. `.gitignore` covers `prototype/js/corpus/`; the deploy
+ * carries the decks, the repo carries the code.
+ *
+ * So this is a DYNAMIC import with a catch rather than a static one at the top
+ * of the file. A clone without corpora then runs with an empty Library, which
+ * is a true statement about that clone. A static import would throw at module
+ * evaluation and take the whole app down before the first render, which is a
+ * confusing way to say "you do not have any decks".
+ *
+ * Called once from app.js before `router.start()`. That is the same
+ * hydrate-before-boot pattern production-path.md §3.1 describes for a network
+ * adapter, and for the same reason: `render()` is synchronous, so everything it
+ * reads has to be in place before it runs for the first time.
+ */
+export async function loadCorpora() {
+  try {
+    const mod = await import('./corpus/index.js');
+    for (const c of mod.CORPORA || []) SOURCES[c.source.id] = c;
+
+    /* The pilot fixture stays in the repo, because the browser suites are
+       written against it and a test fixture with no data is not a fixture. Its
+       page text does not: that is source material like any other, so it is
+       merged back in from the same untracked place. Without it the grounding
+       check in scripts/evals.mjs §13 skips and says so, which is the honest
+       outcome rather than a silent one. */
+    if (mod.PILOT_PAGES) JA.source.pageText = mod.PILOT_PAGES;
+  } catch (e) {
+    /* ABSENCE AND BREAKAGE ARE DIFFERENT AND MUST NOT LOOK THE SAME.
+       A clone with no decks is a fine state and says so quietly. A corpus that
+       exists and throws is a bug, and swallowing it leaves an empty Library
+       with no explanation anywhere - which is what the first version of this
+       catch did, and it cost a debugging round to notice the decks had stopped
+       loading at all. */
+    const absent = /Failed to fetch|Cannot find|404|not found/i.test(e.message || '');
+    if (!absent) console.error('corpus/index.js exists but failed to load:', e);
+  }
+  return SOURCES;
+}
 
 export function corpusFor(sourceId) {
   return SOURCES[sourceId] || null;

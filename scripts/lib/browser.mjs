@@ -188,10 +188,31 @@ export async function withBrowser(fn, opts = {}) {
        * leaves that state intact - a "reset" that does not reset is how an
        * earlier auditor checked every screen against the wrong markup.
        */
+      /**
+       * Wait until the app has finished booting.
+       *
+       * Boot became asynchronous when the decks moved out of the repository:
+       * they arrive by dynamic import before the first render. A suite that
+       * asserted the moment the document existed was reading a half-built app
+       * and got answers that were true for about 200ms — "1 corpus registered"
+       * on a machine with four, and Today rendering as the upload screen. A
+       * fixed sleep would paper over it on a laptop and fail on a cold cache;
+       * this waits for the thing itself.
+       */
+      async ready(ms = 8000) {
+        return evaluate(`(async () => {
+          const until = Date.now() + ${ms};
+          while (!window.HCApp && Date.now() < until) await new Promise((r) => setTimeout(r, 25));
+          if (window.HCApp && window.HCApp.ready) await window.HCApp.ready;
+          return !!window.HCApp;
+        })()`);
+      },
+
       async goto(hash = '#/learn', steps = 0) {
         await evaluate(`try { sessionStorage.clear(); } catch (e) {} location.hash = '${hash}';`);
         await send('Page.reload', {});
         await wait(opts.bootMs || 1800);
+        await this.ready();
         for (let i = 0; i < steps; i++) {
           await evaluate('document.querySelector("[data-next]")?.click()');
           await wait(550);

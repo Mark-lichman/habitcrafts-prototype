@@ -68,6 +68,7 @@ if (installed) await withBrowser(async (b) => {
 
   await b.send('Page.reload', {});
   await b.wait(2500);
+  await b.ready();
 
   await b.check('the app still boots', `${b.T}.length > 40`, true);
   await b.check('and it is Today that comes up',
