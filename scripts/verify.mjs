@@ -97,14 +97,24 @@ for (const suite of wanted) {
   const r = spawnSync(process.execPath, suite.args, { cwd: root, encoding: 'utf8' });
   const out = `${r.stdout || ''}${r.stderr || ''}`;
 
-  /* The last line of every suite is its own verdict. Printing that rather than
-     the whole run keeps the summary readable; a failure prints its detail. */
-  const lines = out.trim().split('\n').filter(Boolean);
-  const verdict = lines[lines.length - 1] || '(no output)';
+  /* THE LAST LINE IS THE VERDICT ONLY WHEN THE SUITE FINISHED.
+     When it CRASHES the last line is whatever Node printed last, and the first
+     version of this reported a bare "^" from a stack trace for all seven
+     browser suites at once. Seven identical carets say nothing about a Chrome
+     that never started, which is what had happened.
+
+     So: prefer a real verdict, fall back to the first actual error, and only
+     then to the last line. */
+  const lines = out.trim().split('\n').map((l) => l.trimEnd()).filter((l) => l.trim());
   const ok = r.status === 0;
+  const verdictLine = [...lines].reverse().find((l) => /checks? (passed|FAILED)|suites? (passed|FAILED)|all checks passed/.test(l));
+  const errorLine = lines.find((l) => /^\s*(\w*Error|Assertion failed)/.test(l));
+  const verdict = verdictLine || errorLine || lines[lines.length - 1] || '(no output)';
 
   if (!ok) {
-    for (const l of lines) if (/FAIL|Error|error:/.test(l)) console.log(`  ${l}`);
+    /* Named failures if the suite ran; the crash if it did not. */
+    const detail = lines.filter((l) => /^\s*FAIL /.test(l));
+    for (const l of (detail.length ? detail : lines.slice(-6))) console.log(`  ${l}`);
   }
   console.log(`  ${ok ? 'PASS' : 'FAIL'}  ${verdict}\n`);
   results.push({ ...suite, ok, verdict });
