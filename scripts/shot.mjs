@@ -31,10 +31,16 @@ const at = (flag, fallback) => {
 };
 const width = Number(at('--width', 1100));
 const dark = argv.includes('--dark');
+/* `--x japanese` shoots the SHIPPING configuration: the nav and chrome the
+   installed app actually has, rather than the prototype's demo furniture. */
+const x = at('--x', '');
 
 /* Each entry is a screen worth looking at, not every screen there is. `after`
    runs before the shot, for the ones that need a click to become interesting. */
 const SCREENS = [
+  { name: 'today', hash: '#/today', note: 'the review queue across every deck' },
+  { name: 'today-answer', hash: '#/today', click: '[data-show]',
+    note: 'the same card with its answer up, which is where the grade is given' },
   { name: 'library', hash: '#/library', note: 'the shelf: every upload that produced a practice' },
   /* Deep links, which is how the Library and the reminder both open a lesson.
      Stepping through the flow instead would only ever reach the pilot's
@@ -71,7 +77,7 @@ await withBrowser(async (b) => {
       format: 'png',
       captureBeyondViewport: true,
     });
-    const file = resolve(outDir, `${s.name}${dark ? '-dark' : ''}-${width}.png`);
+    const file = resolve(outDir, `${s.name}${x ? '-' + x : ''}${dark ? '-dark' : ''}-${width}.png`);
     writeFileSync(file, Buffer.from(shot.result.data, 'base64'));
 
     const heading = await b.evaluate(
@@ -79,4 +85,4 @@ await withBrowser(async (b) => {
     console.log(`  ${file.replace(root + '\\', '')}  —  ${heading}`);
     await b.check(`${s.name} rendered something`, `${b.T}.length > 40`, true);
   }
-}, { bootMs: 2000 });
+}, { bootMs: 2000, query: `solo=1&demo=1${x ? '&x=' + x : ''}` });

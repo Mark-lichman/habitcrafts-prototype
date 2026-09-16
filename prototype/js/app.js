@@ -45,6 +45,13 @@ const xbar = document.querySelector('[data-xbar]');
 
 function paintNav() {
   if (!navList) return;
+
+  /* The new-habit FAB belongs to the habit product. The Japanese build has no
+     use for it: nothing there is created by hand, everything comes out of an
+     upload. Hidden through the configuration rather than by a CSS override, so
+     it is one decision in one table alongside the nav it sits in. */
+  const fab = document.querySelector('.nav-fab');
+  if (fab) fab.hidden = !config.fabVisible();
   navList.innerHTML = String(html`
     ${config.navItems().map((item) => html`
       <li class="${item.rail ? 'nav-li--rail' : ''}">

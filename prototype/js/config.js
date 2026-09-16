@@ -78,6 +78,47 @@ const BASE_NAV = [
 -------------------------------------------------------------------------- */
 
 export const EXPERIMENTS = {
+  /* --------------------------------------------------------------------
+     THE ONE THAT IS NOT AN EXPERIMENT.
+
+     `japanese` is a SHIPPING CONFIGURATION, and it lives in this table because
+     production-path.md §3.2 says it should: "In the prototype it is which
+     business-model experiment is being simulated; in production it is feature
+     flags. They are the same thing, which is the point."
+
+     It is what gets installed on a phone. Everything the prototype carries to
+     demonstrate a business model — the switcher, Community, Progress, Explore,
+     the new-habit FAB — is furniture in a pocket, so this configuration takes
+     it off rather than hiding it behind a URL parameter somebody could drop.
+     Nothing is deleted: every other configuration still has all of it, and the
+     prototype keeps working for design.
+
+     `switcher: false` is the load-bearing part. `?chrome=clean` would also hide
+     the simulator, but a query parameter is not a guarantee: one navigation
+     that drops it and the installed app is showing E1/E2/E3 buttons to someone
+     practising vocabulary on a train.
+     -------------------------------------------------------------------- */
+  japanese: {
+    id: 'japanese',
+    label: 'Japanese practice',
+    short: 'JA',
+    persona: 'The installed app. One person, their own decks, a review queue.',
+    entry: '/today',
+    hypothesis: null,
+    ticket: null,
+    nav: [],
+    /* REPLACES the base six rather than adding to them. */
+    navOnly: [
+      { id: 'today',   href: '#/today',   icon: 'habits',   label: 'Today' },
+      { id: 'library', href: '#/library', icon: 'library',  label: 'Decks' },
+      { id: 'learn',   href: '#/learn',   icon: 'explore',  label: 'Add' },
+      { id: 'profile', href: '#/profile', icon: 'person',   label: 'You' },
+    ],
+    switcher: false,
+    fab: false,
+    flags: {},
+  },
+
   none: {
     id: 'none',
     label: 'Base app',
@@ -207,6 +248,13 @@ export function flag(name) {
 /** The nav for the active experiment: base six with its additions slotted in
     before Profile, which stays last because muscle memory lives there. */
 export function navItems() {
+  /* A shipping configuration REPLACES the base rather than adding to it. An
+     experiment asks "what does this persona need on top of the app"; a shipped
+     product asks "what is the app", and for the installed Japanese build the
+     answer does not include Community. */
+  const only = experiment().navOnly;
+  if (only) return only.slice();
+
   const extra = experiment().nav || [];
   if (!extra.length) return BASE_NAV.slice();
   const out = BASE_NAV.slice();
@@ -281,9 +329,18 @@ document.documentElement.setAttribute('data-experiment', activeId);
 -------------------------------------------------------------------------- */
 
 export function switcherVisible() {
+  /* A configuration can refuse the simulator outright, and that is stronger
+     than the query parameter: `?chrome=clean` is one dropped navigation away
+     from putting E1/E2/E3 buttons on top of an installed app. */
+  if (experiment().switcher === false) return false;
   try {
     return new URLSearchParams(window.location.search).get('chrome') !== 'clean';
   } catch (e) {
     return true;
   }
+}
+
+/** Does this configuration offer the new-habit button? */
+export function fabVisible() {
+  return experiment().fab !== false;
 }
