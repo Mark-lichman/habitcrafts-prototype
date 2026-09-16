@@ -19,7 +19,33 @@ way to have both — a Flutter app and a web app are two front ends, and two fro
 ends is two of everything: two component libraries, two bug queues, two places
 the design system drifts apart.
 
-**So this is a real fork and it should be taken deliberately:**
+> ## TAKEN: OPTION A, 2026-09-16.
+>
+> Mark asked to practise from a Galaxy S26. That forced the fork, and the
+> evidence settled it rather than the argument below:
+>
+> - **The one capability cited for Option B works on the device in question.**
+>   The check-in haptic uses the Vibration API, which Android supports. It is
+>   also not implemented in the Flutter app: `HapticFeedback` appears zero times
+>   there.
+> - **The Flutter app contains no Japanese at all.** A search of `lib/`,
+>   `assets/` and `docs/` for japanese, hiragana, katakana, kanji, romaji and
+>   nihongo returns nothing. Installing it gives a generic habit tracker.
+> - **Option B means porting ~19,000 lines of JS and 6,555 of CSS** into a
+>   64,700-line FlutterFlow export whose hand-written surface is 1,800 lines,
+>   which has no `test/` directory and 1,854 analyzer warnings.
+> - **All the work is here.** This repo: 21 commits since 2026-09-04. The
+>   Flutter repo: one commit in seven weeks, and it was documentation.
+>
+> The installable app exists as of this date: manifest, icons, service worker,
+> offline boot, a localStorage adapter and a review schedule. `scripts/pwa.mjs`
+> checks it and `--installed` proves it opens with the network switched off.
+>
+> **The Flutter repo is now history rather than a target.** The README's line
+> that "until that decision is taken, nothing here ships to users" no longer
+> blocks anything.
+
+**The fork as it was written, kept because the reasoning is still the record:**
 
 - **Option A — this becomes the front end.** The app ships as a web app (installable
   PWA), Flutter is retired, and the Flutter repo becomes history rather than a
