@@ -98,6 +98,9 @@ const SCREENS = [
   ['lessons',       '#/learn',       3],
   ['when',          '#/learn',       4],
   ['lesson',        '#/learn/jl-5',  0],
+  /* The review queue. The one screen that gets opened every day, so the one
+     that can least afford to overflow on a phone. */
+  ['today',         '#/today',       0],
   ['home',          '#/home',        0],
   ['library',       '#/library',     0],
   ['progress',      '#/progress',    0],
@@ -123,8 +126,14 @@ await withBrowser(async (b) => {
     }
   }
 
-  b.section('Nightfall');
-  await b.width(1280);
+  /* NIGHTFALL AT 390 AS WELL AS 1280.
+     The desktop pass was the only one, and the phone is the only place this
+     will ever be read in the dark: on a train, in bed, at the end of the day.
+     Checking dark mode exclusively at a width nobody reads it at is checking
+     the wrong thing carefully. */
+  for (const w of [390, 1280]) {
+  b.section(`Nightfall ${w}px`);
+  await b.width(w);
   for (const [name, hash, steps] of SCREENS) {
     await b.goto(hash, steps);
     await b.evaluate("document.documentElement.setAttribute('data-theme','dark')");
@@ -132,5 +141,6 @@ await withBrowser(async (b) => {
     const inv = await b.evaluate(INVISIBLE);
     await b.check(`${name}: nothing invisible in dark`, 'true',
       () => { if (inv.length) console.log(`        ${inv.join(', ')}`); return inv.length === 0; });
+  }
   }
 });

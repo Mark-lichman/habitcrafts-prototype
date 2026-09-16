@@ -79,6 +79,10 @@ const ROUTES = [
      Keeping the table constant means a link into an experiment surface always
      resolves — it explains itself instead of silently falling back to Home,
      which is what a route table that changed shape would do. */
+  /* The review queue across every deck. Not under /learn/: that flow walks one
+     upload from the top, and this is the opposite question — what is due, from
+     anywhere, right now. */
+  { path: '/today',              load: () => import('./views/today.js') },
   { path: '/learn',              load: () => import('./views/learn.js') },
   /* Deep link into one lesson, so a reminder can open the thing it is
      reminding you about rather than dropping you at the top of a flow. */
