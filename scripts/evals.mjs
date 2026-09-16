@@ -330,12 +330,33 @@ const BANNED = [
   { term: /\bkana\b/i, instead: 'name the script: hiragana or katakana' },
 ];
 
+/* Everything a learner actually reads. The first version stopped at lessons and
+   rules, and so had nothing to say about the Library shelf, where the source
+   title and blurb are the only words on the card. */
 const facing = [
+  JA.source.title, JA.source.subtitle, JA.source.blurb, ...(JA.source.topics || []),
   ...JA.questions.flatMap((q) => [q.ask, q.why, q.affects,
     ...q.options.flatMap((o) => [o.label, o.consequence])]),
-  ...JA.lessons.flatMap((l) => [l.title, l.standfirst, ...(l.body || [])]),
+  ...JA.lessons.flatMap((l) => [l.title, l.standfirst, ...(l.body || []),
+    ...l.exercises.flatMap((e) => [e.prompt, e.because]),
+    ...(l.habitSuggestion ? [l.habitSuggestion.behavior, l.habitSuggestion.prompt,
+      l.habitSuggestion.celebration, l.habitSuggestion.why] : [])]),
   ...JA.rules.map((r) => r.gloss),
+  ...(JA.proposedHabit ? [JA.proposedHabit.behavior, JA.proposedHabit.prompt,
+    JA.proposedHabit.celebration, JA.proposedHabit.why] : []),
 ].filter(Boolean);
+
+/* NO EM OR EN DASHES IN PRODUCT COPY. 58 were removed from this repository by
+   hand, deliberately, and CLAUDE.md records the decision. A rule enforced by
+   memory survives exactly as long as the memory does: the first generated
+   corpus came back titled "koko / soko / asoko — kochira series, floors …",
+   putting one straight back on the Library shelf. Comments, docs and READMEs
+   are explicitly out of scope; this checks only what a learner reads. */
+const dashed = facing.filter((s) => /[—–]/.test(s));
+check(dashed.length === 0,
+  'no em or en dash in any string a learner reads',
+  dashed.slice(0, 5).map((s) => `"${s.slice(0, 70)}…"`).join('\n       ')
+  + '\n       Recast the sentence rather than swapping the character.');
 
 for (const { term, instead } of BANNED) {
   const hits = facing.filter((s) => term.test(s));

@@ -27,3 +27,6 @@ prototype/build.json
 *.key
 *api*key*.txt
 !.env.example
+
+# Screenshots are for looking at, not for keeping.
+shots/

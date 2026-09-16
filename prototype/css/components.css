@@ -5524,3 +5524,19 @@ body:has(.devbar) .page { padding-block-end: 128px; }
 .space-door__code .field { flex: 1 1 200px; margin: 0; }
 
 .space-yours { margin-block-start: var(--space-32); }
+
+/* ---------------------------------------------------------------------------
+   CHIPS CARRY TEXT NOBODY SIZED
+   Appended, modifying nothing above it.
+
+   A topic chip on the Library shelf holds a phrase extraction wrote, and
+   extraction has no idea how wide a phone is. "polite kochira / sochira /
+   achira" arrived as a single chip 61px wider than a 390px screen and scrolled
+   the entire Library sideways, which a11y.mjs caught by measuring. A chip may
+   wrap inside itself; it may not push the page.
+--------------------------------------------------------------------------- */
+
+.chip {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
