@@ -9,15 +9,21 @@
    Putting it in the prose file would have hidden exactly that.
 
    WHAT THE UPLOAD ACTUALLY WAS, because it shaped the pipeline:
-   a 14-page scanned slide deck with a 519-character text layer. The text layer
-   is not the content — it is the teacher's annotation track over slide images
-   ("Country + じん JIN ＝nationality"). Extraction that read only the text
-   layer would have produced a plausible, wrong practice. The pages are images
-   and have to be read as images.
+   a 14-page slide deck whose text layer is its own PowerPoint text boxes -
+   real content, but only 475 characters of it. The picture-only slides carry
+   meaning that is not in the text at all: slide 11 is a photograph of Mr. Kim
+   with no sentence under it, and that is the describe-drill the deck is built
+   on. So the pages still have to be read as images. See `source.ingest`, which
+   records what this banner used to claim and why it was wrong.
 
-   PROVENANCE. Every rule, item and irregular below carries the page it came
-   from, and quotes it verbatim. Same rule as the prose corpus: a check whose
-   answer is not locatable in the source must not exist. [#5] [#8]
+   PROVENANCE, AND ITS TWO KINDS.
+   EXTRACTED - rules, items, names, irregulars. On the page. Each carries its
+   page and quotes it verbatim, and `evals/ground.mjs` checks all 14 against the
+   page they cite.
+   GENERATED - lessons, exercises, habits. On no page, because nobody wrote them
+   down: this deck contains no drills at all. Each carries `derivedFrom`, naming
+   the extracted card it drills. A page here would be a costume.
+   docs/lesson-standards.md §3. [#5] [#8]
    ========================================================================= */
 
 /* --------------------------------------------------------------------------
@@ -82,6 +88,27 @@ export const source = {
     note: 'Text alone gives the rules and the vocabulary and misses the picture drills. '
       + 'Verified: every quote in this file is on the page it cites.',
   },
+
+  /* The text of each page, straight from the PDF and never from a model.
+     This is what lets scripts/evals.mjs §13 run the grounding test in the repo
+     with no dependencies: it is evidence, not more output needing checked. */
+  pageText: {
+    "1": "Country\u0001+\u0001じん\nJIN\n＝nationality",
+    "2": "Name\u0001+\u0001さん\nsan\n＝Mr.\u0001Ms.",
+    "3": "X\u0001=\u0001Y Ms. Yamada\n=\nN1\u0001wa\u0001N2\u0001desu",
+    "4": "X≠Y Ms. Yamada\n=",
+    "5": "やまださん \tは \tにほんじんじゃ \tありません\nyamadasan\u0001wa\u0001nihonnjin\u0001ja\u0001arimasen",
+    "6": "Mr.\u0001Miller",
+    "7": "ミラーさん・ぎんこういん\nミラーさん \tは \tぎんこういんじゃ \tありません\nmirāsan\u0001wa\u0001ginkōin\u0001ja\u0001arimasen",
+    "8": "X＝Y？Ms. Yamada\n=",
+    "9": "ヤマダさん \tは \tにほんじん \tですか。\nyamadasan\u0001wa\u0001nihonnjin\u0001desuka",
+    "10": "employee\ngakkou\nshain",
+    "11": "Kim\nKimsan\u0001wa\u0001SUMSUNG\u0001no\u0001shain\u0001desu",
+    "12": "Teacher\nも（mo）:also\nWatashi\u0001wa\u0001sensei\u0001desu\nSofiasan\u0001mo\u0001sensei\u0001desu",
+    "13": "１→いっさい\n２→にさい\n３→さんさい\n４→よんさい\n５→ごさい\n６→ろくさい\n７→ななさい\n８→はっさい\n９→きゅうさい\n１０→じゅっさい",
+    "14": "Kai\nkai\u0001wa\u0001san\u0001sai\u0001desu\nYear\u0001old"
+  },
+
 };
 
 /* --------------------------------------------------------------------------
@@ -352,6 +379,15 @@ export const properNouns = [
   { key: 'k-kai',    ja: 'カイ',         romaji: 'Kai',        en: 'Kai',         script: 'katakana', page: 14 },
   { key: 'k-doitsu', ja: 'ドイツ',       romaji: 'Doitsu',     en: 'Germany',     script: 'katakana', page: 1 },
   { key: 'k-yamada', ja: 'やまださん',   romaji: 'Yamada-san', en: 'Ms. Yamada',  script: 'hiragana', page: 5, quote: 'やまださん は にほんじんじゃ ありません' },
+
+  /* ADDED after the Latin check (evals.mjs §9) found it. The deck writes
+     SUMSUNG on slide 11 - its own typo - and the exercises quietly teach the
+     correct SAMSUNG. Correcting a brand name for a learner is the right call,
+     but it was an undeclared one: the corpus asserted Latin text the source
+     does not contain, which is the shape of an invention even when the motive
+     is good. Declared here, with the quote keeping the typo so grounding stays
+     exact. `romajiIsSourceSpelling` because a Latin name romanises to itself. */
+  { key: 'k-samsung', ja: 'SAMSUNG', romaji: 'SAMSUNG', en: 'Samsung (the slide misspells it SUMSUNG)', script: 'latin', page: 11, quote: 'Kimsan wa SUMSUNG no shain desu', romajiIsSourceSpelling: true },
 ];
 
 /* IRREGULARS: the expensive part. Their own bucket because the kind declares
@@ -397,9 +433,9 @@ export const lessons = [
       'さん attaches to other people and never to yourself. This is the first rule in the deck that is about politeness rather than grammar, and it is the one a beginner breaks in their first real conversation.',
     ],
     exercises: [
-      { type: 'produce',   prompt: 'Say: "Ms. Yamada is Japanese."', answer: 'やまださん は にほんじん です', romaji: 'Yamada-san wa nihonjin desu', page: 3 },
-      { type: 'transform', prompt: 'ドイツ (Germany) → the word for a German person', answer: 'ドイツじん', romaji: 'doitsu-jin', page: 1 },
-      { type: 'discern',   prompt: 'Introducing yourself, which is right?', options: ['わたし は ミラーさん です', 'わたし は ミラー です'], answer: 1, because: 'さん is never used about yourself.', page: 2 },
+      { type: 'produce',   prompt: 'Say: "Ms. Yamada is Japanese."', answer: 'やまださん は にほんじん です', romaji: 'Yamada-san wa nihonjin desu', derivedFrom: "r-identity" },
+      { type: 'transform', prompt: 'ドイツ (Germany) → the word for a German person', answer: 'ドイツじん', romaji: 'doitsu-jin', derivedFrom: "r-nationality" },
+      { type: 'discern',   prompt: 'Introducing yourself, which is right?', options: ['わたし は ミラーさん です', 'わたし は ミラー です'], answer: 1, because: 'さん is never used about yourself.', derivedFrom: "i-san" },
     ],
     habitSuggestion: {
       behavior: 'Say three X-は-Y sentences out loud about people I know',
@@ -421,9 +457,9 @@ export const lessons = [
       'Nothing else in the sentence moves. Topic, は, and the noun all stay exactly where they were.',
     ],
     exercises: [
-      { type: 'transform', prompt: 'Make negative: ミラーさん は ぎんこういん です', answer: 'ミラーさん は ぎんこういん じゃ ありません', romaji: 'Mirā-san wa ginkōin ja arimasen', page: 7 },
-      { type: 'discern',   prompt: 'Which is correct?', options: ['にほんじん じゃ ありません です', 'にほんじん じゃ ありません'], answer: 1, because: 'じゃ ありません replaces です; it does not follow it.', page: 5 },
-      { type: 'produce',   prompt: 'Say: "I am not a bank employee."', answer: 'わたし は ぎんこういん じゃ ありません', romaji: 'watashi wa ginkōin ja arimasen', page: 7 },
+      { type: 'transform', prompt: 'Make negative: ミラーさん は ぎんこういん です', answer: 'ミラーさん は ぎんこういん じゃ ありません', romaji: 'Mirā-san wa ginkōin ja arimasen', derivedFrom: "r-negative" },
+      { type: 'discern',   prompt: 'Which is correct?', options: ['にほんじん じゃ ありません です', 'にほんじん じゃ ありません'], answer: 1, because: 'じゃ ありません replaces です; it does not follow it.', derivedFrom: "r-negative" },
+      { type: 'produce',   prompt: 'Say: "I am not a bank employee."', answer: 'わたし は ぎんこういん じゃ ありません', romaji: 'watashi wa ginkōin ja arimasen', derivedFrom: "r-negative" },
     ],
     habitSuggestion: {
       behavior: 'Turn one true sentence about my day into its negative',
@@ -445,8 +481,8 @@ export const lessons = [
       'Because nothing moves, the question form is the cheapest thing in Lesson 1 to make automatic, which makes it the fastest route to an actual exchange with somebody.',
     ],
     exercises: [
-      { type: 'transform', prompt: 'Make a question: やまださん は にほんじん です', answer: 'やまださん は にほんじん ですか', romaji: 'Yamada-san wa nihonjin desu ka', page: 9 },
-      { type: 'produce',   prompt: 'Ask: "Are you a teacher?"', answer: 'せんせい ですか', romaji: 'sensei desu ka', page: 9 },
+      { type: 'transform', prompt: 'Make a question: やまださん は にほんじん です', answer: 'やまださん は にほんじん ですか', romaji: 'Yamada-san wa nihonjin desu ka', derivedFrom: "r-question" },
+      { type: 'produce',   prompt: 'Ask: "Are you a teacher?"', answer: 'せんせい ですか', romaji: 'sensei desu ka', derivedFrom: "r-question" },
     ],
     habitSuggestion: {
       behavior: 'Ask one ですか question out loud, then answer it myself',
@@ -468,12 +504,12 @@ export const lessons = [
       'も is the first particle that displaces another. Learners keep は and add も, producing さん は も, because in English "too" is an addition rather than a substitution.',
     ],
     exercises: [
-      { type: 'produce',   prompt: 'Say: "Mr. Kim is a SAMSUNG employee."', answer: 'キムさん は SAMSUNG の しゃいん です', romaji: 'Kim-san wa SAMSUNG no shain desu', page: 11 },
+      { type: 'produce',   prompt: 'Say: "Mr. Kim is a SAMSUNG employee."', answer: 'キムさん は SAMSUNG の しゃいん です', romaji: 'Kim-san wa SAMSUNG no shain desu', derivedFrom: "r-affiliation" },
       /* The picture drill the deck is actually built on: slide 11 is a photo
          of Mr. Kim with no sentence under it. The image is the prompt. */
-      { type: 'describe',  prompt: 'Slide 11: describe this person in one sentence.', image: 'p11', answer: 'キムさん は SAMSUNG の しゃいん です', romaji: 'Kim-san wa SAMSUNG no shain desu', page: 11 },
-      { type: 'discern',   prompt: 'Ms. Sofia is a teacher as well. Which is right?', options: ['ソフィアさん は も せんせい です', 'ソフィアさん も せんせい です'], answer: 1, because: 'も takes the place of は.', page: 12 },
-      { type: 'transform', prompt: 'わたし は せんせい です → say that Sofia is one too', answer: 'ソフィアさん も せんせい です', romaji: 'Sofia-san mo sensei desu', page: 12 },
+      { type: 'describe',  prompt: 'Slide 11: describe this person in one sentence.', image: 'p11', answer: 'キムさん は SAMSUNG の しゃいん です', romaji: 'Kim-san wa SAMSUNG no shain desu', derivedFrom: "r-affiliation" },
+      { type: 'discern',   prompt: 'Ms. Sofia is a teacher as well. Which is right?', options: ['ソフィアさん は も せんせい です', 'ソフィアさん も せんせい です'], answer: 1, because: 'も takes the place of は.', derivedFrom: "r-also" },
+      { type: 'transform', prompt: 'わたし は せんせい です → say that Sofia is one too', answer: 'ソフィアさん も せんせい です', romaji: 'Sofia-san mo sensei desu', derivedFrom: "r-also" },
     ],
     habitSuggestion: {
       behavior: 'Describe two people with の, then link them with も',
@@ -496,10 +532,10 @@ export const lessons = [
       'The cost is in three sounds. 1, 8 and 10 change: いっさい, はっさい, じゅっさい. Each is a consonant doubling where the number loses its own ending, and they are the forms that get missed months later, long after the pattern itself is secure.',
     ],
     exercises: [
-      { type: 'produce',   prompt: 'Say: "Kai is three years old."', answer: 'カイ は さんさい です', romaji: 'Kai wa san-sai desu', page: 14 },
-      { type: 'recall',    prompt: 'How do you say eight years old?', answer: 'はっさい', romaji: 'hassai', page: 13 },
-      { type: 'discern',   prompt: 'Which is the real form for 10?', options: ['じゅうさい', 'じゅっさい'], answer: 1, because: 'じゅう shortens to じゅっ before さい.', page: 13 },
-      { type: 'recall',    prompt: 'Which three of 1 to 10 are irregular?', answer: '1, 8 and 10', page: 13 },
+      { type: 'produce',   prompt: 'Say: "Kai is three years old."', answer: 'カイ は さんさい です', romaji: 'Kai wa san-sai desu', derivedFrom: "r-age" },
+      { type: 'recall',    prompt: 'How do you say eight years old?', answer: 'はっさい', romaji: 'hassai', derivedFrom: "x-8" },
+      { type: 'discern',   prompt: 'Which is the real form for 10?', options: ['じゅうさい', 'じゅっさい'], answer: 1, because: 'じゅう shortens to じゅっ before さい.', derivedFrom: "x-10" },
+      { type: 'recall',    prompt: 'Which three of 1 to 10 are irregular?', answer: '1, 8 and 10', derivedFrom: "r-age" },
     ],
     habitSuggestion: {
       behavior: 'Say the ages of three people I know, including one irregular',
