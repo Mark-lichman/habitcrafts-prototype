@@ -13,12 +13,18 @@
 # みんなの日本語 class decks and ©Langoal worksheets, and this repository is
 # public. So a checkout has the pilot fixture and nothing else.
 #
-# Every suite is written to pass in that state. `corpora.mjs` reads the registry
-# rather than a hardcoded list; `persist` and `pwa --installed` take whatever
-# card is due first and the pilot always has some; `evals-all` globs whatever
-# corpora exist. The suites therefore assert the same things against one deck
-# here and four on Mark's machine, which is the property that makes this worth
-# running at all.
+# Every suite RUNS in that state. It does not assert the same things, and an
+# earlier version of this comment claimed it did. Measured: `evals-all` is RED
+# locally with 3 of 4 corpora carrying findings, and GREEN here, because the
+# three that fail are the machine-generated decks and those are exactly what
+# git ignores. CI only ever grades the hand-written pilot, which has always
+# passed. Two checks go vacuous rather than merely weaker: the cross-corpus
+# key-collision checks compare a set of one corpus to itself, and evals.mjs §2b
+# is skipped silently because the pilot has no `source.affords`.
+#
+# So this job guards the APP. Extraction quality is graded on the machine that
+# has the decks. That distinction is worth stating, because the previous
+# wording would have let a green badge here stand in for a red local run.
 #
 # -----------------------------------------------------------------------------
 # NO EMPTY-TEST GUARD, BECAUSE THERE ARE TESTS

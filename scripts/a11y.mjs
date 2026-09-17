@@ -112,6 +112,38 @@ await withBrowser(async (b) => {
     await b.width(w);
     for (const [name, hash, steps] of SCREENS) {
       await b.goto(hash, steps);
+
+      /* THE POSITIVE CONTROL, AND THE REASON THIS FILE NEEDED ONE.
+         Every other check here is an ABSENCE: no overflowing element, no small
+         target, no unnamed control. An empty page satisfies all of them, and an
+         independent audit proved it by pointing this suite at a server that
+         returned a bare `<main></main>`: 110 of 110 green, exit 0.
+
+         That is not a hypothetical. The header above records that a route once
+         rendered an empty <main> because a backtick closed a template literal,
+         and this is the suite that visits all ten routes. It was the one suite
+         guaranteed not to notice.
+
+         So each screen must first PROVE IT RENDERED. `assertAppReachable` in
+         the Evercred suites is the same idea, and docs/testing in the Flutter
+         repo calls it the false-green floor. */
+      const alive = await b.evaluate(`(() => {
+        const m = document.querySelector('#main');
+        if (!m) return { text: 0, controls: 0, heading: null };
+        return {
+          text: m.innerText.trim().length,
+          controls: m.querySelectorAll('button, a[href], input, [role="checkbox"]').length,
+          heading: (m.querySelector('h1, h2') || {}).innerText || null,
+        };
+      })()`);
+      await b.check(`${name}: rendered something to check`, 'true',
+        () => {
+          const ok = alive.text > 80 && alive.controls > 0;
+          if (!ok) console.log(`        ${alive.text} chars, ${alive.controls} controls — `
+            + 'the screen is empty, so every check below would pass vacuously');
+          return ok;
+        });
+
       const o = await b.evaluate(OVERFLOW);
       await b.check(`${name}: no sideways scroll`, 'true',
         () => { if (o.over > 1) console.log(`        ${o.over}px — ${o.guilty.join(', ')}`); return o.over <= 1; });
