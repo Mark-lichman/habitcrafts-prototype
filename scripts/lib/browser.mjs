@@ -31,7 +31,7 @@
    ========================================================================= */
 
 import { spawn } from 'node:child_process';
-import { mkdtempSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 
@@ -98,7 +98,21 @@ export async function withBrowser(fn, opts = {}) {
   });
 
   const port = 9222 + Math.floor(Math.random() * 400);
-  const profile = mkdtempSync(resolve(tmpdir(), 'hc-cdp-'));
+
+  /* A CALLER CAN OWN THE PROFILE, AND ONE SUITE HAS TO.
+     Normally this is a throwaway directory, deleted on the way out, because a
+     suite that inherits the last run's state is a suite that drifts.
+
+     scripts/persist.mjs is the exception and the reason this option exists. It
+     has to prove that state reaches DISK, and `Page.reload` cannot: a reload
+     stays inside the same browser process, where localStorage is served from
+     the in-memory copy Chrome already holds. That suite passed whether or not a
+     single byte was ever written. The only way to ask the real question is to
+     kill the browser, start a new one on the SAME profile, and see what comes
+     back - which needs a profile that outlives one session. */
+  const ownedProfile = !!opts.profile;
+  const profile = ownedProfile ? opts.profile : mkdtempSync(resolve(tmpdir(), 'hc-cdp-'));
+  if (ownedProfile && !existsSync(profile)) mkdirSync(profile, { recursive: true });
   /* CI NEEDS TWO MORE FLAGS, AND THE FAILURE WITHOUT THEM IS UNREADABLE.
      On a GitHub runner Chrome's sandbox cannot start, so the browser exits
      immediately and never opens a debugging port. What you see is every browser
@@ -272,10 +286,14 @@ export async function withBrowser(fn, opts = {}) {
     });
 
     /* Now the profile is nobody's. Retried because Windows can still hold a
-       handle for a moment after the process is gone. */
-    for (let i = 0; i < 3; i++) {
-      try { rmSync(profile, { recursive: true, force: true }); break; }
-      catch (e) { await wait(150); }
+       handle for a moment after the process is gone. A caller-owned profile is
+       left alone: it is the caller's evidence, and deleting it here would
+       destroy the very thing the next session is meant to read back. */
+    if (!ownedProfile) {
+      for (let i = 0; i < 3; i++) {
+        try { rmSync(profile, { recursive: true, force: true }); break; }
+        catch (e) { await wait(150); }
+      }
     }
   }
 
@@ -283,6 +301,15 @@ export async function withBrowser(fn, opts = {}) {
   state.errors.slice(0, 5).forEach((e) => console.log('   ' + e));
 
   const bad = state.fail || state.errors.length;
+
+  /* A SECOND SESSION NEEDS THIS FUNCTION TO RETURN.
+     Exiting here is right for the nine suites that open one browser and are
+     done. It made a two-session suite impossible to write: the first call
+     terminated the process before the second could run, so "does it survive a
+     restart" could not be asked at all. `carry` hands the tally back instead,
+     and the caller reports once at the end. */
+  if (opts.carry) return { pass: state.pass, fail: state.fail, errors: state.errors };
+
   console.log(bad
     ? `\n${state.fail} of ${state.pass + state.fail} FAILED`
     : `\nall ${state.pass} checks passed`);

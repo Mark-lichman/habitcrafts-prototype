@@ -18,8 +18,14 @@
 *::after { box-sizing: border-box; }
 
 html {
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
+  /* text-size-adjust was pinned to 100%, which meant a reader who had enlarged
+     their system text got no benefit anywhere in this app. That is the setting
+     people with low vision actually use, and an app for daily reading of a
+     script they cannot yet read fluently is the last place to override it.
+     `auto` lets the platform scale; the layout is already fluid and was
+     verified at font_scale 1.5 on a device with no overflow. */
+  -webkit-text-size-adjust: auto;
+  text-size-adjust: auto;
   /* The canvas lives on <html> so the grain pseudo-element on <body> can sit
      behind body content at z-index:-1 without being occluded. */
   background-color: var(--c-canvas);

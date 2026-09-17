@@ -216,9 +216,59 @@ export function dueSummary(onDay = srs.isoDay(Date.now())) {
   };
 }
 
-/** How much of a source has been touched at all, for the Library card. */
+/**
+ * How much of a source has been touched at all, for the Library card.
+ *
+ * TWO KINDS OF PRACTICE REACH THIS, AND ONLY ONE USED TO COUNT.
+ * The lesson flow calls `store.completeLesson()` when every exercise in a
+ * lesson has been marked, which writes `state.study`. The Today queue does not:
+ * it answers individual cards across every deck and writes only the review log.
+ *
+ * So a person practising daily through the app's main screen saw the Decks tab
+ * say "not started" and every lesson say "Never practised", forever. An
+ * independent audit found it on the device; no suite did, because each one
+ * drives one flow and then asks that same flow whether it worked.
+ *
+ * The fix derives rather than storing a second fact: a lesson counts as
+ * practised if any of its cards has a review. `state.study` keeps answering the
+ * question it was built for, which is how many times a whole lesson was RUN.
+ */
 export function sourceProgress(sourceId) {
   const c = corpusFor(sourceId);
   if (!c) return null;
-  return store.studySummary(c.lessons.map((l) => l.key));
+
+  const base = store.studySummary(c.lessons.map((l) => l.key));
+  const reviewed = store.reviewsByCard();
+  if (!reviewed.size) return base;
+
+  const touched = new Set();
+  let lastAt = base.lastAt;
+  for (const lesson of c.lessons) {
+    for (const ex of lesson.exercises) {
+      const rs = reviewed.get(srs.cardId(sourceId, ex));
+      if (!rs || !rs.length) continue;
+      touched.add(lesson.key);
+      const when = srs.isoDay(rs[rs.length - 1].at);
+      if (!lastAt || when > lastAt) lastAt = when;
+    }
+  }
+
+  return {
+    ...base,
+    started: new Set([
+      ...c.lessons.filter((l) => store.lessonStat(l.key).count > 0).map((l) => l.key),
+      ...touched,
+    ]).size,
+    lastAt,
+  };
+}
+
+/** Has any card in this lesson been answered, by either route? */
+export function lessonTouched(sourceId, lessonKey) {
+  const c = corpusFor(sourceId);
+  const lesson = c && c.lessons.find((l) => l.key === lessonKey);
+  if (!lesson) return false;
+  if (store.lessonStat(lessonKey).count > 0) return true;
+  const reviewed = store.reviewsByCard();
+  return lesson.exercises.some((ex) => (reviewed.get(srs.cardId(sourceId, ex)) || []).length > 0);
 }

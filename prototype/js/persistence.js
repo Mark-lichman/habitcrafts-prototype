@@ -179,8 +179,169 @@ export const fixtureAdapter = webStorage(
    daily practice is on the order of a megabyte of JSON against a 5MB ceiling.
 -------------------------------------------------------------------------- */
 
-export const localAdapter = webStorage(
-  'local', () => window.localStorage, 'hc:ja:v1');
+const LOCAL_KEY = 'hc:ja:v1';
+
+/* --------------------------------------------------------------------------
+   DURABILITY, WHICH LOCALSTORAGE ALONE DOES NOT GIVE
+
+   MEASURED, NOT ASSUMED. `scripts/persist.mjs` practises one card, kills the
+   browser PROCESS, and starts a new one on the same profile. Everything written
+   in the last moment before the kill was gone: the review log came back empty
+   and the check-in count came back one short. An independent audit had already
+   reproduced this on the device four times and measured a 3-5 second window;
+   on desktop Chrome the same rig measures it at under one second:
+
+       pause    0ms  ->  wanted 508, got 507  LOST
+       pause 1000ms  ->  wanted 508, got 508  SURVIVED
+
+   The cause is not the app. `setItem` returns immediately and Chrome commits
+   its localStorage area to disk on a timer, so a process that dies inside that
+   window loses whatever had not been flushed. An earlier note in this codebase
+   called that "not something this app controls", which the audit correctly
+   called a choice being described as a law. It IS controllable, and for this
+   product it has to be: answering a card and pocketing the phone is not an edge
+   case, it is the main way anyone uses this app.
+
+   THE FIX KEEPS THE SYNCHRONOUS CONTRACT. localStorage stays the read path and
+   still answers `load()` instantly, so `render()` is untouched and no view
+   learns a new word. Every save ALSO goes to IndexedDB, which commits a real
+   transaction, and with `durability: 'strict'` asks for a flush rather than a
+   lazy one. IndexedDB is not used for reads at runtime; it is used once, at
+   boot, to answer one question: is there something on disk newer than what
+   localStorage handed back?
+
+   WHICH COPY IS NEWER IS A STORED FACT, AND IT IS THE ONLY ONE.
+   Both writes are stamped with the same millisecond, and the stamp lives beside
+   the blob rather than inside the state, so no selector can see it and no view
+   can come to depend on it. This does not breach "derive, never store a second
+   fact": the stamp is not a fact ABOUT the domain that could contradict the
+   history, it is a fact about the write itself, which is the one thing that
+   genuinely cannot be derived from the data.
+-------------------------------------------------------------------------- */
+
+const DB_NAME = 'hc-ja';
+const DB_STORE = 'state';
+const AT_KEY = LOCAL_KEY + ':at';
+
+let dbPromise = null;
+
+/** The database, opened once. Resolves to null if IndexedDB is unavailable. */
+function openDb() {
+  if (dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve) => {
+    try {
+      if (!window.indexedDB) return resolve(null);
+      const req = window.indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
+      };
+      req.onsuccess = () => resolve(req.result);
+      /* Private mode, a blocked origin, a corrupt profile. Falling back to
+         localStorage-only is exactly the old behaviour, which worked. */
+      req.onerror = () => resolve(null);
+      req.onblocked = () => resolve(null);
+    } catch (e) {
+      resolve(null);
+    }
+  });
+  return dbPromise;
+}
+
+/**
+ * Put the blob, asking for a real flush.
+ *
+ * `durability: 'strict'` is the whole point of choosing IndexedDB here: Chrome's
+ * default is 'relaxed', which reports success before the data is necessarily on
+ * disk and would reproduce the bug this function exists to fix. Older engines do
+ * not know the option; they ignore the third argument rather than throwing, and
+ * the catch covers the ones that do not.
+ */
+async function idbPut(raw, savedAt) {
+  const db = await openDb();
+  if (!db) return;
+  try {
+    const tx = db.transaction(DB_STORE, 'readwrite', { durability: 'strict' });
+    tx.objectStore(DB_STORE).put({ raw, savedAt }, 'current');
+  } catch (e) {
+    try {
+      const tx = db.transaction(DB_STORE, 'readwrite');
+      tx.objectStore(DB_STORE).put({ raw, savedAt }, 'current');
+    } catch (e2) { /* in-memory for this session, same as a blocked origin */ }
+  }
+}
+
+async function idbGet() {
+  const db = await openDb();
+  if (!db) return null;
+  return new Promise((resolve) => {
+    try {
+      const req = db.transaction(DB_STORE, 'readonly').objectStore(DB_STORE).get('current');
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    } catch (e) { resolve(null); }
+  });
+}
+
+async function idbClear() {
+  const db = await openDb();
+  if (!db) return;
+  try { db.transaction(DB_STORE, 'readwrite').objectStore(DB_STORE).delete('current'); }
+  catch (e) { /* nothing to clear */ }
+}
+
+const base = webStorage('local', () => window.localStorage, LOCAL_KEY);
+
+export const localAdapter = {
+  ...base,
+
+  save(state) {
+    const at = Date.now();
+    const raw = JSON.stringify(state);
+    try {
+      const ls = window.localStorage;
+      ls.setItem(LOCAL_KEY, raw);
+      ls.setItem(AT_KEY, String(at));
+    } catch (e) { /* quota or private mode; IndexedDB may still take it */ }
+    /* Deliberately not awaited. `save()` is synchronous by contract and is
+       called from the middle of a render cycle; the transaction commits on its
+       own and a failure has already been swallowed inside. */
+    idbPut(raw, at);
+  },
+
+  clear() {
+    base.clear();
+    try { window.localStorage.removeItem(AT_KEY); } catch (e) {}
+    idbClear();
+  },
+
+  /**
+   * Reconcile the two copies, before the first render.
+   *
+   * Called from `boot()` alongside `loadCorpora()`, which is the same
+   * hydrate-before-boot point the contract at the top of this file describes for
+   * a network adapter, and for the same reason: `load()` is synchronous, so
+   * anything it should return has to be in place before it is first called.
+   *
+   * Normally both copies carry the same stamp and this does nothing. It earns
+   * its place in the one case that matters: localStorage lost its last flush,
+   * IndexedDB did not, and the newer blob is copied back so the synchronous
+   * read path returns it.
+   */
+  async hydrate() {
+    try {
+      const stored = await idbGet();
+      if (!stored || !stored.raw) return false;
+      const lsAt = Number(window.localStorage.getItem(AT_KEY) || 0);
+      if (!(stored.savedAt > lsAt)) return false;
+      window.localStorage.setItem(LOCAL_KEY, stored.raw);
+      window.localStorage.setItem(AT_KEY, String(stored.savedAt));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+};
 
 /* --------------------------------------------------------------------------
    THE MEMORY ADAPTER — for tests and for screenshots

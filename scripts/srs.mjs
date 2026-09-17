@@ -92,16 +92,43 @@ check('not due today', srs.isDue(midway, TODAY), false);
 check('due once the day arrives', srs.isDue(midway, '2026-06-16'), true);
 check('and still due after it passes, never skipped', srs.isDue(midway, '2026-06-30'), true);
 
+section('the day boundary is LOCAL, not UTC');
+/* THE BUG THIS SUITE ORIGINALLY MISSED.
+   `isoDay` used toISOString(), which is UTC, while the rest of the app uses the
+   local calendar day and data.js:34 warns against exactly that. An independent
+   audit found it on the device; none of the assertions above could, because
+   they all use times that fall on the same day in both zones.
+
+   So this evening is deliberately chosen to straddle: 20:00 in any timezone
+   west of UTC is already tomorrow in UTC. Under the old code the card was
+   stamped tomorrow and came due the day AFTER, skipping a whole day of
+   practice for anyone in the Americas practising after dinner. */
+const evening = new Date(2026, 8, 16, 20, 0, 0);       /* 8pm local, 16 Sept */
+const eveningCard = srs.scheduleFor([{ grade: 'got', at: evening.toISOString() }]);
+check('an 8pm answer is stamped with today, not tomorrow',
+  srs.isoDay(evening), '2026-09-16');
+check('so a one-day interval lands tomorrow', eveningCard.dueOn, '2026-09-17');
+check('not due the same evening', srs.isDue(eveningCard, '2026-09-16'), false);
+check('due the next morning, which is the whole point',
+  srs.isDue(eveningCard, '2026-09-17'), true);
+
+/* Just before local midnight, the hardest case in either direction. */
+const lateNight = new Date(2026, 8, 16, 23, 59, 0);
+check('23:59 is still today', srs.isoDay(lateNight), '2026-09-16');
+const earlyMorning = new Date(2026, 8, 17, 0, 1, 0);
+check('00:01 is already tomorrow', srs.isoDay(earlyMorning), '2026-09-17');
+
 section('dates survive a month boundary');
 /* addDays does UTC string arithmetic, which is where off-by-one bugs live. */
-const endOfMonth = srs.scheduleFor([{ grade: 'got', at: '2026-06-29T22:00:00Z' }]);
-check('29 June + 1 day', endOfMonth.dueOn, '2026-06-30');
-const endOfYear = srs.scheduleFor([
-  { grade: 'got', at: '2026-12-28T10:00:00Z' },
-  { grade: 'got', at: '2026-12-28T10:00:00Z' },
-  { grade: 'got', at: '2026-12-28T10:00:00Z' },
-]);
-check('28 December + 4 days crosses the year', endOfYear.dueOn, '2027-01-01');
+/* Local times, since isoDay is local. A 'Z' literal here would make the
+   expected answer depend on where the suite is run, which is the class of bug
+   this section exists to catch. */
+const lastOfJune = new Date(2026, 5, 29, 22, 0, 0).toISOString();
+check('29 June + 1 day', srs.scheduleFor([{ grade: 'got', at: lastOfJune }]).dueOn, '2026-06-30');
+const yearEnd = new Date(2026, 11, 28, 10, 0, 0).toISOString();
+check('28 December + 4 days crosses the year', srs.scheduleFor([
+  { grade: 'got', at: yearEnd }, { grade: 'got', at: yearEnd }, { grade: 'got', at: yearEnd },
+]).dueOn, '2027-01-01');
 
 section('identity survives re-extraction');
 /* The whole argument for hashing content instead of using lessonKey:index is

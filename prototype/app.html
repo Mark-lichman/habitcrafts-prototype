@@ -121,7 +121,12 @@
   </defs>
 </svg>
 
-<a class="skip-link" href="#main">Skip to today's habits</a>
+<!-- A BUTTON, NOT href="#main". The router owns the hash, so activating the
+     skip link set hash "#main", matched no route, and fell through to the entry
+     screen - destroying the page the user was on. An accessibility affordance
+     that throws away your screen is worse than not having one. The copy was
+     also HabitCrafts', not this app's. -->
+<button class="skip-link" type="button" data-skip-to-main>Skip to the content</button>
 
 <!-- ===========================================================================
      THE EXPERIMENT SWITCHER — the ONE piece of scaffolding in this file.
