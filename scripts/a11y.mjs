@@ -29,18 +29,49 @@ import { withBrowser } from './lib/browser.mjs';
 /* Visible = actually laid out. Everything below shares this definition. */
 const VISIBLE = 'el.getClientRects().length > 0';
 
+/* SCAN THE WHOLE DOCUMENT, NOT JUST `#main`.
+   This used to look only inside `#main`, and so could not name the culprit
+   whenever the culprit was the shell. CI failed ten screens on Linux with a
+   flat 33px of overflow and an EMPTY guilty list every time - which was the
+   check telling us, without anyone reading it that way, that the overflowing
+   element was the nav or the header rather than the page content. Nine
+   identical numbers across nine unrelated screens says "the frame", not "the
+   content", and the diagnostic was looking at the content.
+
+   The width and the offending edge are reported too. "33px" alone does not say
+   whether something is slightly too wide or something is fixed-width and way
+   off, and that difference decides the fix. */
 const OVERFLOW = `(() => {
   const de = document.documentElement;
   const over = de.scrollWidth - de.clientWidth;
   const guilty = [];
   if (over > 1) {
-    document.querySelectorAll('#main *').forEach((el) => {
-      if (el.getBoundingClientRect().right > de.clientWidth + 1) {
-        guilty.push(String(el.className || el.tagName).slice(0, 40));
+    document.querySelectorAll('body *').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) return;           /* not rendered */
+      if (r.right > de.clientWidth + 1) {
+        guilty.push({
+          what: String(el.className || el.tagName).slice(0, 40),
+          right: Math.round(r.right),
+          width: Math.round(r.width),
+          inMain: !!el.closest('#main'),
+        });
       }
     });
+    /* Widest overhang first: the outermost offender is usually the cause and
+       everything inside it is a consequence. */
+    guilty.sort((a, b) => b.right - a.right);
   }
-  return { over, guilty: guilty.slice(0, 3) };
+  return {
+    over,
+    viewport: de.clientWidth,
+    /* Concatenation, not a template literal: this whole block is a template
+       literal in the .mjs file, so an inner \${} would be interpolated by node
+       against variables that only exist in the browser. */
+    guilty: guilty.slice(0, 4).map((g) => g.what
+      + ' [' + g.width + 'px wide, right edge ' + g.right
+      + (g.inMain ? '' : ', OUTSIDE #main') + ']'),
+  };
 })()`;
 
 const SMALL_TARGETS = `(() => {
@@ -146,7 +177,14 @@ await withBrowser(async (b) => {
 
       const o = await b.evaluate(OVERFLOW);
       await b.check(`${name}: no sideways scroll`, 'true',
-        () => { if (o.over > 1) console.log(`        ${o.over}px — ${o.guilty.join(', ')}`); return o.over <= 1; });
+        () => {
+          if (o.over > 1) {
+            console.log(`        ${o.over}px over a ${o.viewport}px viewport`);
+            if (o.guilty.length) o.guilty.forEach((g) => console.log(`          ${g}`));
+            else console.log('          no element overhangs: the document itself is wider');
+          }
+          return o.over <= 1;
+        });
 
       const t = await b.evaluate(SMALL_TARGETS);
       await b.check(`${name}: every target ≥ 24px`, 'true',
