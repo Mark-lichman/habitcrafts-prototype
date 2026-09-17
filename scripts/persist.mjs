@@ -52,10 +52,30 @@ import { withBrowser } from './lib/browser.mjs';
    installs. */
 const SHIPPING = 'x=japanese&solo=1';
 
+/**
+ * Delete the profile, patiently, and never fail the suite over it.
+ *
+ * CI failed on `ENOTEMPTY: rmdir '/tmp/hc-persist-profile/Default'`, which was
+ * this file's own doing: it deleted the directory the instant `withBrowser`
+ * returned, while Chrome was still letting go of it. browser.mjs already
+ * retries its own cleanup for exactly this reason and this did not.
+ *
+ * Swallowed at the end rather than thrown: a leftover temp directory is
+ * untidy, and reporting a persistence regression because a folder was busy is
+ * worse than untidy. The next run clears it before it does anything.
+ */
+function rmProfile(dir) {
+  for (let i = 0; i < 5; i++) {
+    try { rmSync(dir, { recursive: true, force: true }); return true; }
+    catch (e) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 200); }
+  }
+  return false;
+}
+
 /* One profile, two browsers. Cleared first so a previous run cannot supply the
    data this one is about to claim it saved. */
 const PROFILE = resolve(tmpdir(), 'hc-persist-profile');
-rmSync(PROFILE, { recursive: true, force: true });
+rmProfile(PROFILE);
 
 const opts = { query: SHIPPING, bootMs: 1800, profile: PROFILE, carry: true };
 const app = 'window.HCApp.store';
@@ -220,7 +240,9 @@ const two = await withBrowser(async (b) => {
 
 /* -------------------------------------------------------------------------- */
 
-rmSync(PROFILE, { recursive: true, force: true });
+if (!rmProfile(PROFILE)) {
+  console.log(`  note  could not remove ${PROFILE}; the next run will clear it`);
+}
 
 const pass = one.pass + two.pass;
 const fail = one.fail + two.fail;
