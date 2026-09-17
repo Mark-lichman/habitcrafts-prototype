@@ -22,15 +22,26 @@
    THE DECKS ARE NOT IN THE REPOSITORY, SO CI SEES A DIFFERENT APP
    ---------------------------------------------------------------------------
    `prototype/js/corpus/` is gitignored. A clone has the pilot fixture and
-   nothing else, which is a legitimate state the app is written to handle, and
-   every suite is written to pass in it: `corpora.mjs` reads the registry rather
-   than a hardcoded list, `persist` and `pwa --installed` use whatever card is
-   due first, and the pilot always has some. The suites therefore assert the
-   same things against one deck in CI and four on Mark's machine, which is the
-   property that makes CI worth having at all.
+   nothing else, and every suite is written to RUN in that state.
+
+   It does NOT assert the same things there, and an earlier version of this
+   comment claimed it did. Measured: `evals-all` is RED locally, 3 of its 4
+   corpora carrying findings, and GREEN in CI, because the three that fail are
+   the machine-generated ones and those are exactly the files git ignores. CI
+   only ever grades the hand-written pilot, which has always passed.
+
+   Two checks go further and become vacuous rather than merely weaker: the
+   cross-corpus key-collision checks in `evals-all` compare a set of one corpus
+   to itself, and `evals.mjs` §2b is skipped silently because the pilot has no
+   `source.affords`. Both print a pass.
+
+   So CI is a guard on the APP and not on extraction quality. Extraction is
+   graded on the machine that has the decks. Saying that plainly is the point:
+   the previous wording would have let a green CI stand in for a red local run.
    ========================================================================= */
 
 import { spawn, spawnSync } from 'node:child_process';
+import { readdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -45,6 +56,7 @@ const URL = `http://localhost:${PORT}`;
 -------------------------------------------------------------------------- */
 
 const SUITES = [
+  { name: 'srs',       args: ['scripts/srs.mjs'],              what: 'the scheduler spaces things out' },
   { name: 'smoke',     args: ['scripts/smoke.mjs'],            what: 'the data layer obeys its own rules' },
   { name: 'evals',     args: ['scripts/evals-all.mjs'],        what: 'every corpus holds up, and the checks between them' },
   { name: 'drive',     args: ['scripts/drive.mjs'],            what: 'the flow does what it claims', browser: true },
@@ -85,7 +97,35 @@ async function ensureServer() {
 console.log('— regenerating the precache list —');
 const pre = spawnSync(process.execPath, ['tools/precache.mjs'], { cwd: root, encoding: 'utf8' });
 console.log(pre.stdout.trim() || pre.stderr.trim());
+/* Its exit status was ignored. If generation fails, `pwa` then validates
+   whatever stale sw-manifest.js is on disk and reports it as good. */
+if (pre.status !== 0) {
+  console.log('\nprecache generation FAILED; the manifest below would be stale.');
+  process.exit(1);
+}
 console.log();
+
+/* EVERY SUITE ON DISK IS EITHER LISTED OR DELIBERATELY EXCLUDED.
+   `android.mjs` existed for a day and ran nowhere: it is not in this list and
+   not in CI, so it was a file that looked like coverage and was not. The list
+   is now checked against the directory, and a new suite that nobody wires up
+   says so instead of sitting there. */
+const EXCLUDED = new Set([
+  'verify.mjs',        /* this file */
+  'evals.mjs',         /* run per-corpus by evals-all */
+  'serve.js',
+  'shot.mjs',          /* takes pictures, asserts nothing */
+  'android.mjs',       /* needs a device on adb; run by hand */
+  'installable.mjs',   /* subsumed by pwa.mjs */
+]);
+const onDisk = readdirSync(resolve(root, 'scripts'))
+  .filter((f) => f.endsWith('.mjs') && !EXCLUDED.has(f));
+const listed = new Set(SUITES.map((s) => s.args[0].replace('scripts/', '')));
+const unlisted = onDisk.filter((f) => !listed.has(f));
+if (unlisted.length) {
+  console.log(`WARNING: ${unlisted.join(', ')} ${unlisted.length === 1 ? 'is a suite' : 'are suites'} `
+    + 'nobody runs. Add to SUITES or to EXCLUDED with a reason.\n');
+}
 
 const wanted = SUITES.filter((s) => !(noBrowser && s.browser));
 if (noBrowser) console.log(`SKIPPING ${SUITES.length - wanted.length} browser suites (--no-browser)\n`);
