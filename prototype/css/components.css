@@ -5587,3 +5587,38 @@ a.card {
   align-items: center;
   gap: var(--space-8);
 }
+
+/* ---------------------------------------------------------------------------
+   THE EXPERIMENT SWITCHER MUST NOT SET THE WIDTH OF THE DOCUMENT
+
+   CI failed ten screens on Linux for three runs with a flat 33px of sideways
+   scroll, and once the overflow check learned to name culprits outside `#main`
+   it said the same thing every time: `xbar__group [411px wide, right edge 423]`
+   in a 390px viewport.
+
+   `.xbar__group` is a flex ITEM of `.xbar__row`, and a flex item's default
+   `min-width: auto` refuses to shrink below the intrinsic width of its
+   contents. So the row of experiment buttons sized itself to its buttons and
+   pushed the whole document wider, and every screen inherited it - which is why
+   nine unrelated screens reported an identical number.
+
+   It was never a Linux bug. It is a font-metrics bug that Linux exposed:
+   measured on Windows the group is 372px inside a 390px viewport, eighteen
+   pixels of headroom, and raising the button font to 17px reproduces the
+   failure exactly (group 475px, document 97px over). Any longer label or any
+   wider fallback face would have done the same on any platform.
+
+   `min-width: 0` lets it shrink; `flex-wrap: wrap` lets the buttons take a
+   second line rather than hiding behind a scrollbar the switcher would never
+   advertise. `.xbar__row` already wraps, so this is the same behaviour one
+   level down.
+
+   Not visible in the shipping build - `config.js` sets `switcher: false` for
+   the `japanese` configuration - so this was never reaching the phone. It was
+   reaching every design review at 390px.
+--------------------------------------------------------------------------- */
+
+.xbar__group {
+  min-width: 0;
+  flex-wrap: wrap;
+}
