@@ -5560,3 +5560,30 @@ a.card {
   text-decoration: none;
   color: inherit;
 }
+
+/* ---------------------------------------------------------------------------
+   .u-row — USED IN FOURTEEN PLACES AND DEFINED IN NONE
+   Appended, modifying nothing above it.
+
+   Four views set `class="u-row"` with an inline `gap`, on the reasonable
+   assumption that it makes a flex row. It was never defined. The elements
+   rendered as plain blocks, so `gap` and `flex-wrap` were inert and the chip
+   rows sat flush against each other: rounded pills touching with no vertical
+   space, and the Library's topic chips running together in the text layer as
+   "koko / soko / asokodokochira / sochira".
+
+   An independent audit on a real device found it. No suite could: overlapping
+   chips are neither wider than the viewport nor smaller than 24px, so the
+   overflow and target-size checks both pass over them happily.
+
+   `align-items: center` because every current use is a row of controls or
+   pills; `flex-wrap: wrap` because a phone is 412px and a row of four chips
+   is not.
+--------------------------------------------------------------------------- */
+
+.u-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8);
+}

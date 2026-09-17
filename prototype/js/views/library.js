@@ -372,7 +372,11 @@ export function render() {
             <a class="btn btn--secondary" href="#/library/${hero.id}">
               ${hero.read ? 'Read it again' : 'Read the lesson'}
             </a>
-            <a class="btn btn--ghost" href="#week">See the week</a>
+            <!-- NOT href="#week". The router owns the hash, so a bare fragment is read
+                 as a route, fails to match, and falls through to the entry screen: a
+                 button on Decks that silently took you to Today. Found on a device by
+                 an audit; no suite clicks it. -->
+            <button class="btn btn--ghost" type="button" data-see-week>See the week</button>
           </div>
         </div>
 
@@ -490,6 +494,16 @@ export function mount(root) {
   /* Closing out a practice. The store archives the habits and shelves the
      source; the view only has to ask, and the re-render comes for free
      because app.js re-renders every mounted view on a store change. */
+  /* `#week` IS A REAL SECTION ON THIS PAGE, and `href="#week"` was the obvious
+     way to reach it and the wrong one: routing is hash-based, so the router
+     claimed the fragment, matched nothing and fell through to the entry screen.
+     Scrolling explicitly is the only way to have an in-page jump in an app
+     whose URL fragment is a route. */
+  on(root, 'click', '[data-see-week]', () => {
+    const week = document.querySelector('#week');
+    if (week) week.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
   on(root, 'click', '[data-finish]', (e, el) => {
     store.finishSource(el.getAttribute('data-finish'));
   });

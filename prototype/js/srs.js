@@ -102,10 +102,36 @@ export function cardId(sourceId, exercise) {
 
 const DAY = 86400000;
 
-export const isoDay = (d) => new Date(d).toISOString().slice(0, 10);
+/**
+ * The LOCAL calendar day, not the UTC one.
+ *
+ * This used to be `new Date(d).toISOString().slice(0, 10)`, and the comment
+ * above claimed it matched store.js's convention "so the two never disagree
+ * about what day it is". It did the opposite, and `data.js:34` warns against
+ * this exact mistake in as many words: "Never `new Date().toISOString()`: that
+ * is UTC and puts the evening of the 13th on the 14th."
+ *
+ * The damage was silent and it fell on evening practice in the Americas. A card
+ * answered at 20:00 Pacific on a Wednesday was stamped Thursday, so its one-day
+ * interval landed on FRIDAY: it was not due at any point on Thursday until
+ * 17:01 local. Every box-1 card skipped the following morning, and the symptom
+ * reads as "the app is not showing me anything" rather than as a bug.
+ *
+ * Written out rather than imported from data.js because this module is pure and
+ * has no other reason to depend on the fixture layer, but the shape is
+ * deliberately identical to `iso()` there.
+ */
+export function isoDay(d) {
+  const t = new Date(d);
+  return t.getFullYear() + '-'
+    + String(t.getMonth() + 1).padStart(2, '0') + '-'
+    + String(t.getDate()).padStart(2, '0');
+}
 
+/** `days` after an ISO day string, staying on local midnights. */
 function addDays(isoDate, days) {
-  return isoDay(new Date(isoDate + 'T00:00:00Z').getTime() + days * DAY);
+  const [y, m, d] = isoDate.split('-').map(Number);
+  return isoDay(new Date(y, m - 1, d).getTime() + days * DAY);
 }
 
 /* --------------------------------------------------------------------------

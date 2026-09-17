@@ -166,7 +166,22 @@ config.onExperimentChange(() => {
   else router.refresh();
 });
 
+/* THE SKIP LINK MOVES FOCUS; IT DOES NOT NAVIGATE.
+   It was `href="#main"`, which the hash router read as a route, failed to
+   match, and fell through to the entry screen — so the one control on the page
+   specifically for keyboard and screen-reader users threw away whatever screen
+   they were on. `tabindex="-1"` is set here rather than in markup so <main>
+   never becomes a tab stop for everyone else. */
 document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-skip-to-main]')) {
+    const main = document.querySelector('#main');
+    if (main) {
+      main.setAttribute('tabindex', '-1');
+      main.focus();
+      main.scrollIntoView({ block: 'start' });
+    }
+    return;
+  }
   const btn = e.target.closest('[data-x]');
   if (btn) config.setExperiment(btn.getAttribute('data-x'));
 });
@@ -268,6 +283,19 @@ async function boot() {
      practising rather than a person reviewing, and on Android dismissing an
      installed app from the recents tray ends the session. */
   const demo = new URLSearchParams(location.search).has('demo');
+
+  /* RECONCILE THE TWO COPIES BEFORE ANYTHING READS EITHER.
+     The local adapter writes to localStorage AND to IndexedDB, because
+     localStorage alone loses whatever it has not flushed when the process is
+     killed - measured at under a second on desktop and 3-5 seconds on the
+     device, which is exactly long enough to lose the card you just answered
+     before putting the phone away. `hydrate()` is the one await that lets the
+     synchronous `load()` below return the newer of the two.
+
+     Before `configure`, not after: `configure` calls `load()` immediately, and
+     hydrating afterwards would reconcile a copy the store had already read. */
+  if (!demo) await localAdapter.hydrate();
+
   store.configure(demo ? fixtureAdapter : localAdapter);
 
   /* THE DECKS LOAD BEFORE THE FIRST RENDER, NOT DURING IT.
