@@ -54,6 +54,7 @@ const OVERFLOW = `(() => {
           what: String(el.className || el.tagName).slice(0, 40),
           right: Math.round(r.right),
           width: Math.round(r.width),
+          position: getComputedStyle(el).position,
           inMain: !!el.closest('#main'),
         });
       }
@@ -65,11 +66,31 @@ const OVERFLOW = `(() => {
   return {
     over,
     viewport: de.clientWidth,
+    /* WIDTHS THAT DISAGREE ARE THE POINT.
+       The remaining CI failure reports .app-nav at 404px, but that element is
+       position:fixed with inset-inline:16px, which should make it the viewport
+       minus 32 whatever the document does - 358px at 390. It measures 358 here
+       and 404 there, and 404 is exactly 436 minus 32, where 436 is the
+       overflowing document width. So on the runner the fixed nav is resolving
+       against something document-sized rather than the viewport, which means it
+       is a SYMPTOM and the real culprit is elsewhere. These numbers say which
+       of the viewports is lying.
+
+       No backticks in here: this comment sits INSIDE a template literal, and
+       the first one ended the string and broke the file. */
+    innerWidth: window.innerWidth,
+    bodyScroll: document.body.scrollWidth,
+    docScroll: de.scrollWidth,
     /* Concatenation, not a template literal: this whole block is a template
        literal in the .mjs file, so an inner \${} would be interpolated by node
        against variables that only exist in the browser. */
-    guilty: guilty.slice(0, 4).map((g) => g.what
+    /* Eight, not four: the last round was truncated at four and every slot was
+       taken by the nav and its own children, which hid whatever else overhangs.
+       The computed position is reported because a FIXED element that overhangs
+       is usually a consequence of a wide document, not a cause of one. */
+    guilty: guilty.slice(0, 8).map((g) => g.what
       + ' [' + g.width + 'px wide, right edge ' + g.right
+      + ', ' + g.position
       + (g.inMain ? '' : ', OUTSIDE #main') + ']'),
   };
 })()`;
