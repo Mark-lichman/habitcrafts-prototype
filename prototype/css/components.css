@@ -5622,3 +5622,46 @@ a.card {
   min-width: 0;
   flex-wrap: wrap;
 }
+
+/* ---------------------------------------------------------------------------
+   A LESSON CHIP MUST NOT BE AS WIDE AS ITS TITLE
+
+   The last screen failing CI on Linux was the reminder step, and once the
+   overflow report named things outside `#main` AND stopped truncating its own
+   list at four entries, it said:
+
+     btn btn--sm btn--primary [387px wide, right edge 436, static]
+
+   Not the nav, which had been the loudest entry in the report and was only ever
+   a symptom: `.app-nav` is fixed and was resolving against an already-wide
+   document.
+
+   The chips sit in a `.u-row`, the wrapping flex utility, and `.btn` sets
+   `white-space: nowrap`, so a chip is exactly as wide as its label. A title
+   like "1. The sentence that says what something is" cannot shrink, and one
+   chip at 439px in a 342px row takes the whole document with it. Reproduced on
+   Windows by raising the button font to 19px: the document goes 99px over.
+
+   Truncation rather than wrapping: these are one-line chips in a row, and a
+   chip that grows to three lines pushes the actual controls off the screen.
+   Clipping keeps the row a row and the title readable up to the width there is,
+   which is the same treatment the status chips already get.
+
+   Scoped to `.u-row > .btn` rather than to the flow's own container: the first
+   attempt targeted `.learn-crumbs .btn` on the assumption that the chips lived
+   there, and it changed nothing at all, because the probe had only ever printed
+   the parent of the FIRST button on the screen. Measuring each overflowing
+   element's own parent named `.u-row`. A guess that produces no change is still
+   a guess.
+
+   `min-width: 0` is the part that does the work. Without it a flex item refuses
+   to shrink below its content, which is the same trap `.xbar__group` fell into
+   one commit earlier.
+--------------------------------------------------------------------------- */
+
+.u-row > .btn {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
