@@ -120,7 +120,7 @@ function joinedSpace(space) {
            The hypothesis as written names the MEMBER as the payer, so the test
            has to give them a real chance to buy — even though the prior is that
            the operator pays. An experiment that only offers the option you
-           expect to win has not tested anything. [#3 §4.5] -->
+           expect to win has not tested anything. [#17] -->
       ${flag('memberPaywall') ? html`
         <section class="card card--roomy space-upgrade" aria-labelledby="up-${space.id}">
           <h3 id="up-${space.id}" class="t-h3">Practice companion</h3>

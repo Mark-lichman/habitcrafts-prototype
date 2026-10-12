@@ -133,7 +133,7 @@ function lessonCard(practice, lesson) {
    THE PUBLISH PANEL
    For E1 this is also the money moment: the price ask sits at publish, after
    the author has seen the thing they would be paying for, and never at upload
-   where they have seen nothing. [#2 §3.6]
+   where they have seen nothing. [#16]
 -------------------------------------------------------------------------- */
 
 function publishPanel(practice) {

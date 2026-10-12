@@ -10,7 +10,7 @@
    ------------------------------------------------------------------------
    WHY THE SOURCES ARE INVENTED BOOKS
    ------------------------------------------------------------------------
-   The business case behind E1 is written against a real book (see issue #2).
+   The business case behind E1 was worked through against a real book.
    The prototype is not, and deliberately so.
 
    Every generated lesson in this app carries a provenance line pointing at a
@@ -85,7 +85,7 @@ export const sources = [
    What "conversion" produces. In production this is a model call; here it is
    two hand-written sets, so the screens can be reviewed without anyone
    pretending the generation quality is the thing under test. (E1 fakes the
-   conversion for its first cohort for the same reason — issue #2.)
+   conversion for its first cohort for the same reason, issue #16.)
 
    Every lesson carries:
      sourceRef      the provenance line's content: chapter, page, verbatim quote
