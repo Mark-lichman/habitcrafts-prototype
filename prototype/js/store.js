@@ -465,7 +465,7 @@ export function practiceLessonById(practice, lessonId) {
 /**
  * Record a source. `rightsConfirmed` is required rather than defaulted:
  * an affirmative rights confirmation at upload is the whole copyright position
- * for E1, and a field that defaults to true is not a confirmation. [#2 §copyright]
+ * for E1, and a field that defaults to true is not a confirmation. [#16 §copyright]
  */
 export function addSource(fields = {}) {
   const s = {
@@ -491,7 +491,7 @@ export function addSource(fields = {}) {
  * `publish: true` shortcut. Nothing publishes unreviewed — the author must
  * open each week and then call publishPractice() themselves. That is the
  * design constraint the whole creator experiment rests on, and the safest
- * place to enforce it is here, where every path has to come through. [#2 §3.4]
+ * place to enforce it is here, where every path has to come through. [#16]
  */
 export function bindSource(sourceId, opts = {}) {
   const source = sourceById(sourceId);
@@ -773,7 +773,7 @@ export function joinSpace(id) {
 /* --- the consumer paywall (E3) -------------------------------------------- */
 
 /**
- * The wall sits on CONVERSION, never on the check-in. [#4 §5.4]
+ * The wall sits on CONVERSION, never on the check-in. [#18]
  *
  * One free Practice; a second source needs Plus. This function is the only
  * place that rule is written down, so moving the wall is a one-line change and

@@ -99,7 +99,7 @@ export const EXPERIMENTS = {
     hypothesis:
       'Authors, speakers and coaches are willing to pay for an app that helps ' +
       'their audience convert knowledge into daily practice.',
-    ticket: 2,
+    ticket: 16,
     nav: [
       { id: 'studio', href: '#/studio', icon: 'rosette', label: 'Studio' },
     ],
@@ -120,7 +120,7 @@ export const EXPERIMENTS = {
     hypothesis:
       'Members of knowledge communities are willing to pay to have the knowledge ' +
       'they are part of put into daily practice.',
-    ticket: 3,
+    ticket: 17,
     nav: [
       { id: 'spaces', href: '#/spaces', icon: 'shield', label: 'Spaces' },
     ],
@@ -142,7 +142,7 @@ export const EXPERIMENTS = {
     hypothesis:
       'General consumer learners are a reachable audience and are searching for ' +
       'a tool to help them turn their learnings into practice.',
-    ticket: 4,
+    ticket: 18,
     nav: [],
     flags: {
       bindery: true,

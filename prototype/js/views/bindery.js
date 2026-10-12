@@ -117,7 +117,7 @@ function stepPick() {
            to checked: a confirmation that confirms itself is not one. This is
            the whole copyright position for E1 — the creator owns or licenses
            what they upload — so it gates the Continue button rather than
-           sitting decoratively beside it. [#2 §copyright] -->
+           sitting decoratively beside it. [#16 §copyright] -->
       <label class="check bind-rights">
         <input type="checkbox" data-rights ${draft.rights ? 'checked' : ''}>
         <span class="t-body-sm">
@@ -283,7 +283,7 @@ function stepBinding() {
 /* --------------------------------------------------------------------------
    THE PAYWALL — E3 only
    The wall sits on CONVERSION, never on the check-in. A user who never pays
-   still has a complete habit app; what Plus buys is a second source. [#4 §5.4]
+   still has a complete habit app; what Plus buys is a second source. [#18]
 -------------------------------------------------------------------------- */
 
 function wall() {
